@@ -1,16 +1,20 @@
 import requests
+import re
 
 OLLAMA_ENDPOINT = "http://localhost:11434/api/generate"
-MODEL = "mistral"  # Or llama2, codellama, etc.
+MODEL = "llama3"
 
 def nl_to_sql(prompt: str, schema: str) -> str:
-    full_prompt = f"""
-You are an AI that converts natural language into SQL queries.
+    full_prompt = """
+You are an expert AI that translates natural language into pure SQL queries.
+Do not include explanations or Markdown formatting. Just return the raw SQL.
+
 Schema:
 {schema}
 
-Natural language: {prompt}
-SQL:"""
+User Query: {prompt}
+SQL:
+"""
 
     response = requests.post(OLLAMA_ENDPOINT, json={
         "model": MODEL,
@@ -18,4 +22,6 @@ SQL:"""
         "stream": False
     })
 
-    return response.json()['response'].strip()
+    raw = response.json()['response'].strip()
+    match = re.search(r"(SELECT|INSERT|UPDATE|DELETE)[\\s\\S]+?;", raw, re.IGNORECASE)
+    return match.group(0).strip() if match else raw
