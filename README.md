@@ -95,11 +95,6 @@ When uploading a CSV file:
 
 ---
 
-## License
-
-MIT
-
----
 
 ## Contributing
 
