@@ -1,58 +1,11 @@
-# db_utils.py
+import os
+import json
+import sqlite3
 import pandas as pd
-from sqlalchemy import create_engine, text, MetaData
+from sqlalchemy import create_engine, MetaData, Table, Column, Integer, text
+from sqlalchemy.schema import CreateTable
 
-# Create/connect SQLite database
 engine = create_engine("sqlite:///rag.db", echo=False)
-
-
-def run_query(query):
-    with engine.connect() as conn:
-        try:
-            result = conn.execute(text(query))
-            try:
-                df = pd.DataFrame(result.fetchall(), columns=result.keys())
-                return df
-            except:
-                return "Executed successfully."
-        except Exception as e:
-            return f"Error: {e}"
-
-
-def get_schema():
-    meta = MetaData()
-    meta.reflect(bind=engine)
-    schema_desc = ""
-    for table in meta.tables.values():
-        schema_desc += f"Table {table.name} with columns: {[col.name for col in table.columns]}\n"
-    return schema_desc
-
-
-def create_table(table_name, columns: dict):
-    col_str = ", ".join([f"{k} {v}" for k, v in columns.items()])
-    query = f"CREATE TABLE IF NOT EXISTS {table_name} ({col_str});"
-    return run_query(query)
-
-
-def create_sample_table_if_not_exists():
-    query = """
-    CREATE TABLE IF NOT EXISTS users (
-        id INTEGER PRIMARY KEY,
-        name TEXT,
-        age INTEGER
-    );
-    """
-    run_query(query)
-
-    check = run_query("SELECT COUNT(*) FROM users;")
-    if isinstance(check, pd.DataFrame) and check.iloc[0, 0] == 0:
-        insert_query = """
-        INSERT INTO users (name, age) VALUES 
-        ('Alice', 28),
-        ('Bob', 34),
-        ('Charlie', 22);
-        """
-        run_query(insert_query)
 
 
 def list_tables():
@@ -61,64 +14,138 @@ def list_tables():
     return list(meta.tables.keys())
 
 
+def get_schema():
+    meta = MetaData()
+    meta.reflect(bind=engine)
+    output = []
+    for table in meta.tables.values():
+        output.append(f"Table: {table.name}")
+        for col in table.columns:
+            output.append(f"  - {col.name} ({col.type})")
+        output.append("")
+    return "\n".join(output)
+
+
 def get_table_columns(table_name):
     meta = MetaData()
     meta.reflect(bind=engine)
     if table_name in meta.tables:
-        table = meta.tables[table_name]
-        return ", ".join([col.name for col in table.columns])
-    return "No such table."
+        return [col.name for col in meta.tables[table_name].columns]
+    return []
 
 
-def insert_row(table_name, row_string):
+def run_query(query):
     try:
-        meta = MetaData()
-        meta.reflect(bind=engine)
-        table = meta.tables[table_name]
-        col_names = [col.name for col in table.columns]
-        placeholders = ", ".join(["?"] * len(col_names))
-        query = f"INSERT INTO {table_name} VALUES ({placeholders})"
-        values = eval(f"[{row_string}]")
         with engine.connect() as conn:
-            conn.execute(text(query), values)
-        return "Row inserted successfully."
+            result = conn.execute(text(query))
+            if result.returns_rows:
+                df = pd.DataFrame(result.fetchall(), columns=result.keys())
+                return df
+            return "✅ Query executed successfully."
     except Exception as e:
-        return f"Error: {e}"
+        return f"❌ Error: {str(e)}"
 
 
-def bulk_insert_csv(file_obj, table_name):
+def create_sample_table_if_not_exists():
+    if "users" not in list_tables():
+        with engine.connect() as conn:
+            conn.execute(text("""
+                CREATE TABLE users (
+                    id INTEGER PRIMARY KEY AUTOINCREMENT,
+                    name TEXT,
+                    age INTEGER
+                )
+            """))
+            conn.execute(text("""
+                INSERT INTO users (name, age) VALUES
+                ('Alice', 28),
+                ('Bob', 34),
+                ('Charlie', 22)
+            """))
+        generate_metadata_for_table("users")
+
+
+def create_table(table_name, columns):
+    meta = MetaData()
+    cols = [Column("id", Integer, primary_key=True)]
+    for name, dtype in columns.items():
+        if name != "id":
+            cols.append(Column(name, text(dtype)))
+    table = Table(table_name, meta, *cols)
+    meta.create_all(engine)
+    return f"✅ Table '{table_name}' created."
+
+
+def insert_row(table_name, row_values):
     try:
-        df = pd.read_csv(file_obj.name)
+        values = [x.strip() for x in row_values.split(",")]
+        columns = get_table_columns(table_name)
+        if "id" in columns:
+            columns.remove("id")
+        if len(values) != len(columns):
+            return "❌ Column count mismatch."
+        placeholders = ", ".join(["?"] * len(values))
+        sql = f"INSERT INTO {table_name} ({', '.join(columns)}) VALUES ({placeholders})"
+        with sqlite3.connect("rag.db") as conn:
+            conn.execute(sql, values)
+            conn.commit()
+        return "✅ Row inserted."
+    except Exception as e:
+        return f"❌ Error: {str(e)}"
+
+
+def bulk_insert_csv(file, table_name):
+    try:
+        df = pd.read_csv(file.name)
         df.to_sql(table_name, con=engine, if_exists='append', index=False)
-        return f"{len(df)} rows inserted into '{table_name}'"
+        return f"✅ Inserted {len(df)} rows into '{table_name}'"
     except Exception as e:
-        return f"CSV Insert Error: {e}"
+        return f"❌ CSV Upload Error: {str(e)}"
 
 
-def create_table_from_csv(file_obj, table_name):
+def create_table_from_csv(file, table_name):
     try:
-        df = pd.read_csv(file_obj.name)
-        df.to_sql(table_name, con=engine, if_exists='fail', index=False)
-        return f"New table '{table_name}' created with {len(df)} rows."
+        df = pd.read_csv(file.name)
+        df.to_sql(table_name, con=engine, if_exists='replace', index=False)
+        generate_metadata_for_table(table_name)
+        return f"✅ New table '{table_name}' created from CSV."
     except Exception as e:
-        return f"Error creating table from CSV: {e}"
-
-
-def delete_row_by_id(table_name, row_id):
-    try:
-        query = f"DELETE FROM {table_name} WHERE id = {row_id};"
-        return run_query(query)
-    except Exception as e:
-        return f"Error: {e}"
+        return f"❌ CSV Table Creation Error: {str(e)}"
 
 
 def create_foreign_key_relation(from_table, from_col, to_table, to_col):
-    try:
-        fk_query = f"""
-        ALTER TABLE {from_table}
-        ADD CONSTRAINT fk_{from_table}_{from_col}
-        FOREIGN KEY ({from_col}) REFERENCES {to_table}({to_col});
-        """
-        return run_query(fk_query)
-    except Exception as e:
-        return f"Error: {e}"
+    return f"🔒 Foreign key constraints not supported in SQLite dynamically."
+
+
+# ✅ METADATA MANAGEMENT
+
+def generate_metadata_for_table(table_name):
+    os.makedirs("metadata", exist_ok=True)
+    meta = MetaData()
+    meta.reflect(bind=engine)
+    table = meta.tables.get(table_name)
+    if table is None:
+        return
+    metadata = {
+        "table": table_name,
+        "description": f"Auto-generated metadata for table '{table_name}'",
+        "columns": {col.name: f"{col.name} ({col.type})" for col in table.columns},
+        "primary_key": [col.name for col in table.primary_key][0] if table.primary_key else None,
+        "foreign_keys": []
+    }
+    with open(f"metadata/{table_name}.json", "w") as f:
+        json.dump(metadata, f, indent=2)
+
+
+def remove_metadata_for_table(table_name):
+    path = f"metadata/{table_name}.json"
+    if os.path.exists(path):
+        os.remove(path)
+
+
+def sync_metadata_with_existing_tables():
+    os.makedirs("metadata", exist_ok=True)
+    for table in list_tables():
+        path = f"metadata/{table}.json"
+        if not os.path.exists(path):
+            generate_metadata_for_table(table)

@@ -3,19 +3,31 @@ import gradio as gr
 from sqlalchemy import MetaData, text, create_engine
 from db_utils import (
     run_query, get_schema, create_table, create_sample_table_if_not_exists,
-    insert_row, bulk_insert_csv, list_tables, get_table_columns, delete_row_by_id,
-    create_foreign_key_relation, create_table_from_csv
+    insert_row, bulk_insert_csv, list_tables, get_table_columns,
+    create_foreign_key_relation, create_table_from_csv, generate_metadata_for_table,
+    remove_metadata_for_table
 )
 from llm_utils import nl_to_sql
 import pandas as pd
+import os
 
-# Initialize DB connection
+# Initialize DB
 engine = create_engine("sqlite:///rag.db", echo=False)
-
-# Ensure base tables exist
 create_sample_table_if_not_exists()
+from db_utils import sync_metadata_with_existing_tables
+sync_metadata_with_existing_tables()
 
-# Helper to format schema cleanly with row counts
+# Shared dropdowns across all tabs
+shared_tables = list_tables()
+table_dropdown = gr.Dropdown(label="Select Table", choices=shared_tables)
+existing_table = gr.Dropdown(label="Choose Existing Table", choices=shared_tables)
+from_table = gr.Dropdown(label="From Table", choices=shared_tables)
+to_table = gr.Dropdown(label="To Table", choices=shared_tables)
+from_col = gr.Dropdown(label="Column in From Table", choices=[])
+to_col = gr.Dropdown(label="Primary Key Column in To Table", choices=[])
+
+# Helpers
+
 def get_pretty_schema():
     meta = MetaData()
     meta.reflect(bind=engine)
@@ -47,33 +59,85 @@ def preview_table_rows(table_name):
     except:
         return "Error fetching rows."
 
+def build_prompt_from_metadata(user_question):
+    import json
+    prompt = (
+                "You are an expert SQLite query generator."
+            "Use only valid SQLite syntax. Do not use information_schema or SHOW TABLES."
+            "Always reference the provided metadata to understand available tables and columns."
+            "Only return the SQL query. Do not explain your answer."
+            "Here is the database metadata:"
+        )
+
+    meta_dir = "metadata"
+    for file in os.listdir(meta_dir):
+        if file.endswith(".json"):
+            with open(os.path.join(meta_dir, file)) as f:
+                data = json.load(f)
+                prompt += f"Table: {data['table']} — {data.get('description', 'No description')}"
+                for col, desc in data['columns'].items():
+                    prompt += f"- {col}: {desc}"
+                prompt += " "
+
+    prompt += "Example 1:"
+    prompt += "Question: How many users are older than 30?"
+    prompt += "SQL: SELECT COUNT(*) FROM users WHERE age > 30;"
+
+    prompt += "Example 2:"
+    prompt += "Question: How many columns are in the 'survey' table?"
+    prompt += "SQL: SELECT COUNT(*) FROM survey;"
+
+    prompt += "Example 3:"
+    prompt += "Question: How many NULL values are in each column of the 'survey2' table?"
+    prompt += (
+        "SQL: SELECT 'column1' AS column_name, COUNT(*) FROM survey2 WHERE column1 IS NULL"
+        "UNION ALL"
+        "SELECT 'column2', COUNT(*) FROM survey2 WHERE column2 IS NULL;"
+    )
+
+    prompt += "Now answer the following:"
+    prompt += f"Question: {user_question} SQL:"
+    
+
+    return prompt
+
 with gr.Blocks() as demo:
-    gr.Markdown("# SQL RAG Dashboard (Local LLM + Ollama + SQLite)")
+    gr.Markdown("SQL RAG Dashboard (Talk to Your Database)")
 
-    # --- NATURAL LANGUAGE TO SQL ---
+    # Ask tab
     with gr.Tab("Ask with Natural Language"):
-        nl_input = gr.Textbox(label="Ask a question", placeholder="e.g., Show users older than 25")
+        nl_input = gr.Textbox(label="Ask your question")
         sql_out = gr.Textbox(label="Generated SQL")
-        result_out = gr.Textbox(label="Result (Markdown table)")
-        btn_run = gr.Button("Generate and Run")
+        result_out = gr.Textbox(label="Result")
+        btn_run = gr.Button("Ask")
 
-        def handle_nl_query(user_query):
-            schema = get_schema()
-            sql = nl_to_sql(user_query, schema)
+        def handle_nl_query(user_question):
+            prompt = build_prompt_from_metadata(user_question)
+            sql = nl_to_sql(prompt)
             result = run_query(sql)
             return sql, result if isinstance(result, str) else result.to_markdown(index=False)
 
-        btn_run.click(handle_nl_query, inputs=[nl_input], outputs=[sql_out, result_out])
+        btn_run.click(handle_nl_query, inputs=nl_input, outputs=[sql_out, result_out])
 
-    # --- TABLE CREATION ---
+    # Create tab
+    with gr.Tab("Upload CSV"):
+        csv_file = gr.File(label="Upload CSV File (.csv only)", file_types=[".csv"])
+        csv_table_name = gr.Textbox(label="New Table Name")
+        csv_output = gr.Textbox(label="Upload Status")
+
+        def handle_csv_upload(file, table_name):
+            return create_table_from_csv(file, table_name)
+
+        upload_btn = gr.Button("Upload CSV")
+        upload_btn.click(handle_csv_upload, inputs=[csv_file, csv_table_name], outputs=[csv_output])
+
+    # Create tab
     with gr.Tab("Create Table"):
         table_name = gr.Textbox(label="Table Name")
-        with gr.Row():
-            col_name = gr.Textbox(label="Column Name")
-            col_type = gr.Dropdown(label="Column Type", choices=["TEXT", "INTEGER", "REAL", "BOOLEAN", "DATE", "DATETIME", "BLOB"], value="TEXT")
-            add_col = gr.Button("Add Column")
-
-        col_preview = gr.Textbox(label="Columns Preview")
+        col_name = gr.Textbox(label="Column Name")
+        col_type = gr.Dropdown(label="Type", choices=["TEXT", "INTEGER", "REAL", "BOOLEAN"], value="TEXT")
+        add_col = gr.Button("Add Column")
+        col_preview = gr.Textbox(label="Preview")
         col_state = gr.State([])
 
         def add_column(n, t, state):
@@ -84,75 +148,28 @@ with gr.Blocks() as demo:
 
         btn_create = gr.Button("Create Table")
         status = gr.Textbox(label="Status")
-        schema = gr.Textbox(label="Current Schema")
+        schema = gr.Textbox(label="Schema")
 
         def create_final_table(tname, columns):
             col_dict = {n: t for n, t in columns}
             result = create_table(tname, col_dict)
-            return f"Table '{tname}' created.", get_schema()
+            generate_metadata_for_table(tname)
+            return f"✅ {tname} created.", get_schema()
 
         btn_create.click(create_final_table, inputs=[table_name, col_state], outputs=[status, schema])
 
-    # --- ROW INSERTION ---
-    with gr.Tab("Insert Data"):
-        table_dropdown = gr.Dropdown(label="Select Table", choices=list_tables())
-        col_info = gr.Dropdown(label="Table Columns", choices=[], multiselect=True)
-        row_input = gr.Textbox(label="Row Data (comma-separated)")
-        insert_btn = gr.Button("Insert Row")
-        insert_status = gr.Textbox(label="Insert Status")
-
-        table_dropdown.change(update_dropdown_choices, inputs=[table_dropdown], outputs=[col_info, table_dropdown])
-        insert_btn.click(insert_row, inputs=[table_dropdown, row_input], outputs=[insert_status])
-
-    # --- BULK CSV UPLOAD ---
-    with gr.Tab("Bulk Upload CSV"):
-        file_input = gr.File(label="CSV File", file_types=[".csv"])
-        upload_mode = gr.Radio(label="Upload Mode", choices=["Append to Existing Table", "Create New Table"], value="Append to Existing Table")
-
-        existing_table = gr.Dropdown(label="Choose Existing Table", choices=list_tables(), visible=True)
-        new_table_name = gr.Textbox(label="New Table Name", visible=False)
-
-        upload_btn = gr.Button("Upload CSV")
-        upload_status = gr.Textbox(label="Status")
-
-        def toggle_fields(mode):
-            return gr.update(visible=(mode == "Append to Existing Table")), gr.update(visible=(mode == "Create New Table"))
-
-        upload_mode.change(toggle_fields, inputs=[upload_mode], outputs=[existing_table, new_table_name])
-
-        def handle_csv_upload(file, mode, existing, new_name):
-            if not file:
-                return "No file uploaded.", gr.update()
-            result = bulk_insert_csv(file, existing) if mode == "Append to Existing Table" else create_table_from_csv(file, new_name)
-            return result, gr.update(choices=list_tables())
-
-        upload_btn.click(handle_csv_upload, inputs=[file_input, upload_mode, existing_table, new_table_name], outputs=[upload_status, existing_table])
-
-    # --- FOREIGN KEY CREATION ---
-    with gr.Tab("Create Relationship (FK)"):
-        from_table = gr.Dropdown(label="From Table", choices=list_tables())
-        from_col = gr.Dropdown(label="Column in From Table", choices=[])
-        to_table = gr.Dropdown(label="To Table", choices=list_tables())
-        to_col = gr.Dropdown(label="Primary Key Column in To Table", choices=[])
-        fk_status = gr.Textbox(label="Status")
-        fk_btn = gr.Button("Add Foreign Key")
-
-        from_table.change(update_dropdown_choices, inputs=[from_table], outputs=[from_col, from_table])
-        to_table.change(update_dropdown_choices, inputs=[to_table], outputs=[to_col, to_table])
-
-        fk_btn.click(create_foreign_key_relation, inputs=[from_table, from_col, to_table, to_col], outputs=[fk_status])
-
-    # --- TABLE SCHEMA VIEW AND DELETE TABLE ---
+    # Delete tab
     with gr.Tab("View/Delete Tables"):
-        schema_view_btn = gr.Button("Refresh Table Details")
-        schema_output = gr.Textbox(label="Current Table Details", lines=30)
+        schema_view_btn = gr.Button("Refresh Details")
+        schema_output = gr.Textbox(label="Schema", lines=30)
 
         def delete_table(table_name):
             try:
                 run_query(f"DROP TABLE IF EXISTS {table_name}")
+                remove_metadata_for_table(table_name)
                 tables = list_tables()
                 return (
-                    f"✅ Table '{table_name}' deleted.",
+                    f"✅ Deleted {table_name}",
                     get_pretty_schema(),
                     gr.update(choices=tables, value=None),
                     gr.update(choices=tables, value=None),
@@ -163,25 +180,22 @@ with gr.Blocks() as demo:
                     gr.update(choices=[], value=None)
                 )
             except Exception as e:
-                tables = list_tables()
-                return (
-                    f"❌ {str(e)}",
-                    get_pretty_schema(),
-                    gr.update(choices=tables, value=None),
-                    gr.update(choices=tables, value=None),
-                    gr.update(choices=tables, value=None),
-                    gr.update(choices=tables, value=None),
-                    gr.update(choices=tables, value=None),
-                    gr.update(choices=[], value=None),
-                    gr.update(choices=[], value=None)
-                )
+                return f"❌ {str(e)}", get_pretty_schema(), *[gr.update(choices=list_tables())]*7
 
-        delete_table_dropdown = gr.Dropdown(label="Select Table to Delete", choices=list_tables())
+        delete_table_dropdown = gr.Dropdown(label="Select Table to Delete", choices=shared_tables)
+        refresh_meta_btn = gr.Button("Refresh Metadata")
+        meta_status = gr.Textbox(label="Metadata Refresh Status", interactive=False)
+
+        def refresh_metadata():
+            sync_metadata_with_existing_tables()
+            return "✅ Metadata synced with current database tables."
+
+        refresh_meta_btn.click(refresh_metadata, outputs=[meta_status])
         delete_btn = gr.Button("Delete Selected Table")
         delete_status = gr.Textbox(label="Delete Status")
-        preview_output = gr.Textbox(label="Preview Rows", lines=8)
+        preview_output = gr.Textbox(label="Preview", lines=8)
 
-        delete_table_dropdown.change(preview_table_rows, inputs=[delete_table_dropdown], outputs=[preview_output])
+        delete_table_dropdown.change(preview_table_rows, inputs=delete_table_dropdown, outputs=preview_output)
         schema_view_btn.click(get_pretty_schema, outputs=[schema_output])
         delete_btn.click(
             delete_table,
@@ -189,5 +203,4 @@ with gr.Blocks() as demo:
             outputs=[delete_status, schema_output, delete_table_dropdown, table_dropdown, existing_table, from_table, to_table, from_col, to_col]
         )
 
-        gr.Markdown("### Table Preview")
-        demo.launch(share=True)
+    demo.launch(share=True)

@@ -1,0 +1,11 @@
+{
+  "table": "users",
+  "description": "Auto-generated metadata for table 'users'",
+  "columns": {
+    "id": "id (INTEGER)",
+    "name": "name (TEXT)",
+    "age": "age (INTEGER)"
+  },
+  "primary_key": "id",
+  "foreign_keys": []
+}
