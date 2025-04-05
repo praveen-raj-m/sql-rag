@@ -1,0 +1,16 @@
+{
+  "table": "kettlepump",
+  "description": "Auto-generated metadata for table 'kettlepump'",
+  "columns": {
+    "#": "# (BIGINT)",
+    "Date Time, GMT-07:00": "Date Time, GMT-07:00 (TEXT)",
+    "AC Curr, Amps (LGR S/N: 21930920, SEN S/N: 21930920, LBL: Print Pack 24)": "AC Curr, Amps (LGR S/N: 21930920, SEN S/N: 21930920, LBL: Print Pack 24) (FLOAT)",
+    "Started (LGR S/N: 21930920)": "Started (LGR S/N: 21930920) (TEXT)",
+    "Button Up (LGR S/N: 21930920)": "Button Up (LGR S/N: 21930920) (TEXT)",
+    "Button Down (LGR S/N: 21930920)": "Button Down (LGR S/N: 21930920) (FLOAT)",
+    "Stopped (LGR S/N: 21930920)": "Stopped (LGR S/N: 21930920) (FLOAT)",
+    "End Of File (LGR S/N: 21930920)": "End Of File (LGR S/N: 21930920) (FLOAT)"
+  },
+  "primary_key": null,
+  "foreign_keys": []
+}

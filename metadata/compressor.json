@@ -1,0 +1,9 @@
+{
+  "table": "compressor",
+  "description": "Auto-generated metadata for table 'compressor'",
+  "columns": {
+    "Plot Title: Print Pack 0": "Plot Title: Print Pack 0 (TEXT)"
+  },
+  "primary_key": null,
+  "foreign_keys": []
+}

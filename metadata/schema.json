@@ -1,0 +1,313 @@
+{
+  "survey": {
+    "Submission ID": {
+      "type": "TEXT",
+      "primary_key": false,
+      "not_null": false,
+      "default": null,
+      "example_query": "\"Submission ID\""
+    },
+    "Last updated": {
+      "type": "TEXT",
+      "primary_key": false,
+      "not_null": false,
+      "default": null,
+      "example_query": "\"Last updated\""
+    },
+    "Submission started": {
+      "type": "TEXT",
+      "primary_key": false,
+      "not_null": false,
+      "default": null,
+      "example_query": "\"Submission started\""
+    },
+    "Status": {
+      "type": "TEXT",
+      "primary_key": false,
+      "not_null": false,
+      "default": null,
+      "example_query": "Status"
+    },
+    "Current step": {
+      "type": "TEXT",
+      "primary_key": false,
+      "not_null": false,
+      "default": null,
+      "example_query": "\"Current step\""
+    },
+    "What is your age group?": {
+      "type": "TEXT",
+      "primary_key": false,
+      "not_null": false,
+      "default": null,
+      "example_query": "\"What is your age group?\""
+    },
+    "What is your gender?": {
+      "type": "TEXT",
+      "primary_key": false,
+      "not_null": false,
+      "default": null,
+      "example_query": "\"What is your gender?\""
+    },
+    "Which field of study or discipline are you currently in?": {
+      "type": "TEXT",
+      "primary_key": false,
+      "not_null": false,
+      "default": null,
+      "example_query": "\"Which field of study or discipline are you currently in?\""
+    },
+    "How often do you use AI tools for academic purposes?": {
+      "type": "TEXT",
+      "primary_key": false,
+      "not_null": false,
+      "default": null,
+      "example_query": "\"How often do you use AI tools for academic purposes?\""
+    },
+    "Please describe how you typically use  AI in a classroom setting.": {
+      "type": "TEXT",
+      "primary_key": false,
+      "not_null": false,
+      "default": null,
+      "example_query": "\"Please describe how you typically use  AI in a classroom setting.\""
+    },
+    "How often do you verify information provided by AI tools?": {
+      "type": "TEXT",
+      "primary_key": false,
+      "not_null": false,
+      "default": null,
+      "example_query": "\"How often do you verify information provided by AI tools?\""
+    },
+    "What methods do you typically use to verify information given by AI tools?": {
+      "type": "TEXT",
+      "primary_key": false,
+      "not_null": false,
+      "default": null,
+      "example_query": "\"What methods do you typically use to verify information given by AI tools?\""
+    },
+    "How often have you encountered AI-generated inaccuracies?": {
+      "type": "TEXT",
+      "primary_key": false,
+      "not_null": false,
+      "default": null,
+      "example_query": "\"How often have you encountered AI-generated inaccuracies?\""
+    },
+    "Creating course assignments": {
+      "type": "TEXT",
+      "primary_key": false,
+      "not_null": false,
+      "default": null,
+      "example_query": "\"Creating course assignments\""
+    },
+    "Brainstorming ideas for essays or projects": {
+      "type": "TEXT",
+      "primary_key": false,
+      "not_null": false,
+      "default": null,
+      "example_query": "\"Brainstorming ideas for essays or projects\""
+    },
+    "Proofreading and improving grammar or style": {
+      "type": "TEXT",
+      "primary_key": false,
+      "not_null": false,
+      "default": null,
+      "example_query": "\"Proofreading and improving grammar or style\""
+    },
+    "Providing complete solutions to homework or exams": {
+      "type": "TEXT",
+      "primary_key": false,
+      "not_null": false,
+      "default": null,
+      "example_query": "\"Providing complete solutions to homework or exams\""
+    },
+    "Writing drafts or outlines for assignments": {
+      "type": "TEXT",
+      "primary_key": false,
+      "not_null": false,
+      "default": null,
+      "example_query": "\"Writing drafts or outlines for assignments\""
+    },
+    "Should students be allowed to use generative AI tools during in-class assignments or tests?": {
+      "type": "TEXT",
+      "primary_key": false,
+      "not_null": false,
+      "default": null,
+      "example_query": "\"Should students be allowed to use generative AI tools during in-class assignments or tests?\""
+    },
+    "How comfortable are you with disclosing AI usage in academic work?": {
+      "type": "TEXT",
+      "primary_key": false,
+      "not_null": false,
+      "default": null,
+      "example_query": "\"How comfortable are you with disclosing AI usage in academic work?\""
+    },
+    "Do you believe AI can effectively complement traditional teaching methods?": {
+      "type": "TEXT",
+      "primary_key": false,
+      "not_null": false,
+      "default": null,
+      "example_query": "\"Do you believe AI can effectively complement traditional teaching methods?\""
+    },
+    "How would you feel about using AI in the classroom in parallel with the classroom teacher?": {
+      "type": "TEXT",
+      "primary_key": false,
+      "not_null": false,
+      "default": null,
+      "example_query": "\"How would you feel about using AI in the classroom in parallel with the classroom teacher?\""
+    },
+    "Can you briefly explain your standings on AI being incorporated into classroom teaching?": {
+      "type": "TEXT",
+      "primary_key": false,
+      "not_null": false,
+      "default": null,
+      "example_query": "\"Can you briefly explain your standings on AI being incorporated into classroom teaching?\""
+    },
+    "Which of the following classroom tasks would you feel comfortable completing with the help of AI?": {
+      "type": "TEXT",
+      "primary_key": false,
+      "not_null": false,
+      "default": null,
+      "example_query": "\"Which of the following classroom tasks would you feel comfortable completing with the help of AI?\""
+    },
+    "How would you feel about receiving AI-generated feedback on your work?": {
+      "type": "TEXT",
+      "primary_key": false,
+      "not_null": false,
+      "default": null,
+      "example_query": "\"How would you feel about receiving AI-generated feedback on your work?\""
+    },
+    "Do you think integrating AI into education could create more personalized learning experiences?": {
+      "type": "TEXT",
+      "primary_key": false,
+      "not_null": false,
+      "default": null,
+      "example_query": "\"Do you think integrating AI into education could create more personalized learning experiences?\""
+    },
+    "Errors": {
+      "type": "FLOAT",
+      "primary_key": false,
+      "not_null": false,
+      "default": null,
+      "example_query": "Errors"
+    },
+    "Url": {
+      "type": "TEXT",
+      "primary_key": false,
+      "not_null": false,
+      "default": null,
+      "example_query": "Url"
+    },
+    "Network ID": {
+      "type": "TEXT",
+      "primary_key": false,
+      "not_null": false,
+      "default": null,
+      "example_query": "\"Network ID\""
+    }
+  },
+  "users": {
+    "id": {
+      "type": "INTEGER",
+      "primary_key": true,
+      "not_null": false,
+      "default": null,
+      "example_query": "id"
+    },
+    "name": {
+      "type": "TEXT",
+      "primary_key": false,
+      "not_null": false,
+      "default": null,
+      "example_query": "name"
+    },
+    "age": {
+      "type": "INTEGER",
+      "primary_key": false,
+      "not_null": false,
+      "default": null,
+      "example_query": "age"
+    }
+  },
+  "sqlite_sequence": {
+    "name": {
+      "type": "",
+      "primary_key": false,
+      "not_null": false,
+      "default": null,
+      "example_query": "name"
+    },
+    "seq": {
+      "type": "",
+      "primary_key": false,
+      "not_null": false,
+      "default": null,
+      "example_query": "seq"
+    }
+  },
+  "compressor": {
+    "Plot Title: Print Pack 0": {
+      "type": "TEXT",
+      "primary_key": false,
+      "not_null": false,
+      "default": null,
+      "example_query": "\"Plot Title: Print Pack 0\""
+    }
+  },
+  "kettlepump": {
+    "#": {
+      "type": "BIGINT",
+      "primary_key": false,
+      "not_null": false,
+      "default": null,
+      "example_query": "#"
+    },
+    "Date Time, GMT-07:00": {
+      "type": "TEXT",
+      "primary_key": false,
+      "not_null": false,
+      "default": null,
+      "example_query": "\"Date Time, GMT-07:00\""
+    },
+    "AC Curr, Amps (LGR S/N: 21930920, SEN S/N: 21930920, LBL: Print Pack 24)": {
+      "type": "FLOAT",
+      "primary_key": false,
+      "not_null": false,
+      "default": null,
+      "example_query": "\"AC Curr, Amps (LGR S/N: 21930920, SEN S/N: 21930920, LBL: Print Pack 24)\""
+    },
+    "Started (LGR S/N: 21930920)": {
+      "type": "TEXT",
+      "primary_key": false,
+      "not_null": false,
+      "default": null,
+      "example_query": "\"Started (LGR S/N: 21930920)\""
+    },
+    "Button Up (LGR S/N: 21930920)": {
+      "type": "TEXT",
+      "primary_key": false,
+      "not_null": false,
+      "default": null,
+      "example_query": "\"Button Up (LGR S/N: 21930920)\""
+    },
+    "Button Down (LGR S/N: 21930920)": {
+      "type": "FLOAT",
+      "primary_key": false,
+      "not_null": false,
+      "default": null,
+      "example_query": "\"Button Down (LGR S/N: 21930920)\""
+    },
+    "Stopped (LGR S/N: 21930920)": {
+      "type": "FLOAT",
+      "primary_key": false,
+      "not_null": false,
+      "default": null,
+      "example_query": "\"Stopped (LGR S/N: 21930920)\""
+    },
+    "End Of File (LGR S/N: 21930920)": {
+      "type": "FLOAT",
+      "primary_key": false,
+      "not_null": false,
+      "default": null,
+      "example_query": "\"End Of File (LGR S/N: 21930920)\""
+    }
+  }
+}

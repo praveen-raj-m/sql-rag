@@ -4,6 +4,7 @@ import sqlite3
 import pandas as pd
 from sqlalchemy import create_engine, MetaData, Table, Column, Integer, text
 from sqlalchemy.schema import CreateTable
+from typing import Dict, List
 
 engine = create_engine("sqlite:///rag.db", echo=False)
 
@@ -149,3 +150,61 @@ def sync_metadata_with_existing_tables():
         path = f"metadata/{table}.json"
         if not os.path.exists(path):
             generate_metadata_for_table(table)
+
+
+def generate_schema_from_db(db_path: str = "rag.db") -> Dict:
+    """Generate schema information from the database"""
+    schema = {}
+    try:
+        conn = sqlite3.connect(db_path)
+        cursor = conn.cursor()
+        
+        # Get all tables
+        cursor.execute("SELECT name FROM sqlite_master WHERE type='table';")
+        tables = [row[0] for row in cursor.fetchall()]
+        
+        for table in tables:
+            # Get table info
+            cursor.execute(f"PRAGMA table_info({table});")
+            columns = {}
+            for col in cursor.fetchall():
+                col_name = col[1]
+                col_type = col[2]
+                col_pk = col[5]
+                
+                # Build column description with full details
+                desc = {
+                    "type": col_type,
+                    "primary_key": bool(col_pk),
+                    "not_null": bool(col[3]),
+                    "default": col[4],
+                    "example_query": f'"{col_name}"' if ' ' in col_name or ',' in col_name else col_name
+                }
+                
+                columns[col_name] = desc
+                
+            schema[table] = columns
+            
+    except Exception as e:
+        print(f"Error generating schema: {str(e)}")
+    finally:
+        conn.close()
+        
+    return schema
+
+
+def update_schema_file(schema: Dict, schema_file: str = "metadata/schema.json") -> None:
+    """Update the schema file with new schema information"""
+    os.makedirs(os.path.dirname(schema_file), exist_ok=True)
+    with open(schema_file, 'w') as f:
+        json.dump(schema, f, indent=2)
+
+
+def refresh_schema(db_path: str = "rag.db", schema_file: str = "metadata/schema.json") -> str:
+    """Refresh the schema file with current database structure"""
+    try:
+        schema = generate_schema_from_db(db_path)
+        update_schema_file(schema, schema_file)
+        return "✅ Schema refreshed successfully"
+    except Exception as e:
+        return f"❌ Error refreshing schema: {str(e)}"
