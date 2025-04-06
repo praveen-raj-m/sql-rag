@@ -1,0 +1,41 @@
+{
+  "name": "employees",
+  "description": "Employee records database",
+  "columns": [
+    {
+      "name": "id",
+      "type": "INTEGER",
+      "description": "Employee ID number"
+    },
+    {
+      "name": "first_name",
+      "type": "TEXT",
+      "description": "Employee's first name"
+    },
+    {
+      "name": "last_name",
+      "type": "TEXT",
+      "description": "Employee's last name"
+    },
+    {
+      "name": "position",
+      "type": "TEXT",
+      "description": "Job title"
+    },
+    {
+      "name": "department",
+      "type": "TEXT",
+      "description": "Department name"
+    },
+    {
+      "name": "salary",
+      "type": "REAL",
+      "description": "Annual salary in USD"
+    },
+    {
+      "name": "hire_date",
+      "type": "TEXT",
+      "description": "Date of hire (YYYY-MM-DD)"
+    }
+  ]
+}

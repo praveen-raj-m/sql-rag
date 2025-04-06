@@ -1,100 +1,116 @@
 # SQL RAG Dashboard
 
-A natural language interface for SQLite databases that lets users query databases using everyday language instead of SQL code.
-
-## Overview
-
-SQL RAG Dashboard is a Python application that combines:
-
-- Natural Language Processing to understand user questions
-- Dynamic SQL query generation
-- Semantic search capabilities with RAG (Retrieval-Augmented Generation)
-- An intuitive web interface built with Gradio
-
-Users can ask questions like "How many null values are in the 'Button Down' column?" or "Show me the longest name in the users table" without writing a single line of SQL.
+A fully local dashboard that lets you query, manage, and build SQL databases using natural language powered by a local LLM (LLaMA 3.2 via Ollama).
 
 ## Features
 
-- **Natural Language Queries**: Ask questions about your data in plain English
-- **Automatic SQL Generation**: Converts natural language into optimized SQL queries
-- **Complex Column Handling**: Works with complex column names containing spaces and special characters
-- **Descriptive Statistics**: Supports common analytical functions (max, min, avg, count, etc.)
-- **Text Analysis**: Analyze text fields (word counts, character counts, etc.)
-- **Null Value Analysis**: Easily identify and analyze missing data
-- **Dynamic Schema Loading**: Automatically adapts to any SQLite database schema
-- **Formatted Results**: Presents results in a clear, readable format
+- **Natural Language to SQL**: Ask questions in plain English and get SQL queries and results
+- **Advanced Query Capabilities**: Support for complex operations including:
+  - Counting null values in columns
+  - Finding averages, maximums, and minimums
+  - Calculating sums and counting distinct values
+  - Text analysis (word count, character count)
+- **Table Management**: Create, view, and delete tables with an intuitive interface
+- **Data Management**:
+  - Step-by-step table creation with column type dropdowns
+  - Manual row insertion
+  - Bulk CSV upload (append or create new tables)
+- **Relationship Management**: Create foreign key relationships between tables
+- **Fully Local Execution**: No external APIs or cloud services required
+- **Interactive Dashboard**: Built with Gradio for a user-friendly experience
 
-## Installation
+## Sample Tables
 
-### Requirements
+The repository includes scripts to create these sample tables:
 
-- Python 3.8+
-- SQLite database
+1. **Products**: Product inventory with name, category, price, stock, and description
+2. **Employees**: Employee records with names, positions, departments, salaries
+3. **Orders**: Customer order information with payment methods and status
 
-### Setup
+## Getting Started
 
-1. Clone the repository:
+### Prerequisites
 
-   ```
-   git clone https://github.com/yourusername/sql-rag-dashboard.git
-   cd sql-rag-dashboard
-   ```
+- Python 3.8 or higher
+- [Ollama](https://ollama.ai/) installed locally
 
-2. Install dependencies:
+### Installation
 
-   ```
-   pip install -r requirements.txt
-   ```
+```bash
+# Clone the repository
+git clone https://github.com/yourusername/sql-rag-dashboard.git
+cd sql-rag-dashboard
 
-3. Place your SQLite database file in the project directory as `sqlite.db`
+# Create a virtual environment
+python -m venv venv
+source venv/bin/activate  # On Windows: venv\Scripts\activate
 
-4. Run the application:
+# Install dependencies
+pip install -r requirements.txt
 
-   ```
-   python app.py
-   ```
-
-5. Open the dashboard in your browser at the URL shown in the terminal
-
-## Usage Examples
-
-Ask questions like:
-
-- "What tables are in this database?"
-- "How many rows are in the users table?"
-- "Show me the average age of users"
-- "Find the highest AC current value in kettlepump"
-- "Count null values in the Button Down column"
-- "Who has the longest name in the users table?"
-- "How many unique values are in this column?"
-
-## Testing
-
-Run the comprehensive test suite:
-
-```
-python final_test.py
+# Start Ollama with LLaMA 3.2
+ollama pull llama3
+ollama run llama3
 ```
 
-The test suite covers a wide range of query types and edge cases to ensure the system works correctly with your database.
+### Running the Dashboard
 
-## Project Structure
+```bash
+python app.py
+```
 
-- `app.py`: Main application with Gradio interface
-- `llm_utils.py`: Natural language to SQL conversion logic
-- `final_test.py`: Comprehensive test suite
-- `requirements.txt`: Project dependencies
+Visit `http://localhost:7860` to use the application.
+
+### Setting up sample data
+
+To create sample tables:
+
+```bash
+python create_sample_tables.py
+```
+
+## Database Management Tools
+
+Several tools are included to help manage your database:
+
+```bash
+# List all tables
+python db_manager.py list
+
+# Delete a specific table
+python db_manager.py delete <table_name>
+
+# Create a sample users table
+python db_manager.py create-users
+
+# Refresh the schema
+python db_manager.py refresh-schema
+```
+
+For a detailed guide, see [README_DB_TOOLS.md](README_DB_TOOLS.md).
+
+## Example Natural Language Queries
+
+- "Show all products in the Electronics category"
+- "What is the average salary of employees in the Engineering department?"
+- "How many orders have a status of Shipped?"
+- "Count null values in the total_amount column of the orders table"
+- "Find the maximum price in the products table"
+- "What is the sum of stock for Kitchen products?"
+
+## Technical Details
+
+- SQLite database (stored as `sqlite.db`)
+- LLaMA 3.2 integration via Ollama
+- Gradio for the user interface
+- Dynamic schema management with JSON metadata
 
 ## License
 
-This project is licensed under the MIT License - see the LICENSE file for details.
+[MIT](LICENSE)
 
-## Contributing
+## Acknowledgements
 
-Contributions are welcome! Please feel free to submit a Pull Request.
-
-1. Fork the repository
-2. Create your feature branch (`git checkout -b feature/amazing-feature`)
-3. Commit your changes (`git commit -m 'Add some amazing feature'`)
-4. Push to the branch (`git push origin feature/amazing-feature`)
-5. Open a Pull Request
+- [LLaMA 3.2](https://ai.meta.com/llama/) by Meta AI
+- [Ollama](https://ollama.ai/) for local LLM hosting
+- [Gradio](https://www.gradio.app/) for the web interface

@@ -39,17 +39,30 @@
     "name": "",
     "seq": ""
   },
-  "compressor": {
-    "Plot Title: Print Pack 0": "TEXT"
+  "products": {
+    "id": "INTEGER",
+    "name": "TEXT",
+    "category": "TEXT",
+    "price": "REAL",
+    "stock": "INTEGER",
+    "description": "TEXT"
   },
-  "kettlepump": {
-    "#": "BIGINT",
-    "Date Time, GMT-07:00": "TEXT",
-    "AC Curr, Amps (LGR S/N: 21930920, SEN S/N: 21930920, LBL: Print Pack 24)": "FLOAT",
-    "Started (LGR S/N: 21930920)": "TEXT",
-    "Button Up (LGR S/N: 21930920)": "TEXT",
-    "Button Down (LGR S/N: 21930920)": "FLOAT",
-    "Stopped (LGR S/N: 21930920)": "FLOAT",
-    "End Of File (LGR S/N: 21930920)": "FLOAT"
+  "employees": {
+    "id": "INTEGER",
+    "first_name": "TEXT",
+    "last_name": "TEXT",
+    "position": "TEXT",
+    "department": "TEXT",
+    "salary": "REAL",
+    "hire_date": "TEXT"
+  },
+  "orders": {
+    "id": "INTEGER",
+    "customer_name": "TEXT",
+    "order_date": "TEXT",
+    "total_amount": "REAL",
+    "payment_method": "TEXT",
+    "status": "TEXT",
+    "shipping_address": "TEXT"
   }
 }

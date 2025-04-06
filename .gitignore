@@ -1,4 +1,64 @@
+# Virtual Environment
 venv/
+env/
+ENV/
+
+# Python cache files
 __pycache__/
+*.py[cod]
+*$py.class
+.pytest_cache/
+*.so
+.Python
+.idea/
+
+# Database files
 *.db
-*.pyc
+*.sqlite
+*.sqlite3
+
+# Distribution / packaging
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+
+# Jupyter Notebook
+.ipynb_checkpoints
+
+# VS Code
+.vscode/
+
+# Environment variables
+.env
+
+# Test files
+*_test.py
+test_*.py
+final_test.py
+
+# Temporary files
+*.tmp
+*.log
+*.bak
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# CSV files
+*.csv
+
+# Specific files to exclude
+[Fillout]*

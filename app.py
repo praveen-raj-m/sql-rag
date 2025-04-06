@@ -8,13 +8,14 @@ from db_utils import (
     remove_metadata_for_table, refresh_schema, sync_metadata_with_existing_tables,
     get_db_connection, DB_PATH
 )
-from llm_utils import LLMHandler, extract_table_name
+from llm_utils import LLMHandler
 import pandas as pd
 import os
 import streamlit as st
 import sqlite3
 from mcp_utils import MCPValidator
-from typing import Tuple, Optional, List, Dict, Any
+from typing import Tuple, Optional
+import json
 
 # Initialize components
 llm = LLMHandler()
@@ -25,12 +26,15 @@ engine = create_engine(f"sqlite:///{DB_PATH}", echo=False)
 create_sample_table_if_not_exists()
 sync_metadata_with_existing_tables()
 
-# Shared dropdowns across all tabs
-shared_tables = list_tables()
-table_dropdown = gr.Dropdown(label="Select Table", choices=shared_tables)
-existing_table = gr.Dropdown(label="Choose Existing Table", choices=shared_tables)
-from_table = gr.Dropdown(label="From Table", choices=shared_tables)
-to_table = gr.Dropdown(label="To Table", choices=shared_tables)
+# Shared dropdowns across all tabs - Modified to fetch values on demand
+def get_all_tables():
+    return list_tables()
+
+# Call the function to get tables instead of passing the function itself
+table_dropdown = gr.Dropdown(label="Select Table", choices=get_all_tables())
+existing_table = gr.Dropdown(label="Choose Existing Table", choices=get_all_tables())
+from_table = gr.Dropdown(label="From Table", choices=get_all_tables())
+to_table = gr.Dropdown(label="To Table", choices=get_all_tables())
 from_col = gr.Dropdown(label="Column in From Table", choices=[])
 to_col = gr.Dropdown(label="Primary Key Column in To Table", choices=[])
 
@@ -69,7 +73,7 @@ def preview_table_rows(table_name):
 
 def init_db():
     """Initialize the database connection"""
-    conn = sqlite3.connect('rag.db')
+    conn = sqlite3.connect(DB_PATH)
     return conn
 
 def get_table_schema(conn, table_name):
@@ -84,42 +88,102 @@ def get_table_schema(conn, table_name):
 
 def refresh_schema():
     """Refresh the schema information"""
-    conn = init_db()
     try:
-        cursor = conn.cursor()
-        cursor.execute("SELECT name FROM sqlite_master WHERE type='table'")
-        tables = cursor.fetchall()
-        
-        for table in tables:
-            table_name = table[0]
-            schema = get_table_schema(conn, table_name)
-            mcp.update_schema(table_name, schema)
+        conn = init_db()
+        try:
+            cursor = conn.cursor()
+            cursor.execute("SELECT name FROM sqlite_master WHERE type='table'")
+            tables = cursor.fetchall()
             
-        st.success("Schema refreshed successfully!")
+            for table in tables:
+                table_name = table[0]
+                try:
+                    schema = get_table_schema(conn, table_name)
+                    mcp.update_schema(table_name, schema)
+                except Exception as e:
+                    print(f"Error updating schema for table {table_name}: {str(e)}")
+            
+            print("Schema refreshed successfully!")
+            return "✅ Schema refreshed successfully!"
+        except Exception as e:
+            error_msg = f"Error refreshing schema: {str(e)}"
+            print(error_msg)
+            return f"❌ {error_msg}"
+        finally:
+            conn.close()
     except Exception as e:
-        st.error(f"Error refreshing schema: {str(e)}")
-    finally:
-        conn.close()
+        error_msg = f"Database connection error: {str(e)}"
+        print(error_msg)
+        return f"❌ {error_msg}"
 
-def delete_table_wrapper(table_name):
+def delete_table(table_name):
+    """
+    Delete a table and return a status message.
+    This function only deletes the table without updating any UI components.
+    """
     try:
-        run_query(f"DROP TABLE IF EXISTS {table_name}")
-        remove_metadata_for_table(table_name)
-        refresh_schema()
+        print(f"Starting deletion of table: {table_name}")
+        
+        # First, verify the table exists
         tables = list_tables()
-        return (
-            f"✅ Deleted {table_name}",
-            get_pretty_schema(),
-            gr.update(choices=tables, value=None),
-            gr.update(choices=tables, value=None),
-            gr.update(choices=tables, value=None),
-            gr.update(choices=tables, value=None),
-            gr.update(choices=tables, value=None),
-            gr.update(choices=[], value=None),
-            gr.update(choices=[], value=None)
-        )
+        if table_name not in tables:
+            return f"❌ Table '{table_name}' does not exist"
+        
+        # Try to drop the table
+        print(f"Dropping table {table_name} from database")
+        conn = get_db_connection()
+        cursor = conn.cursor()
+        cursor.execute(f"DROP TABLE IF EXISTS {table_name}")
+        conn.commit()
+        conn.close()
+        
+        # Try to remove metadata
+        print(f"Removing metadata for table {table_name}")
+        metadata_path = f"metadata/{table_name}.json"
+        alt_metadata_path = f"metadata/{table_name}_metadata.json"
+        
+        # Try both possible metadata file formats
+        for path in [metadata_path, alt_metadata_path]:
+            if os.path.exists(path):
+                try:
+                    os.remove(path)
+                    print(f"Successfully removed metadata file: {path}")
+                except Exception as e:
+                    print(f"Error removing metadata file {path}: {e}")
+        
+        # Update schema.json
+        schema_path = "schema.json"
+        if os.path.exists(schema_path):
+            try:
+                with open(schema_path, 'r') as f:
+                    schema = json.load(f)
+                
+                if table_name in schema:
+                    del schema[table_name]
+                    
+                    with open(schema_path, 'w') as f:
+                        json.dump(schema, f, indent=2)
+                    print(f"Updated schema.json to remove '{table_name}'")
+            except Exception as e:
+                print(f"Error updating schema.json: {e}")
+        
+        # Return success message
+        return f"✅ Table '{table_name}' successfully deleted"
+    
     except Exception as e:
-        return f"❌ {str(e)}", get_pretty_schema(), *[gr.update(choices=list_tables())]*7
+        print(f"Error in delete_table: {str(e)}")
+        import traceback
+        traceback.print_exc()
+        return f"❌ Error deleting table: {str(e)}"
+
+def get_updated_dropdown():
+    """Get updated dropdown choices based on current tables"""
+    tables = list_tables()
+    return gr.update(choices=tables, value=tables[0] if tables else None)
+
+def get_updated_schema():
+    """Get updated schema text"""
+    return get_pretty_schema()
 
 def is_direct_response(response: str) -> bool:
     """Check if the response is a direct answer rather than a SQL query."""
@@ -271,165 +335,121 @@ def handle_sql_query(sql: str) -> Tuple[str, str]:
     except Exception as e:
         return "", str(e)
 
-def get_tables() -> List[str]:
-    """Get list of tables from the database."""
-    try:
-        conn = sqlite3.connect("sqlite.db")
-        cursor = conn.cursor()
-        cursor.execute("SELECT name FROM sqlite_master WHERE type='table' AND name NOT LIKE 'sqlite_%'")
-        tables = [row[0] for row in cursor.fetchall()]
-        conn.close()
-        return tables
-    except Exception as e:
-        print(f"Error getting tables: {e}")
-        return []
-
-def execute_sql(sql: str) -> Tuple[pd.DataFrame, str]:
-    """Execute SQL query and return the results as a DataFrame."""
-    try:
-        conn = sqlite3.connect("sqlite.db")
-        
-        # Handle PRAGMA queries separately
-        if "PRAGMA" in sql:
-            cursor = conn.cursor()
-            result = cursor.execute(sql).fetchall()
-            columns = [desc[0] for desc in cursor.description]
-            df = pd.DataFrame(result, columns=columns)
-            conn.close()
-            return df, None
-            
-        df = pd.read_sql_query(sql, conn)
-        conn.close()
-        return df, None
-    except Exception as e:
-        return pd.DataFrame(), f"Execution failed on sql '{sql}': {str(e)}"
-
-def create_interface():
-    """Create and launch the Gradio interface."""
-    # Customize CSS for a cleaner look
-    css = """
-    .gradio-container {
-        max-width: 1200px;
-        margin: auto;
-    }
-    h1 {
-        text-align: center;
-        margin-bottom: 1rem;
-        font-size: 2.5rem;
-        color: #2C3E50;
-    }
-    h3 {
-        margin-top: 1rem;
-    }
-    .description {
-        text-align: center;
-        margin-bottom: 2rem;
-        font-size: 1.2rem;
-        color: #34495E;
-    }
-    .example-title {
-        font-weight: bold;
-        margin-top: 1.5rem;
-        color: #2980B9;
-    }
-    .examples {
-        display: flex;
-        flex-wrap: wrap;
-        gap: 0.5rem;
-    }
-    .example-box {
-        background-color: #F7F9FA;
-        padding: 0.5rem;
-        border-radius: 0.3rem;
-        border: 1px solid #E0E5E9;
-        cursor: pointer;
-        transition: all 0.2s;
-    }
-    .example-box:hover {
-        background-color: #E0E5E9;
-    }
-    .footer {
-        text-align: center;
-        margin-top: 2rem;
-        font-size: 0.9rem;
-        color: #7F8C8D;
-    }
-    """
+with gr.Blocks() as demo:
+    gr.Markdown("# SQL RAG Dashboard")
     
-    with gr.Blocks(css=css) as demo:
-        gr.HTML(
-            """
-            <h1>SQL RAG Dashboard</h1>
-            <div class="description">
-                Ask questions about your database in plain English.<br>
-                No SQL knowledge required - natural language to SQL conversion happens automatically.
-            </div>
-            """
+    with gr.Row():
+        with gr.Column():
+            question = gr.Textbox(label="Ask your question", placeholder="What is the highest AC current in the kettlepump table?")
+            btn_ask = gr.Button("Ask")
+            
+        with gr.Column():
+            sql_out = gr.Textbox(label="Generated SQL", interactive=True)
+            btn_run_sql = gr.Button("Run SQL")
+            
+    with gr.Row():
+        result = gr.Textbox(label="Result")
+        error = gr.Textbox(label="Error")
+    
+    btn_ask.click(
+        handle_nl_query,
+        inputs=[question],
+        outputs=[sql_out, result, error]
+    )
+    
+    btn_run_sql.click(
+        handle_sql_query,
+        inputs=[sql_out],
+        outputs=[result, error]
+    )
+
+    # Create tab
+    with gr.Tab("Upload CSV"):
+        csv_file = gr.File(label="Upload CSV File (.csv only)", file_types=[".csv"])
+        csv_table_name = gr.Textbox(label="New Table Name")
+        csv_output = gr.Textbox(label="Upload Status")
+
+        def handle_csv_upload(file, table_name):
+            result = create_table_from_csv(file, table_name)
+            if result.startswith("✅"):
+                refresh_schema()
+            return result
+
+        upload_btn = gr.Button("Upload CSV")
+        upload_btn.click(handle_csv_upload, inputs=[csv_file, csv_table_name], outputs=[csv_output])
+
+    # Create tab
+    with gr.Tab("Create Table"):
+        table_name = gr.Textbox(label="Table Name")
+        col_name = gr.Textbox(label="Column Name")
+        col_type = gr.Dropdown(label="Type", choices=["TEXT", "INTEGER", "REAL", "BOOLEAN"], value="TEXT")
+        add_col = gr.Button("Add Column")
+        col_preview = gr.Textbox(label="Preview")
+        col_state = gr.State([])
+
+        def add_column(n, t, state):
+            state.append((n, t))
+            return ", ".join([f"{x[0]} {x[1]}" for x in state]), state
+
+        add_col.click(add_column, inputs=[col_name, col_type, col_state], outputs=[col_preview, col_state])
+
+        btn_create = gr.Button("Create Table")
+        status = gr.Textbox(label="Status")
+        schema = gr.Textbox(label="Schema")
+
+        def create_final_table(tname, columns):
+            col_dict = {n: t for n, t in columns}
+            result = create_table(tname, col_dict)
+            if result.startswith("✅"):
+                refresh_schema()
+            return f"✅ {tname} created.", get_schema()
+
+        btn_create.click(create_final_table, inputs=[table_name, col_state], outputs=[status, schema])
+
+    # Delete tab
+    with gr.Tab("View/Delete Tables"):
+        schema_view_btn = gr.Button("Refresh Schema View")
+        schema_output = gr.Textbox(label="Schema", lines=30)
+        
+        gr.Markdown("### Delete Tables")
+        gr.Markdown("1. Select a table to delete")
+        gr.Markdown("2. Click Delete")
+        gr.Markdown("3. After deletion, you can refresh the schema and dropdown")
+        
+        # Simplified deletion interface
+        delete_table_dropdown = gr.Dropdown(label="Select Table to Delete", choices=get_all_tables())
+        
+        with gr.Row():
+            delete_btn = gr.Button("Delete Selected Table", variant="stop")
+            refresh_dropdown_btn = gr.Button("Refresh Table List")
+            
+        delete_status = gr.Textbox(label="Status")
+        
+        # Schema operations
+        schema_view_btn.click(get_pretty_schema, outputs=[schema_output])
+        
+        # Simple deletion without trying to update other components
+        delete_btn.click(
+            delete_table,
+            inputs=[delete_table_dropdown],
+            outputs=[delete_status]
         )
         
-        with gr.Row():
-            with gr.Column():
-                query_input = gr.Textbox(
-                    label="Ask your question",
-                    placeholder="Example: What tables are in this database?",
-                    lines=2
-                )
-                query_button = gr.Button("Ask", variant="primary")
-            
-        with gr.Row():
-            with gr.Column():
-                sql_output = gr.Textbox(label="Generated SQL", interactive=False)
-                execute_button = gr.Button("Run SQL")
-            
-        with gr.Row():
-            result_output = gr.Textbox(label="Result", lines=10, interactive=False)
-            
-        with gr.Accordion("Example Questions", open=False):
-            gr.HTML('<div class="example-title">Basic Information:</div>')
-            with gr.Row(elem_classes=["examples"]):
-                gr.HTML('<div class="example-box">What tables are in this database?</div>')
-                gr.HTML('<div class="example-box">How many columns are in the kettlepump table?</div>')
-                gr.HTML('<div class="example-box">Count rows in the users table</div>')
-                
-            gr.HTML('<div class="example-title">Data Analysis:</div>')
-            with gr.Row(elem_classes=["examples"]):
-                gr.HTML('<div class="example-box">What is the highest AC current in kettlepump?</div>')
-                gr.HTML('<div class="example-box">Find the average age of users</div>')
-                gr.HTML('<div class="example-box">Who has the longest name in the users table?</div>')
-                
-            gr.HTML('<div class="example-title">Null Value Analysis:</div>')
-            with gr.Row(elem_classes=["examples"]):
-                gr.HTML('<div class="example-box">Count null values in the Button Down column</div>')
-                gr.HTML('<div class="example-box">Show me rows where Stopped column is null</div>')
-                gr.HTML('<div class="example-box">How many missing values in the survey table?</div>')
-                
-            gr.HTML('<div class="example-title">Unique Values:</div>')
-            with gr.Row(elem_classes=["examples"]):
-                gr.HTML('<div class="example-box">How many unique ages in the users table?</div>')
-                gr.HTML('<div class="example-box">Count distinct values in AC Current column</div>')
-                
-        gr.HTML(
-            """
-            <div class="footer">
-                SQL RAG Dashboard - Query databases with natural language
-            </div>
-            """
+        # Add a refresh schema button after deletion
+        refresh_after_delete_btn = gr.Button("Refresh Schema After Deletion")
+        refresh_after_delete_btn.click(get_pretty_schema, outputs=[schema_output])
+        
+        # Refresh only the delete dropdown
+        refresh_dropdown_btn.click(
+            lambda: gr.update(choices=get_all_tables()),
+            inputs=None,
+            outputs=[delete_table_dropdown]
         )
         
-        # Set up event handlers
-        query_button.click(handle_nl_query, inputs=query_input, outputs=[query_input, sql_output, result_output])
-        execute_button.click(lambda sql: (sql, *execute_sql(sql)), inputs=sql_output, outputs=[sql_output, result_output])
-        
-        # Setup example click handlers
-        for el in demo.blocks.values():
-            if isinstance(el, gr.HTML) and "example-box" in el.value:
-                example_text = el.value.split('>')[1].split('<')[0]
-                el.click(lambda q: q, inputs=[gr.Textbox(value=example_text)], outputs=query_input)
-                el.click(handle_nl_query, inputs=[gr.Textbox(value=example_text)], outputs=[query_input, sql_output, result_output])
-    
-    return demo
+        # Add warning message
+        gr.Markdown("**Important:** After deleting a table, you need to:")
+        gr.Markdown("1. Click 'Refresh Table List' to update this dropdown")
+        gr.Markdown("2. Click 'Refresh Schema After Deletion' to update the schema")
+        gr.Markdown("3. To update other dropdowns in other tabs, refresh the entire page")
 
-if __name__ == "__main__":
-    # Create and launch the interface
-    demo = create_interface()
-    demo.launch(share=False)
+    demo.launch(share=True)

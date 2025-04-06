@@ -1,0 +1,36 @@
+{
+  "name": "products",
+  "description": "Product inventory database",
+  "columns": [
+    {
+      "name": "id",
+      "type": "INTEGER",
+      "description": "Unique product identifier"
+    },
+    {
+      "name": "name",
+      "type": "TEXT",
+      "description": "Product name"
+    },
+    {
+      "name": "category",
+      "type": "TEXT",
+      "description": "Product category"
+    },
+    {
+      "name": "price",
+      "type": "REAL",
+      "description": "Product price in USD"
+    },
+    {
+      "name": "stock",
+      "type": "INTEGER",
+      "description": "Current inventory quantity"
+    },
+    {
+      "name": "description",
+      "type": "TEXT",
+      "description": "Product description"
+    }
+  ]
+}

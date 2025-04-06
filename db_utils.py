@@ -94,7 +94,7 @@ def insert_row(table_name, row_values):
             return "❌ Column count mismatch."
         placeholders = ", ".join(["?"] * len(values))
         sql = f"INSERT INTO {table_name} ({', '.join(columns)}) VALUES ({placeholders})"
-        with sqlite3.connect("rag.db") as conn:
+        with sqlite3.connect(DB_PATH) as conn:
             conn.execute(sql, values)
             conn.commit()
         return "✅ Row inserted."
@@ -159,7 +159,7 @@ def sync_metadata_with_existing_tables():
             generate_metadata_for_table(table)
 
 
-def generate_schema_from_db(db_path: str = "rag.db") -> Dict:
+def generate_schema_from_db(db_path: str = DB_PATH) -> Dict:
     """Generate schema information from the database"""
     schema = {}
     try:
@@ -207,7 +207,7 @@ def update_schema_file(schema: Dict, schema_file: str = "metadata/schema.json") 
         json.dump(schema, f, indent=2)
 
 
-def refresh_schema(db_path: str = "rag.db", schema_file: str = "metadata/schema.json") -> str:
+def refresh_schema(db_path: str = DB_PATH, schema_file: str = "metadata/schema.json") -> str:
     """Refresh the schema file with current database structure"""
     try:
         schema = generate_schema_from_db(db_path)
