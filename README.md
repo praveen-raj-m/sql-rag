@@ -10,7 +10,7 @@ A fully local dashboard that lets you query, manage, and build SQL databases usi
   - Finding averages, maximums, and minimums
   - Calculating sums and counting distinct values
   - Text analysis (word count, character count)
-- **Model Configuration Panel (MCP)**: Intelligent system that ensures accurate query generation:
+- **Model Context Protocol (MCP)**: Intelligent system that ensures accurate query generation:
   - Schema validation for table and column references
   - Context enrichment with database structure
   - Metadata-aware query generation
@@ -113,7 +113,7 @@ Even when tables and columns have complex names or mixed conventions, MCP ensure
 
 - **SQLite Database**: Lightweight, serverless database stored as `sqlite.db`
 - **LLaMA 3.2 Integration**: Leverages local LLM capabilities via Ollama
-- **MCP Architecture**: Custom-built Model Configuration Panel for enhanced LLM-database interaction
+- **MCP Architecture**: Custom-built Model Context Protocol for enhanced LLM-database interaction
   - Uses Pydantic models for schema validation
   - Maintains real-time database schema representation
   - Dynamically generates context-aware prompts
@@ -121,9 +121,9 @@ Even when tables and columns have complex names or mixed conventions, MCP ensure
 - **Dynamic Schema Management**: JSON-based metadata system for table and column information
 - **Error Resilience**: Robust error handling for schema mismatches and invalid queries
 
-## Model Configuration Panel (MCP)
+## Model Context Protocol (MCP)
 
-The SQL RAG Dashboard includes a Model Configuration Panel that helps manage the interaction between natural language and SQL conversion:
+The SQL RAG Dashboard includes a Model Context Protocol that helps manage the interaction between natural language and SQL conversion:
 
 ### Features
 
@@ -134,6 +134,75 @@ The SQL RAG Dashboard includes a Model Configuration Panel that helps manage the
 - **Context Enrichment**: Provides the LLM with detailed database context for more accurate SQL generation
 
 The MCP improves query accuracy by ensuring generated SQL is always compatible with your database structure, even as it evolves over time.
+
+### Implementation Details
+
+The MCP is implemented in the `mcp_utils.py` file and consists of several key components:
+
+#### 1. Schema Representation
+
+- **Dynamic Schema Loading**: Automatically loads and parses database schema
+- **Metadata Integration**: Combines schema with metadata to enhance context
+- **Format Optimization**: Structures context in a format optimized for LLM understanding
+
+#### 2. Query Processing Pipeline
+
+1. **User Query Analysis**: Extracts key entities and intent from natural language
+2. **Schema Matching**: Maps user entities to actual database tables and columns
+3. **Context Generation**: Creates a rich prompt containing relevant schema sections
+4. **Query Generation**: Passes enhanced context to LLM for SQL generation
+5. **Validation**: Checks generated SQL against schema before execution
+
+#### 3. Special Query Handlers
+
+- **Specialized Detectors**: Identifies and routes specific query types
+- **Template System**: Uses optimized templates for common query patterns
+- **Custom Handlers**: Dedicated logic for complex operations like null counting
+
+This implementation ensures reliable SQL generation even with ambiguous user queries or complex database structures.
+
+### Advantages Over Standard LLM Approaches
+
+The Model Context Protocol significantly enhances standard LLM capabilities in database interactions:
+
+| Standard LLM Approach                                    | MCP-Enhanced Approach                                             |
+| -------------------------------------------------------- | ----------------------------------------------------------------- |
+| Relies on general knowledge about SQL                    | Utilizes actual database schema with precise column names/types   |
+| Cannot handle complex or unusual column names            | Directly incorporates exact column names regardless of complexity |
+| Easily confused by ambiguous table references            | Validates tables and provides clear schema context                |
+| Limited awareness of available database functions        | Can be configured with database-specific function knowledge       |
+| No schema change awareness                               | Dynamically updates with database schema changes                  |
+| Struggles with complex queries involving multiple tables | Understands table relationships and can generate complex joins    |
+| Produces SQL that often needs manual correction          | Generates production-ready SQL queries with proper escaping       |
+| Cannot handle null value counting and text analysis      | Has specialized handlers for advanced SQL operations              |
+
+MCP achieves these improvements by providing structured context to the LLM rather than relying solely on its pre-trained knowledge. This context-aware approach ensures that the generated SQL is always aligned with the actual database structure.
+
+## MCP vs. Alternative Approaches
+
+The SQL RAG Dashboard with Model Context Protocol offers several advantages over alternative database query tools:
+
+### Compared to Traditional Database GUIs:
+
+- **Natural Language Interface**: No need to learn SQL syntax - simply ask questions in plain English
+- **Deep Schema Understanding**: MCP understands not just table structure but semantic meaning of data
+- **Adaptive Learning**: Improves over time with feedback, unlike static GUI interfaces
+
+### Compared to Cloud-Based AI SQL Tools:
+
+- **Complete Privacy**: All data and queries remain local, no data sent to external services
+- **No Subscription Costs**: Free to use without ongoing API fees or token limits
+- **Customizable**: Fully adaptable to your specific database needs and conventions
+- **Works Offline**: No internet connection required after initial setup
+
+### Compared to Basic LLM Implementations:
+
+- **Structured Context**: Provides carefully formatted database schema information
+- **Error Prevention**: Validates SQL before execution to prevent common errors
+- **Advanced Operations**: Supports specialized queries like null counting and word analysis
+- **Metadata Integration**: Understands column descriptions and relationships between tables
+
+The MCP approach bridges the gap between powerful but complex SQL and natural language, making database interaction accessible to users of all technical levels while maintaining the full capability of SQL.
 
 ## License
 
