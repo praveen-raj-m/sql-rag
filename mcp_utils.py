@@ -99,11 +99,26 @@ class MCPValidator:
         allowed_aggregates = ['count', 'sum', 'avg', 'min', 'max']
         has_aggregate = any(agg in query_lower for agg in allowed_aggregates)
         
-        # Extract column names from query
+        # Extract column names from query, handling quoted columns
         column_pattern = r'select\s+(.*?)\s+from'
         columns_match = re.search(column_pattern, query_lower)
         if columns_match:
-            columns = [col.strip() for col in columns_match.group(1).split(',')]
+            columns = []
+            # Split by comma but respect quoted strings
+            current_col = ""
+            in_quotes = False
+            for char in columns_match.group(1):
+                if char == '"':
+                    in_quotes = not in_quotes
+                    current_col += char
+                elif char == ',' and not in_quotes:
+                    columns.append(current_col.strip())
+                    current_col = ""
+                else:
+                    current_col += char
+            if current_col:
+                columns.append(current_col.strip())
+            
             for col in columns:
                 # Skip validation for aggregate functions
                 if has_aggregate and any(agg in col.lower() for agg in allowed_aggregates):
@@ -111,6 +126,8 @@ class MCPValidator:
                 # Skip validation for *
                 if col == '*':
                     continue
+                # Remove quotes for validation
+                col = col.strip('"')
                 # Validate column exists in any of the referenced tables
                 if not any(
                     col in self.schema[table].keys() 

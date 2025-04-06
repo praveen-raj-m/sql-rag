@@ -2,12 +2,19 @@ import os
 import json
 import sqlite3
 import pandas as pd
-from sqlalchemy import create_engine, MetaData, Table, Column, Integer, text
+from sqlalchemy import create_engine, MetaData, Table, Column, Integer, text, String, Float, Boolean, ForeignKey
 from sqlalchemy.schema import CreateTable
-from typing import Dict, List
+from sqlalchemy.orm import sessionmaker
+from typing import Dict, List, Optional, Any, Union
 
-engine = create_engine("sqlite:///rag.db", echo=False)
+# Database configuration
+DB_PATH = "sqlite.db"
+engine = create_engine(f"sqlite:///{DB_PATH}")
+Session = sessionmaker(bind=engine)
 
+def get_db_connection() -> sqlite3.Connection:
+    """Get a connection to the SQLite database."""
+    return sqlite3.connect(DB_PATH)
 
 def list_tables():
     meta = MetaData()
