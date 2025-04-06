@@ -1,101 +1,100 @@
-# SQL RAG Dashboard (Ollama + LLaMA 3.2 + SQLite)
+# SQL RAG Dashboard
 
-A fully local dashboard that lets you query, manage, and build SQL databases using natural language powered by a local LLM (LLaMA 3.2 via Ollama).
+A natural language interface for SQLite databases that lets users query databases using everyday language instead of SQL code.
 
----
+## Overview
+
+SQL RAG Dashboard is a Python application that combines:
+
+- Natural Language Processing to understand user questions
+- Dynamic SQL query generation
+- Semantic search capabilities with RAG (Retrieval-Augmented Generation)
+- An intuitive web interface built with Gradio
+
+Users can ask questions like "How many null values are in the 'Button Down' column?" or "Show me the longest name in the users table" without writing a single line of SQL.
 
 ## Features
 
-- Natural language to SQL using local LLaMA 3.2
-- Step-by-step table creation with column type dropdowns
-- Manual row insertion
-- Bulk CSV upload
-  - Append to existing tables
-  - Create a new table automatically from CSV headers
-- Delete row by ID
-- Create foreign key relationships
-- Fully local execution (no external APIs or cloud)
-- Shareable Gradio dashboard
+- **Natural Language Queries**: Ask questions about your data in plain English
+- **Automatic SQL Generation**: Converts natural language into optimized SQL queries
+- **Complex Column Handling**: Works with complex column names containing spaces and special characters
+- **Descriptive Statistics**: Supports common analytical functions (max, min, avg, count, etc.)
+- **Text Analysis**: Analyze text fields (word counts, character counts, etc.)
+- **Null Value Analysis**: Easily identify and analyze missing data
+- **Dynamic Schema Loading**: Automatically adapts to any SQLite database schema
+- **Formatted Results**: Presents results in a clear, readable format
 
----
+## Installation
 
-## Setup Instructions
+### Requirements
 
-### 1. Clone the Repo
+- Python 3.8+
+- SQLite database
 
-```bash
-git clone https://github.com/YOUR_USERNAME/sql-rag.git
-cd sql-rag
+### Setup
+
+1. Clone the repository:
+
+   ```
+   git clone https://github.com/yourusername/sql-rag-dashboard.git
+   cd sql-rag-dashboard
+   ```
+
+2. Install dependencies:
+
+   ```
+   pip install -r requirements.txt
+   ```
+
+3. Place your SQLite database file in the project directory as `sqlite.db`
+
+4. Run the application:
+
+   ```
+   python app.py
+   ```
+
+5. Open the dashboard in your browser at the URL shown in the terminal
+
+## Usage Examples
+
+Ask questions like:
+
+- "What tables are in this database?"
+- "How many rows are in the users table?"
+- "Show me the average age of users"
+- "Find the highest AC current value in kettlepump"
+- "Count null values in the Button Down column"
+- "Who has the longest name in the users table?"
+- "How many unique values are in this column?"
+
+## Testing
+
+Run the comprehensive test suite:
+
+```
+python final_test.py
 ```
 
-### 2. Create a Virtual Environment
+The test suite covers a wide range of query types and edge cases to ensure the system works correctly with your database.
 
-```bash
-python3 -m venv venv
-source venv/bin/activate
-```
+## Project Structure
 
-### 3. Install Requirements
+- `app.py`: Main application with Gradio interface
+- `llm_utils.py`: Natural language to SQL conversion logic
+- `final_test.py`: Comprehensive test suite
+- `requirements.txt`: Project dependencies
 
-```bash
-pip install -r requirements.txt
-```
+## License
 
-### 4. Start Ollama with LLaMA 3.2
-
-```bash
-ollama pull llama3
-ollama run llama3
-```
-
-### 5. Run the Dashboard
-
-```bash
-python app.py
-```
-
-Visit `http://localhost:7860` to use the app.
-
----
-
-## Example Natural Language Prompts
-
-- Show all users older than 25
-- List all products with price over 500
-- Insert a new user named John, aged 40
-- Delete the product with id 3
-
----
-
-## CSV Upload Options
-
-When uploading a CSV file:
-
-- Choose "Append to Existing Table" and select a table
-- Or choose "Create New Table", provide a name, and it will:
-  - Automatically infer columns from CSV headers
-  - Create the table and insert data
-
----
-
-## Data Safety
-
-- Uses SQLite, file stored as `rag.db`
-- Use `.gitignore` to exclude the database and virtual environment
-
----
-
-## Roadmap
-
-- Export results as downloadable CSV
-- Visual query builder
-- Chart and data visualizations
-- Multi-user login and access control
-- Deploy with Docker or Hugging Face Spaces
-
----
-
+This project is licensed under the MIT License - see the LICENSE file for details.
 
 ## Contributing
 
-Pull requests and feedback welcome. Open an issue or submit a PR.
+Contributions are welcome! Please feel free to submit a Pull Request.
+
+1. Fork the repository
+2. Create your feature branch (`git checkout -b feature/amazing-feature`)
+3. Commit your changes (`git commit -m 'Add some amazing feature'`)
+4. Push to the branch (`git push origin feature/amazing-feature`)
+5. Open a Pull Request
