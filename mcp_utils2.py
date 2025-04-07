@@ -5,7 +5,6 @@ import sqlite3
 from datetime import datetime
 from typing import Dict, List, Optional, Tuple
 
-# --- Schema & Validation Layer ---
 
 class MCPValidator:
     def __init__(self, schema_file: str = "metadata/schema.json", db_path: str = "rag.db"):
@@ -138,7 +137,6 @@ class MCPValidator:
             del self.schema[table_name]
             self.update_schema_file()
 
-# --- Prompt Context Memory ---
 
 class PromptContextManager:
     def __init__(self):
@@ -169,7 +167,6 @@ def run_query(query: str, db_path: str = "rag.db") -> str:
     except Exception as e:
         return f"Error executing query: {str(e)}"
 
-# --- LLM Placeholder (Mock) ---
 
 def generate_sql_from_prompt(prompt: str, schema: Dict) -> str:
     """
