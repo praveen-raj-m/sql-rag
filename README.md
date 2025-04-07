@@ -114,10 +114,6 @@ More: [README_DB_TOOLS.md](README_DB_TOOLS.md)
 
 
 
-## License
-
-[MIT License](LICENSE)
-
 ## Acknowledgements
 
 - [LLaMA 3.2](https://ai.meta.com/llama/) by Meta AI  
