@@ -3,6 +3,8 @@
 
 A fully local dashboard to query, manage, and build SQL databases using natural language via a local LLM (LLaMA 3.2 with Ollama).
 
+![Demo](./assets/SQLRAG.gif)
+
 ## 🔧 Features
 
 - **Natural Language to SQL**: Translate plain English to executable SQL.

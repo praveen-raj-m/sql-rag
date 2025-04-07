@@ -49,9 +49,9 @@ def run_query(query):
             if result.returns_rows:
                 df = pd.DataFrame(result.fetchall(), columns=result.keys())
                 return df
-            return "✅ Query executed successfully."
+            return " Query executed successfully."
     except Exception as e:
-        return f"❌ Error: {str(e)}"
+        return f" Error: {str(e)}"
 
 
 def create_sample_table_if_not_exists():
@@ -81,7 +81,7 @@ def create_table(table_name, columns):
             cols.append(Column(name, text(dtype)))
     table = Table(table_name, meta, *cols)
     meta.create_all(engine)
-    return f"✅ Table '{table_name}' created."
+    return f" Table '{table_name}' created."
 
 
 def insert_row(table_name, row_values):
@@ -91,24 +91,24 @@ def insert_row(table_name, row_values):
         if "id" in columns:
             columns.remove("id")
         if len(values) != len(columns):
-            return "❌ Column count mismatch."
+            return " Column count mismatch."
         placeholders = ", ".join(["?"] * len(values))
         sql = f"INSERT INTO {table_name} ({', '.join(columns)}) VALUES ({placeholders})"
         with sqlite3.connect(DB_PATH) as conn:
             conn.execute(sql, values)
             conn.commit()
-        return "✅ Row inserted."
+        return " Row inserted."
     except Exception as e:
-        return f"❌ Error: {str(e)}"
+        return f" Error: {str(e)}"
 
 
 def bulk_insert_csv(file, table_name):
     try:
         df = pd.read_csv(file.name)
         df.to_sql(table_name, con=engine, if_exists='append', index=False)
-        return f"✅ Inserted {len(df)} rows into '{table_name}'"
+        return f" Inserted {len(df)} rows into '{table_name}'"
     except Exception as e:
-        return f"❌ CSV Upload Error: {str(e)}"
+        return f" CSV Upload Error: {str(e)}"
 
 
 def create_table_from_csv(file, table_name):
@@ -116,16 +116,16 @@ def create_table_from_csv(file, table_name):
         df = pd.read_csv(file.name)
         df.to_sql(table_name, con=engine, if_exists='replace', index=False)
         generate_metadata_for_table(table_name)
-        return f"✅ New table '{table_name}' created from CSV."
+        return f" New table '{table_name}' created from CSV."
     except Exception as e:
-        return f"❌ CSV Table Creation Error: {str(e)}"
+        return f" CSV Table Creation Error: {str(e)}"
 
 
 def create_foreign_key_relation(from_table, from_col, to_table, to_col):
     return f"🔒 Foreign key constraints not supported in SQLite dynamically."
 
 
-# ✅ METADATA MANAGEMENT
+#  METADATA MANAGEMENT
 
 def generate_metadata_for_table(table_name):
     os.makedirs("metadata", exist_ok=True)
@@ -212,6 +212,6 @@ def refresh_schema(db_path: str = DB_PATH, schema_file: str = "metadata/schema.j
     try:
         schema = generate_schema_from_db(db_path)
         update_schema_file(schema, schema_file)
-        return "✅ Schema refreshed successfully"
+        return " Schema refreshed successfully"
     except Exception as e:
-        return f"❌ Error refreshing schema: {str(e)}"
+        return f" Error refreshing schema: {str(e)}"

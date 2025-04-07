@@ -1,0 +1,30 @@
+{
+  "table": "Disease",
+  "description": "Auto-generated metadata for table 'Disease'",
+  "columns": {
+    "subject": "subject (BIGINT)",
+    "age": "age (BIGINT)",
+    "sex": "sex (BIGINT)",
+    "test_time": "test_time (FLOAT)",
+    "motor_updrs": "motor_updrs (FLOAT)",
+    "total_updrs": "total_updrs (FLOAT)",
+    "jitter": "jitter (FLOAT)",
+    "jitter_abs": "jitter_abs (FLOAT)",
+    "jitter_rap": "jitter_rap (FLOAT)",
+    "jitter_ppq5": "jitter_ppq5 (FLOAT)",
+    "jitter_ddp": "jitter_ddp (FLOAT)",
+    "shimmer": "shimmer (FLOAT)",
+    "shimmer_db": "shimmer_db (FLOAT)",
+    "shimmer_apq3": "shimmer_apq3 (FLOAT)",
+    "shimmer_apq5": "shimmer_apq5 (FLOAT)",
+    "shimmer_apq11": "shimmer_apq11 (FLOAT)",
+    "shimmer_dda": "shimmer_dda (FLOAT)",
+    "nhr": "nhr (FLOAT)",
+    "hnr": "hnr (FLOAT)",
+    "rpde": "rpde (FLOAT)",
+    "dfa": "dfa (FLOAT)",
+    "ppe": "ppe (FLOAT)"
+  },
+  "primary_key": null,
+  "foreign_keys": []
+}

@@ -104,17 +104,17 @@ def refresh_schema():
                     print(f"Error updating schema for table {table_name}: {str(e)}")
             
             print("Schema refreshed successfully!")
-            return "✅ Schema refreshed successfully!"
+            return " Schema refreshed successfully!"
         except Exception as e:
             error_msg = f"Error refreshing schema: {str(e)}"
             print(error_msg)
-            return f"❌ {error_msg}"
+            return f" {error_msg}"
         finally:
             conn.close()
     except Exception as e:
         error_msg = f"Database connection error: {str(e)}"
         print(error_msg)
-        return f"❌ {error_msg}"
+        return f" {error_msg}"
 
 def delete_table(table_name):
     """
@@ -127,7 +127,7 @@ def delete_table(table_name):
         # First, verify the table exists
         tables = list_tables()
         if table_name not in tables:
-            return f"❌ Table '{table_name}' does not exist"
+            return f" Table '{table_name}' does not exist"
         
         # Try to drop the table
         print(f"Dropping table {table_name} from database")
@@ -168,13 +168,13 @@ def delete_table(table_name):
                 print(f"Error updating schema.json: {e}")
         
         # Return success message
-        return f"✅ Table '{table_name}' successfully deleted"
+        return f" Table '{table_name}' successfully deleted"
     
     except Exception as e:
         print(f"Error in delete_table: {str(e)}")
         import traceback
         traceback.print_exc()
-        return f"❌ Error deleting table: {str(e)}"
+        return f"Error deleting table: {str(e)}"
 
 def get_updated_dropdown():
     """Get updated dropdown choices based on current tables"""
@@ -335,7 +335,7 @@ def handle_sql_query(sql: str) -> Tuple[str, str]:
     except Exception as e:
         return "", str(e)
 
-with gr.Blocks() as demo:
+with gr.Blocks(title="SQL RAG") as demo:
     gr.Markdown("# SQL RAG Dashboard")
     
     with gr.Row():
@@ -400,9 +400,8 @@ with gr.Blocks() as demo:
         def create_final_table(tname, columns):
             col_dict = {n: t for n, t in columns}
             result = create_table(tname, col_dict)
-            if result.startswith("✅"):
-                refresh_schema()
-            return f"✅ {tname} created.", get_schema()
+            refresh_schema()
+            return f"{tname} created.", get_schema()
 
         btn_create.click(create_final_table, inputs=[table_name, col_state], outputs=[status, schema])
 
