@@ -1,148 +1,119 @@
-Perfect — let’s now set up routing for the **three task pages**:
-
-* `/drawdown`
-* `/attribution`
-* `/legaldoc`
-
-We’ll do this one by one. Let’s start by creating folders and route files.
+Awesome! 🎉 Routing is working — we’re in great shape.
 
 ---
 
-## ✅ Step 7: Create Folder and Component for Each Task Page
+## ✅ Next Step: Add Tab Layout to a Task Page
 
-From inside your `client/` folder, run the following commands:
+Let’s start with the **Drawdown page**, and add:
 
-```bash
-ng generate component features/drawdown
-ng generate component features/attribution
-ng generate component features/legaldoc
-```
+* Two tabs:
 
-Now you’ll have:
-
-```
-client/src/app/features/drawdown/drawdown.component.ts
-client/src/app/features/attribution/attribution.component.ts
-client/src/app/features/legaldoc/legaldoc.component.ts
-```
+  * **Generate Commentary**
+  * **Chat with Data**
+* Logic to switch tabs
+* Placeholder content for now
 
 ---
 
-## ✅ Step 8: Create Route Files for Each Page
+### 📄 Step 1: Update `drawdown.component.ts` to Use `NgIf` and Tabs
 
-Create 3 files manually:
+Open:
+📄 `client/src/app/features/drawdown/drawdown.component.ts`
 
-### 📄 `features/drawdown/drawdown.routes.ts`
+Update it like this:
 
 ```ts
-import { Routes } from '@angular/router';
-import { DrawdownComponent } from './drawdown.component';
+import { Component } from '@angular/core';
+import { CommonModule } from '@angular/common';
 
-export const DRAWDOWN_ROUTES: Routes = [
-  {
-    path: '',
-    component: DrawdownComponent,
-  },
-];
-```
+@Component({
+  standalone: true,
+  selector: 'app-drawdown',
+  imports: [CommonModule],
+  templateUrl: './drawdown.component.html',
+  styleUrls: ['./drawdown.component.scss']
+})
+export class DrawdownComponent {
+  activeTab: 'commentary' | 'chat' = 'commentary';
 
-### 📄 `features/attribution/attribution.routes.ts`
-
-```ts
-import { Routes } from '@angular/router';
-import { AttributionComponent } from './attribution.component';
-
-export const ATTRIBUTION_ROUTES: Routes = [
-  {
-    path: '',
-    component: AttributionComponent,
-  },
-];
-```
-
-### 📄 `features/legaldoc/legaldoc.routes.ts`
-
-```ts
-import { Routes } from '@angular/router';
-import { LegaldocComponent } from './legaldoc.component';
-
-export const LEGALDOC_ROUTES: Routes = [
-  {
-    path: '',
-    component: LegaldocComponent,
-  },
-];
+  switchTab(tab: 'commentary' | 'chat') {
+    this.activeTab = tab;
+  }
+}
 ```
 
 ---
 
-## ✅ Step 9: Add Routes to `app.routes.ts`
+### 📄 Step 2: Add Tabs in `drawdown.component.html`
 
-Now update your main route file:
+```html
+<div class="tab-selector">
+  <button [class.active]="activeTab === 'commentary'" (click)="switchTab('commentary')">
+    Generate Commentary
+  </button>
+  <button [class.active]="activeTab === 'chat'" (click)="switchTab('chat')">
+    Chat with Data
+  </button>
+</div>
 
-📄 `src/app/app.routes.ts`
+<div class="tab-content">
+  <div *ngIf="activeTab === 'commentary'">
+    <h2>Drawdown Commentary Form (Coming Soon)</h2>
+  </div>
 
-```ts
-import { Routes } from '@angular/router';
-
-export const routes: Routes = [
-  {
-    path: '',
-    loadChildren: () =>
-      import('./features/landing/landing.routes').then((m) => m.LANDING_ROUTES),
-  },
-  {
-    path: 'drawdown',
-    loadChildren: () =>
-      import('./features/drawdown/drawdown.routes').then((m) => m.DRAWDOWN_ROUTES),
-  },
-  {
-    path: 'attribution',
-    loadChildren: () =>
-      import('./features/attribution/attribution.routes').then((m) => m.ATTRIBUTION_ROUTES),
-  },
-  {
-    path: 'legaldoc',
-    loadChildren: () =>
-      import('./features/legaldoc/legaldoc.routes').then((m) => m.LEGALDOC_ROUTES),
-  },
-  {
-    path: '**',
-    redirectTo: '',
-  },
-];
+  <div *ngIf="activeTab === 'chat'">
+    <h2>Drawdown Chat Window (Coming Soon)</h2>
+  </div>
+</div>
 ```
 
 ---
 
-## ✅ Step 10: Test It
+### 🎨 Step 3: Add Tab Styling in `drawdown.component.scss`
 
-In each of the 3 component HTML files, add placeholder text:
+```scss
+.tab-selector {
+  display: flex;
+  gap: 1rem;
+  margin-bottom: 1.5rem;
 
-* **drawdown.component.html**
+  button {
+    padding: 0.75rem 1.5rem;
+    border: none;
+    background-color: #ddd;
+    cursor: pointer;
+    border-radius: 4px;
+    font-weight: bold;
 
-  ```html
-  <h2>Drawdown Page</h2>
-  ```
+    &.active {
+      background-color: #0a74da;
+      color: white;
+    }
+  }
+}
 
-* **attribution.component.html**
-
-  ```html
-  <h2>Attribution Page</h2>
-  ```
-
-* **legaldoc.component.html**
-
-  ```html
-  <h2>Legal Document Analysis Page</h2>
-  ```
-
-Now:
-
-* Run the app using `ng serve`
-* Click the buttons from your landing page
-* Each one should take you to its respective page
+.tab-content {
+  border-top: 1px solid #ccc;
+  padding-top: 1.5rem;
+}
+```
 
 ---
 
-Let me know once these pages are working — then we’ll move on to the **tab layout** (`Generate Commentary` | `Chat with Data`).
+### ✅ Final Test
+
+1. Navigate to **Drawdown page** (`/drawdown`)
+2. You should see:
+
+   * Two buttons as tabs
+   * Placeholder text changing when you click the tab
+
+---
+
+Once confirmed, we’ll:
+
+* Convert this tab UI into a **reusable shared component**
+* Add real form fields to `Generate Commentary`
+* Wire up `Chat with Data` tab with chat logic
+
+Let me know once this works!
