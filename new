@@ -1,119 +1,183 @@
-Awesome! 🎉 Routing is working — we’re in great shape.
+Perfect! ✅ Now that the **Drawdown page tabs are working**, we’ll proceed step-by-step to:
 
 ---
 
-## ✅ Next Step: Add Tab Layout to a Task Page
+## 🧱 Next Step: Build the **Generate Commentary** Tab Layout
 
-Let’s start with the **Drawdown page**, and add:
+For the **Drawdown task**, the structure will include:
 
-* Two tabs:
+* A medium-sized **input textarea**
+* A **Generate Prompt** button
+* A **prompt textarea (editable)**
+* A row with:
 
-  * **Generate Commentary**
-  * **Chat with Data**
-* Logic to switch tabs
-* Placeholder content for now
+  * **Temperature input**
+  * **Model dropdown**
+  * **Download button**
+* A **Generate Commentary** button
+* A **markdown-rendered output area**
+
+Let’s implement this UI now (dummy functionality for now — Flask backend later).
 
 ---
 
-### 📄 Step 1: Update `drawdown.component.ts` to Use `NgIf` and Tabs
+## ✅ Step 1: Update `drawdown.component.html`
 
-Open:
-📄 `client/src/app/features/drawdown/drawdown.component.ts`
+Replace the `<h2>Drawdown Commentary Form (Coming Soon)</h2>` part with:
 
-Update it like this:
+```html
+<div class="commentary-form">
+  <!-- Input Data Textarea -->
+  <label for="inputData">Enter Drawdown Data</label>
+  <textarea id="inputData" rows="8" [(ngModel)]="inputData"></textarea>
+
+  <!-- Generate Prompt Button -->
+  <button (click)="generatePrompt()">Generate Prompt</button>
+
+  <!-- Prompt Textarea (Editable) -->
+  <label for="prompt">Prompt (editable)</label>
+  <textarea id="prompt" rows="6" [(ngModel)]="promptText"></textarea>
+
+  <!-- Controls Row -->
+  <div class="controls-row">
+    <label>Temperature
+      <input type="number" step="0.1" min="0" max="1" [(ngModel)]="temperature">
+    </label>
+
+    <label>Model
+      <select [(ngModel)]="selectedModel">
+        <option value="gemma:2b">Gemma:2B</option>
+        <option value="gemma:7b">Gemma:7B</option>
+        <option value="llama:3">LLaMA 3</option>
+      </select>
+    </label>
+
+    <button (click)="downloadPrompt()">Download Prompt</button>
+  </div>
+
+  <!-- Generate Commentary Button -->
+  <button (click)="generateCommentary()">Generate Commentary</button>
+
+  <!-- Markdown Output -->
+  <div class="markdown-output" [innerHTML]="renderedMarkdown"></div>
+</div>
+```
+
+---
+
+## ✅ Step 2: Update `drawdown.component.ts`
+
+Add logic for the dummy functions:
 
 ```ts
 import { Component } from '@angular/core';
 import { CommonModule } from '@angular/common';
+import { FormsModule } from '@angular/forms';
 
 @Component({
   standalone: true,
   selector: 'app-drawdown',
-  imports: [CommonModule],
+  imports: [CommonModule, FormsModule],
   templateUrl: './drawdown.component.html',
   styleUrls: ['./drawdown.component.scss']
 })
 export class DrawdownComponent {
   activeTab: 'commentary' | 'chat' = 'commentary';
 
+  inputData = '';
+  promptText = '';
+  temperature = 0.7;
+  selectedModel = 'gemma:2b';
+  renderedMarkdown = '';
+
   switchTab(tab: 'commentary' | 'chat') {
     this.activeTab = tab;
   }
-}
-```
 
----
+  generatePrompt() {
+    this.promptText = `Analyze the following drawdown data:\n${this.inputData}`;
+  }
 
-### 📄 Step 2: Add Tabs in `drawdown.component.html`
+  generateCommentary() {
+    this.renderedMarkdown = `
+      ## Commentary Generated
+      - Model: ${this.selectedModel}
+      - Temp: ${this.temperature}
+      
+      > This is a **dummy markdown** preview. Real results will come from the backend.
+    `;
+  }
 
-```html
-<div class="tab-selector">
-  <button [class.active]="activeTab === 'commentary'" (click)="switchTab('commentary')">
-    Generate Commentary
-  </button>
-  <button [class.active]="activeTab === 'chat'" (click)="switchTab('chat')">
-    Chat with Data
-  </button>
-</div>
-
-<div class="tab-content">
-  <div *ngIf="activeTab === 'commentary'">
-    <h2>Drawdown Commentary Form (Coming Soon)</h2>
-  </div>
-
-  <div *ngIf="activeTab === 'chat'">
-    <h2>Drawdown Chat Window (Coming Soon)</h2>
-  </div>
-</div>
-```
-
----
-
-### 🎨 Step 3: Add Tab Styling in `drawdown.component.scss`
-
-```scss
-.tab-selector {
-  display: flex;
-  gap: 1rem;
-  margin-bottom: 1.5rem;
-
-  button {
-    padding: 0.75rem 1.5rem;
-    border: none;
-    background-color: #ddd;
-    cursor: pointer;
-    border-radius: 4px;
-    font-weight: bold;
-
-    &.active {
-      background-color: #0a74da;
-      color: white;
-    }
+  downloadPrompt() {
+    const blob = new Blob([this.promptText], { type: 'text/plain' });
+    const url = window.URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = 'prompt.txt';
+    a.click();
+    window.URL.revokeObjectURL(url);
   }
 }
+```
 
-.tab-content {
-  border-top: 1px solid #ccc;
-  padding-top: 1.5rem;
+---
+
+## ✅ Step 3: Add Minimal Styling in `drawdown.component.scss`
+
+```scss
+.commentary-form {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+
+  label {
+    font-weight: bold;
+    margin-top: 1rem;
+  }
+
+  textarea {
+    width: 100%;
+    padding: 0.75rem;
+    font-family: monospace;
+    resize: vertical;
+  }
+
+  .controls-row {
+    display: flex;
+    gap: 1.5rem;
+    align-items: center;
+
+    input, select {
+      margin-left: 0.5rem;
+    }
+  }
+
+  .markdown-output {
+    margin-top: 2rem;
+    padding: 1rem;
+    border: 1px dashed #ccc;
+    background-color: #f9f9f9;
+    font-family: serif;
+  }
 }
 ```
 
 ---
 
-### ✅ Final Test
+### ✅ Now test:
 
-1. Navigate to **Drawdown page** (`/drawdown`)
-2. You should see:
-
-   * Two buttons as tabs
-   * Placeholder text changing when you click the tab
+* Go to `/drawdown`
+* Type something into the input area
+* Click **Generate Prompt**
+* Click **Generate Commentary**
+* A markdown-looking output should appear
+* Click **Download Prompt** to download the text file
 
 ---
 
-Once confirmed, we’ll:
+Let me know when this is working — then we’ll either:
 
-* Convert this tab UI into a **reusable shared component**
-* Add real form fields to `Generate Commentary`
-* Wire up `Chat with Data` tab with chat logic
+* Refactor to shared components
+* Or move on to the **Chat with Data** tab structure
 
-Let me know once this works!
+Your call!
