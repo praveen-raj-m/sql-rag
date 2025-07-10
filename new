@@ -1,92 +1,107 @@
-.chat-container {
-  display: flex;
-  flex-direction: column;
-  gap: 1rem;
-  max-width: 800px;
-  margin: 0 auto;
+Perfect! Let’s begin by creating the **`TabSelectorComponent`**, since it's simple, reusable, and used on **every task page**.
+
+---
+
+## ✅ Step 1: Create `TabSelectorComponent`
+
+From inside the `client/` folder, run:
+
+```bash
+ng generate component shared/components/tab-selector --standalone
+```
+
+---
+
+## ✅ Step 2: Update `tab-selector.component.ts`
+
+Open:
+📄 `src/app/shared/components/tab-selector/tab-selector.component.ts`
+
+Replace with:
+
+```ts
+import { Component, Input, Output, EventEmitter } from '@angular/core';
+import { CommonModule } from '@angular/common';
+
+@Component({
+  standalone: true,
+  selector: 'app-tab-selector',
+  imports: [CommonModule],
+  templateUrl: './tab-selector.component.html',
+  styleUrls: ['./tab-selector.component.scss']
+})
+export class TabSelectorComponent {
+  @Input() activeTab: 'commentary' | 'chat' = 'commentary';
+  @Output() tabChanged = new EventEmitter<'commentary' | 'chat'>();
+
+  selectTab(tab: 'commentary' | 'chat') {
+    this.tabChanged.emit(tab);
+  }
 }
+```
 
-.chat-controls {
+---
+
+## ✅ Step 3: Create Template
+
+📄 `tab-selector.component.html`
+
+```html
+<div class="tab-selector">
+  <button [class.active]="activeTab === 'commentary'" (click)="selectTab('commentary')">
+    Generate Commentary
+  </button>
+  <button [class.active]="activeTab === 'chat'" (click)="selectTab('chat')">
+    Chat with Data
+  </button>
+</div>
+```
+
+---
+
+## ✅ Step 4: Add Styles
+
+📄 `tab-selector.component.scss`
+
+```scss
+.tab-selector {
   display: flex;
-  justify-content: space-between;
-  align-items: center;
-
-  label, select, button {
-    font-size: 0.95rem;
-  }
-
-  select {
-    margin-left: 0.5rem;
-    padding: 0.3rem;
-    border-radius: 4px;
-  }
+  gap: 1rem;
+  margin-bottom: 1.5rem;
 
   button {
-    padding: 0.4rem 1rem;
-    background-color: #888;
-    color: white;
+    padding: 0.75rem 1.5rem;
     border: none;
+    background-color: #eee;
     border-radius: 4px;
     cursor: pointer;
+    font-weight: 600;
+    transition: background-color 0.2s ease;
+
+    &.active {
+      background-color: #0a74da;
+      color: white;
+    }
 
     &:hover {
-      background-color: #555;
+      background-color: #ccc;
     }
   }
 }
+```
 
-.chat-history {
-  max-height: 300px;
-  overflow-y: auto;
-  border: 1px solid #ccc;
-  border-radius: 6px;
-  padding: 1rem;
-  background: #fdfdfd;
-  display: flex;
-  flex-direction: column;
-  gap: 0.75rem;
+---
 
-  .user {
-    align-self: flex-end;
-    background: #d1eaff;
-    padding: 0.6rem;
-    border-radius: 12px 12px 0 12px;
-    max-width: 75%;
-  }
+## ✅ Step 5: Use in `drawdown.component.html`
 
-  .assistant {
-    align-self: flex-start;
-    background: #efefef;
-    padding: 0.6rem;
-    border-radius: 12px 12px 12px 0;
-    max-width: 75%;
-  }
-}
+Replace the manual tab buttons with:
 
-.chat-input-box {
-  display: flex;
-  gap: 1rem;
-  align-items: flex-end;
+```html
+<app-tab-selector [activeTab]="activeTab" (tabChanged)="switchTab($event)" />
+```
 
-  textarea {
-    flex: 1;
-    padding: 0.6rem;
-    resize: vertical;
-    border: 1px solid #ccc;
-    border-radius: 6px;
-  }
+Now your `DrawdownComponent` handles tab switching, and the tab UI is cleanly abstracted.
 
-  button {
-    height: 100%;
-    padding: 0.6rem 1.2rem;
-    background-color: #0a74da;
-    color: white;
-    border: none;
-    border-radius: 6px;
-    cursor: pointer;
+---
 
-    &:hover {
-      background-color: #095bb5;
-    }
-  }
-}
+Let me know when this is done — then we’ll extract the **ChatWindowComponent** next!
