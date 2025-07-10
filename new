@@ -1,0 +1,78 @@
+Perfect! ✅ Now let’s wire up the **routing** so your `LandingComponent` is displayed when you visit `/`.
+
+---
+
+## ✅ Step 2: Create `landing.routes.ts`
+
+Inside:
+📁 `client/src/app/features/landing/`
+
+Create a new file:
+
+📄 `landing.routes.ts`
+
+### Paste this content:
+
+```ts
+import { Routes } from '@angular/router';
+import { LandingComponent } from './landing.component';
+
+export const LANDING_ROUTES: Routes = [
+  {
+    path: '',
+    component: LandingComponent,
+  },
+];
+```
+
+---
+
+## ✅ Step 3: Connect `landing.routes.ts` to `app.routes.ts`
+
+Open this file:
+📄 `client/src/app/app.routes.ts`
+
+Update it like this:
+
+```ts
+import { Routes } from '@angular/router';
+
+export const routes: Routes = [
+  {
+    path: '',
+    loadChildren: () =>
+      import('./features/landing/landing.routes').then(m => m.LANDING_ROUTES),
+  }
+];
+```
+
+---
+
+## ✅ Step 4: Test It
+
+Open this file:
+📄 `landing.component.html`
+
+Replace it with:
+
+```html
+<h1>Hello from Landing Page</h1>
+```
+
+Now run the app from the `client/` folder:
+
+```bash
+ng serve
+```
+
+Then open your browser at:
+
+```
+http://localhost:4200/
+```
+
+You should see `Hello from Landing Page`.
+
+---
+
+Let me know when that's working — then we’ll add the **title, disclaimer, and task buttons**.
