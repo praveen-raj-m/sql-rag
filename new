@@ -1,90 +1,148 @@
-Awesome! Now let’s build the **Landing Page UI** with:
+Perfect — let’s now set up routing for the **three task pages**:
 
-* A bold **title**
-* A short **disclaimer**
-* Three **task buttons** (Drawdown, Attribution, Legal Doc Analysis)
+* `/drawdown`
+* `/attribution`
+* `/legaldoc`
+
+We’ll do this one by one. Let’s start by creating folders and route files.
 
 ---
 
-## ✅ Step 6: Add Landing Page Layout
+## ✅ Step 7: Create Folder and Component for Each Task Page
 
-### 📄 `landing.component.html`
+From inside your `client/` folder, run the following commands:
 
-```html
-<div class="landing-container">
-  <h1>Financial AI Assistant</h1>
+```bash
+ng generate component features/drawdown
+ng generate component features/attribution
+ng generate component features/legaldoc
+```
 
-  <p class="disclaimer">
-    This tool provides AI-generated financial insights. Always verify the output before using for decision-making.
-  </p>
+Now you’ll have:
 
-  <div class="task-buttons">
-    <button routerLink="/drawdown">📉 Drawdown Analysis</button>
-    <button routerLink="/attribution">📊 Attribution Analysis</button>
-    <button routerLink="/legaldoc">📃 Legal Document Analysis</button>
-  </div>
-</div>
+```
+client/src/app/features/drawdown/drawdown.component.ts
+client/src/app/features/attribution/attribution.component.ts
+client/src/app/features/legaldoc/legaldoc.component.ts
 ```
 
 ---
 
-### 🎨 `landing.component.scss`
+## ✅ Step 8: Create Route Files for Each Page
 
-```scss
-.landing-container {
-  text-align: center;
-  padding: 4rem 1rem;
+Create 3 files manually:
 
-  h1 {
-    font-size: 2.5rem;
-    margin-bottom: 1.5rem;
-  }
+### 📄 `features/drawdown/drawdown.routes.ts`
 
-  .disclaimer {
-    color: #666;
-    max-width: 600px;
-    margin: 0 auto 3rem;
-    font-size: 0.95rem;
-    line-height: 1.4;
-  }
+```ts
+import { Routes } from '@angular/router';
+import { DrawdownComponent } from './drawdown.component';
 
-  .task-buttons {
-    display: flex;
-    justify-content: center;
-    flex-wrap: wrap;
-    gap: 1.5rem;
+export const DRAWDOWN_ROUTES: Routes = [
+  {
+    path: '',
+    component: DrawdownComponent,
+  },
+];
+```
 
-    button {
-      font-size: 1rem;
-      padding: 1rem 2rem;
-      border: none;
-      border-radius: 6px;
-      background-color: #0a74da;
-      color: white;
-      cursor: pointer;
-      transition: background-color 0.2s ease;
+### 📄 `features/attribution/attribution.routes.ts`
 
-      &:hover {
-        background-color: #095bb5;
-      }
-    }
-  }
-}
+```ts
+import { Routes } from '@angular/router';
+import { AttributionComponent } from './attribution.component';
+
+export const ATTRIBUTION_ROUTES: Routes = [
+  {
+    path: '',
+    component: AttributionComponent,
+  },
+];
+```
+
+### 📄 `features/legaldoc/legaldoc.routes.ts`
+
+```ts
+import { Routes } from '@angular/router';
+import { LegaldocComponent } from './legaldoc.component';
+
+export const LEGALDOC_ROUTES: Routes = [
+  {
+    path: '',
+    component: LegaldocComponent,
+  },
+];
 ```
 
 ---
 
-### 🧪 Now test:
+## ✅ Step 9: Add Routes to `app.routes.ts`
 
-Run the app, and visit:
-**`http://localhost:4200/`**
+Now update your main route file:
 
-You should see:
+📄 `src/app/app.routes.ts`
 
-* A clean title
-* A professional disclaimer
-* 3 styled buttons
+```ts
+import { Routes } from '@angular/router';
 
-Clicking the buttons will show a blank page for now (we haven’t built those pages yet) — but routing should work.
+export const routes: Routes = [
+  {
+    path: '',
+    loadChildren: () =>
+      import('./features/landing/landing.routes').then((m) => m.LANDING_ROUTES),
+  },
+  {
+    path: 'drawdown',
+    loadChildren: () =>
+      import('./features/drawdown/drawdown.routes').then((m) => m.DRAWDOWN_ROUTES),
+  },
+  {
+    path: 'attribution',
+    loadChildren: () =>
+      import('./features/attribution/attribution.routes').then((m) => m.ATTRIBUTION_ROUTES),
+  },
+  {
+    path: 'legaldoc',
+    loadChildren: () =>
+      import('./features/legaldoc/legaldoc.routes').then((m) => m.LEGALDOC_ROUTES),
+  },
+  {
+    path: '**',
+    redirectTo: '',
+  },
+];
+```
 
-Let me know once this is confirmed ✅ and we’ll move on to scaffolding the **Drawdown page** with the tab structure.
+---
+
+## ✅ Step 10: Test It
+
+In each of the 3 component HTML files, add placeholder text:
+
+* **drawdown.component.html**
+
+  ```html
+  <h2>Drawdown Page</h2>
+  ```
+
+* **attribution.component.html**
+
+  ```html
+  <h2>Attribution Page</h2>
+  ```
+
+* **legaldoc.component.html**
+
+  ```html
+  <h2>Legal Document Analysis Page</h2>
+  ```
+
+Now:
+
+* Run the app using `ng serve`
+* Click the buttons from your landing page
+* Each one should take you to its respective page
+
+---
+
+Let me know once these pages are working — then we’ll move on to the **tab layout** (`Generate Commentary` | `Chat with Data`).
