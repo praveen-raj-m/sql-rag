@@ -1,103 +1,92 @@
-import { Component } from '@angular/core';
-import { CommonModule } from '@angular/common';
-import { FormsModule } from '@angular/forms';
-
-// Inline interface for chat messages
-interface ChatMessage {
-  role: 'user' | 'assistant';
-  content: string;
+.chat-container {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+  max-width: 800px;
+  margin: 0 auto;
 }
 
-@Component({
-  standalone: true,
-  selector: 'app-drawdown',
-  imports: [CommonModule, FormsModule],
-  templateUrl: './drawdown.component.html',
-  styleUrls: ['./drawdown.component.scss']
-})
-export class DrawdownComponent {
-  // Tab Switching
-  activeTab: 'commentary' | 'chat' = 'commentary';
+.chat-controls {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
 
-  // Commentary Form
-  inputData: string = '';
-  promptText: string = '';
-  temperature: number = 0.7;
-  selectedModel: string = 'gemma:2b';
-  renderedMarkdown: string = '';
+  label, select, button {
+    font-size: 0.95rem;
+  }
 
-  // Chat Tab
-  chatInput: string = '';
-  chatHistory: ChatMessage[] = [];
-  selectedChatModel: string = 'gemma:2b';
+  select {
+    margin-left: 0.5rem;
+    padding: 0.3rem;
+    border-radius: 4px;
+  }
 
-  switchTab(tab: 'commentary' | 'chat') {
-    if (tab === 'chat' && !this.inputData.trim()) {
-      alert('Please enter input data in the commentary tab before using chat.');
-      return;
+  button {
+    padding: 0.4rem 1rem;
+    background-color: #888;
+    color: white;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+
+    &:hover {
+      background-color: #555;
     }
-    this.activeTab = tab;
+  }
+}
+
+.chat-history {
+  max-height: 300px;
+  overflow-y: auto;
+  border: 1px solid #ccc;
+  border-radius: 6px;
+  padding: 1rem;
+  background: #fdfdfd;
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+
+  .user {
+    align-self: flex-end;
+    background: #d1eaff;
+    padding: 0.6rem;
+    border-radius: 12px 12px 0 12px;
+    max-width: 75%;
   }
 
-  generatePrompt() {
-    if (!this.inputData.trim()) {
-      alert('Please enter drawdown input before generating a prompt.');
-      return;
+  .assistant {
+    align-self: flex-start;
+    background: #efefef;
+    padding: 0.6rem;
+    border-radius: 12px 12px 12px 0;
+    max-width: 75%;
+  }
+}
+
+.chat-input-box {
+  display: flex;
+  gap: 1rem;
+  align-items: flex-end;
+
+  textarea {
+    flex: 1;
+    padding: 0.6rem;
+    resize: vertical;
+    border: 1px solid #ccc;
+    border-radius: 6px;
+  }
+
+  button {
+    height: 100%;
+    padding: 0.6rem 1.2rem;
+    background-color: #0a74da;
+    color: white;
+    border: none;
+    border-radius: 6px;
+    cursor: pointer;
+
+    &:hover {
+      background-color: #095bb5;
     }
-    this.promptText = `Analyze the following drawdown data:\n\n${this.inputData}`;
-  }
-
-  generateCommentary() {
-    if (!this.promptText.trim()) {
-      alert('Please generate or write a prompt first.');
-      return;
-    }
-
-    this.renderedMarkdown = `
-## AI Commentary (Simulated)
-
-Model: **${this.selectedModel}**  
-Temperature: **${this.temperature}**
-
----
-
-> This is a *dummy markdown* response. Backend integration will replace this.
-    `;
-  }
-
-  downloadPrompt() {
-    if (!this.promptText.trim()) return;
-
-    const blob = new Blob([this.promptText], { type: 'text/plain' });
-    const url = window.URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = 'prompt.txt';
-    a.click();
-    window.URL.revokeObjectURL(url);
-  }
-
-  sendMessage() {
-    const content = this.chatInput.trim();
-    if (!content) return;
-
-    const userMessage: ChatMessage = {
-      role: 'user',
-      content
-    };
-    this.chatHistory.push(userMessage);
-    this.chatInput = '';
-
-    // Simulate assistant response
-    setTimeout(() => {
-      this.chatHistory.push({
-        role: 'assistant',
-        content: `This is a dummy response from model: ${this.selectedChatModel}`
-      });
-    }, 600);
-  }
-
-  clearChat() {
-    this.chatHistory = [];
   }
 }
