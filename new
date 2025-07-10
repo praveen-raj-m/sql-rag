@@ -1,78 +1,90 @@
-Perfect! ✅ Now let’s wire up the **routing** so your `LandingComponent` is displayed when you visit `/`.
+Awesome! Now let’s build the **Landing Page UI** with:
+
+* A bold **title**
+* A short **disclaimer**
+* Three **task buttons** (Drawdown, Attribution, Legal Doc Analysis)
 
 ---
 
-## ✅ Step 2: Create `landing.routes.ts`
+## ✅ Step 6: Add Landing Page Layout
 
-Inside:
-📁 `client/src/app/features/landing/`
-
-Create a new file:
-
-📄 `landing.routes.ts`
-
-### Paste this content:
-
-```ts
-import { Routes } from '@angular/router';
-import { LandingComponent } from './landing.component';
-
-export const LANDING_ROUTES: Routes = [
-  {
-    path: '',
-    component: LandingComponent,
-  },
-];
-```
-
----
-
-## ✅ Step 3: Connect `landing.routes.ts` to `app.routes.ts`
-
-Open this file:
-📄 `client/src/app/app.routes.ts`
-
-Update it like this:
-
-```ts
-import { Routes } from '@angular/router';
-
-export const routes: Routes = [
-  {
-    path: '',
-    loadChildren: () =>
-      import('./features/landing/landing.routes').then(m => m.LANDING_ROUTES),
-  }
-];
-```
-
----
-
-## ✅ Step 4: Test It
-
-Open this file:
-📄 `landing.component.html`
-
-Replace it with:
+### 📄 `landing.component.html`
 
 ```html
-<h1>Hello from Landing Page</h1>
+<div class="landing-container">
+  <h1>Financial AI Assistant</h1>
+
+  <p class="disclaimer">
+    This tool provides AI-generated financial insights. Always verify the output before using for decision-making.
+  </p>
+
+  <div class="task-buttons">
+    <button routerLink="/drawdown">📉 Drawdown Analysis</button>
+    <button routerLink="/attribution">📊 Attribution Analysis</button>
+    <button routerLink="/legaldoc">📃 Legal Document Analysis</button>
+  </div>
+</div>
 ```
-
-Now run the app from the `client/` folder:
-
-```bash
-ng serve
-```
-
-Then open your browser at:
-
-```
-http://localhost:4200/
-```
-
-You should see `Hello from Landing Page`.
 
 ---
 
-Let me know when that's working — then we’ll add the **title, disclaimer, and task buttons**.
+### 🎨 `landing.component.scss`
+
+```scss
+.landing-container {
+  text-align: center;
+  padding: 4rem 1rem;
+
+  h1 {
+    font-size: 2.5rem;
+    margin-bottom: 1.5rem;
+  }
+
+  .disclaimer {
+    color: #666;
+    max-width: 600px;
+    margin: 0 auto 3rem;
+    font-size: 0.95rem;
+    line-height: 1.4;
+  }
+
+  .task-buttons {
+    display: flex;
+    justify-content: center;
+    flex-wrap: wrap;
+    gap: 1.5rem;
+
+    button {
+      font-size: 1rem;
+      padding: 1rem 2rem;
+      border: none;
+      border-radius: 6px;
+      background-color: #0a74da;
+      color: white;
+      cursor: pointer;
+      transition: background-color 0.2s ease;
+
+      &:hover {
+        background-color: #095bb5;
+      }
+    }
+  }
+}
+```
+
+---
+
+### 🧪 Now test:
+
+Run the app, and visit:
+**`http://localhost:4200/`**
+
+You should see:
+
+* A clean title
+* A professional disclaimer
+* 3 styled buttons
+
+Clicking the buttons will show a blank page for now (we haven’t built those pages yet) — but routing should work.
+
+Let me know once this is confirmed ✅ and we’ll move on to scaffolding the **Drawdown page** with the tab structure.
