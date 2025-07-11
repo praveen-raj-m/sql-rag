@@ -1,58 +1,65 @@
-Great question — yes, you **should** use Angular's built-in security tools to safely display markdown converted to HTML. Here's what you need to know:
+Ah — thank you! That **gap between `<ol>` and `<p>`** is a common HTML rendering behavior, especially when the markdown has:
+
+```md
+1. First item
+
+Some paragraph text here.
+```
+
+This renders to:
+
+```html
+<ol>
+  <li>First item</li>
+</ol>
+<p>Some paragraph text here.</p>
+```
+
+And browsers often apply **default margin** to both `<ol>` and `<p>`, causing visible vertical spacing.
 
 ---
 
-## ✅ Why You Might See the Warning
+### ✅ Fix It with SCSS (Recommended)
 
-Angular automatically **sanitizes HTML** in `[innerHTML]` to prevent XSS (cross-site scripting).
-However, if you're rendering markdown that has been converted to HTML (via `marked.parse()`), Angular may strip out safe tags like `<h1>`, `<ul>`, `<strong>`, etc.
+Update your `.markdown-output` style to normalize spacing:
 
-To render the full HTML safely, you can **explicitly trust** it using Angular's `DomSanitizer`.
+```scss
+.markdown-output {
+  ol, ul {
+    margin-top: 0.5rem;
+    margin-bottom: 0.5rem;
+    padding-left: 1.25rem;
+  }
 
----
+  p {
+    margin-top: 0.25rem;
+    margin-bottom: 0.25rem;
+  }
 
-## ✅ Updated `MarkdownPipe` Using `DomSanitizer`
-
-Here’s the secure and recommended way to implement it:
-
-```ts
-import { Pipe, PipeTransform } from '@angular/core';
-import { DomSanitizer, SafeHtml } from '@angular/platform-browser';
-import { marked } from 'marked';
-
-@Pipe({ name: 'markdown' })
-export class MarkdownPipe implements PipeTransform {
-  constructor(private sanitizer: DomSanitizer) {}
-
-  transform(value: string): SafeHtml {
-    const html = marked.parse(value || '');
-    return this.sanitizer.bypassSecurityTrustHtml(html);
+  li {
+    margin-bottom: 0.25rem;
   }
 }
 ```
 
-> ⚠️ This tells Angular: “I trust the HTML coming out of `marked`” — assuming you're **not injecting user-generated raw HTML** into `marked`, this is safe.
+> This reduces the spacing between lists and paragraphs and keeps things tight and readable.
 
 ---
 
-## ✅ Usage in Template
+### ✅ Bonus: Remove Top/Bottom Margin from First/Last Child (Optional)
 
-Keep this the same:
+If you're rendering a block of markdown, also consider:
 
-```html
-<div class="markdown-output" *ngIf="commentaryResult" [innerHTML]="commentaryResult | markdown"></div>
+```scss
+.markdown-output > *:first-child {
+  margin-top: 0;
+}
+
+.markdown-output > *:last-child {
+  margin-bottom: 0;
+}
 ```
 
 ---
 
-## ✅ Summary
-
-| Requirement              | Solution                                              |
-| ------------------------ | ----------------------------------------------------- |
-| Keep markdown formatting | Use `marked.parse()` + `bypassSecurityTrustHtml()`    |
-| Avoid XSS issues         | Only trust **sanitized, backend-controlled markdown** |
-| Result                   | Clean, styled HTML rendering in your app              |
-
----
-
-Let me know if you'd like CSS styles for headings, bold text, or lists inside `.markdown-output` to match your UI theme.
+Let me know if you're seeing any unwanted space **within the list items themselves** or need a more compact layout!
