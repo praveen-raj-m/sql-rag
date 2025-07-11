@@ -1,292 +1,103 @@
-/* Full-width container for the entire page */
-.container {
-  max-width: 100%;
-  width: 100%;
-  padding: 1rem 2rem;
-  margin: 0 auto;
-  box-sizing: border-box;
-}
+<div class="container">
+  <!-- Header -->
+  <div class="page-header">
+    <h2>Legal Document Analysis</h2>
+    <button class="end-btn" (click)="goBackToLanding()">← Back</button>
+  </div>
 
-/* Header with title and back button */
-.page-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-bottom: 1rem;
+  <!-- Tabs -->
+  <div class="tab-selector">
+    <button [class.active]="activeTab === 'generate'" (click)="switchTab('generate')">Generate Commentary</button>
+    <button [class.active]="activeTab === 'chat'" [disabled]="!templateText || !agreementText" (click)="switchTab('chat')">Chat with Data</button>
+  </div>
 
-  h2 {
-    font-size: 1.75rem;
-    margin: 0;
-  }
+  <!-- Commentary Tab -->
+  <div *ngIf="activeTab === 'generate'" class="commentary-form">
+    <!-- Upload -->
+    <div class="file-upload-row">
+      <div>
+        <label>Template Document</label>
+        <input type="file" (change)="onFileUpload($event, 'template')" />
+      </div>
+      <div>
+        <label>Client Agreement</label>
+        <input type="file" (change)="onFileUpload($event, 'agreement')" />
+      </div>
+    </div>
 
-  .end-btn {
-    background: none;
-    color: #0a74da;
-    border: 2px solid #0a74da;
-    padding: 0.4rem 0.75rem;
-    border-radius: 6px;
-    font-weight: 600;
-    cursor: pointer;
-    transition: all 0.2s ease;
+    <!-- View -->
+    <div class="doc-view">
+      <textarea [value]="templateText" placeholder="Template Document..." readonly></textarea>
+      <textarea [value]="agreementText" placeholder="Client Agreement..." readonly></textarea>
+    </div>
 
-    &:hover {
-      background-color: #0a74da;
-      color: white;
-    }
-  }
-}
+    <!-- Meta -->
+    <div class="info-row">
+      <input type="text" [(ngModel)]="analystName" placeholder="Analyst Name" />
+      <input type="date" [(ngModel)]="analysisDate" />
+    </div>
 
-/* Tab switcher buttons */
-.tab-selector {
-  display: flex;
-  gap: 1rem;
-  margin-bottom: 1.5rem;
+    <!-- Prompt -->
+    <button class="generate-button" (click)="generatePrompt()">Generate Prompt</button>
+    <textarea rows="6" [(ngModel)]="prompt" placeholder="Prompt will appear here..."></textarea>
 
-  button {
-    padding: 0.75rem 1.5rem;
-    border: none;
-    background-color: #eee;
-    border-radius: 4px;
-    cursor: pointer;
-    font-weight: 600;
+    <!-- Model/Temp/Download -->
+    <div class="controls-row">
+      <select [(ngModel)]="llmModel">
+        <option value="llama3">LLaMA 3</option>
+        <option value="gemma3-12b">Gemma 3:12B</option>
+        <option value="gemma3-27b">Gemma 3:27B</option>
+      </select>
+      <input type="number" [(ngModel)]="temperature" min="0" max="1" step="0.1" />
+      <button [disabled]="isGenerating || !commentaryResult">Download Output</button>
+    </div>
 
-    &.active {
-      background-color: #0a74da;
-      color: white;
-    }
+    <!-- Commentary Output -->
+    <button class="generate-button" (click)="generateCommentary()" [disabled]="isGenerating">Generate Commentary</button>
+    <div class="markdown-output" *ngIf="commentaryResult" [innerHTML]="commentaryResult | markdown"></div>
+  </div>
 
-    &:hover {
-      background-color: #ccc;
-    }
+  <!-- Chat Tab -->
+  <div *ngIf="activeTab === 'chat'" class="chat-layout">
+    <!-- Left: Document -->
+    <div class="chat-left">
+      <h4>Document Comparison</h4>
+      <div class="doc-scroll">
+        <h5>Template</h5>
+        <pre>{{ templateText }}</pre>
+        <h5>Agreement</h5>
+        <pre>{{ agreementText }}</pre>
+      </div>
+    </div>
 
-    &:disabled {
-      opacity: 0.5;
-      cursor: not-allowed;
-    }
-  }
-}
+    <!-- Right: Chat -->
+    <div class="chat-right">
+      <div class="summary-box">
+        <h4>Summary</h4>
+        <p>This will contain an AI-generated summary of key differences.</p>
+      </div>
 
-/* Generate Commentary layout */
-.commentary-form {
-  display: flex;
-  flex-direction: column;
-  gap: 1rem;
+      <div class="chat-controls">
+        <select [(ngModel)]="llmModel">
+          <option value="llama3">LLaMA 3</option>
+          <option value="gemma3-12b">Gemma 3:12B</option>
+          <option value="gemma3-27b">Gemma 3:27B</option>
+        </select>
+        <button (click)="clearChat()">Clear Chat</button>
+      </div>
 
-  .file-upload-row {
-    display: flex;
-    gap: 1rem;
+      <div class="chat-history">
+        <div *ngFor="let msg of chatHistory" class="chat-message" [ngClass]="msg.role">
+          <strong *ngIf="msg.role === 'user'">You:</strong>
+          <strong *ngIf="msg.role === 'assistant'">AI:</strong>
+          <span>{{ msg.content }}</span>
+        </div>
+      </div>
 
-    input {
-      flex: 1;
-      padding: 0.5rem;
-    }
-
-    label {
-      font-weight: 500;
-    }
-  }
-
-  .doc-view {
-    display: flex;
-    gap: 1rem;
-
-    textarea {
-      flex: 1;
-      height: 200px;
-      padding: 0.5rem;
-      resize: vertical;
-      font-family: monospace;
-      background-color: #fafafa;
-    }
-  }
-
-  .info-row {
-    display: flex;
-    gap: 1rem;
-    flex-wrap: wrap;
-
-    input {
-      width: 200px;
-      padding: 0.5rem;
-      border-radius: 6px;
-      border: 1px solid #ccc;
-    }
-  }
-
-  textarea, input, select {
-    border-radius: 6px;
-    border: 1px solid #ccc;
-    box-sizing: border-box;
-  }
-
-  .controls-row {
-    display: flex;
-    align-items: center;
-    gap: 1rem;
-    flex-wrap: wrap;
-
-    select, input {
-      padding: 0.5rem;
-    }
-
-    button {
-      padding: 0.6rem 1.2rem;
-      background-color: #ddd;
-      border: 1px solid #ccc;
-      border-radius: 4px;
-    }
-  }
-
-  .generate-button {
-    padding: 0.6rem 1.2rem;
-    background-color: #0a74da;
-    color: white;
-    border: none;
-    border-radius: 4px;
-    width: fit-content;
-
-    &:hover {
-      background-color: #095bb5;
-    }
-
-    &:disabled {
-      background-color: #aaa;
-      cursor: not-allowed;
-    }
-  }
-
-  .markdown-output {
-    margin-top: 1rem;
-    padding: 1rem;
-    border-left: 4px solid #0a74da;
-    background: #f5f5f5;
-    white-space: pre-wrap;
-    max-height: 400px;
-    overflow-y: auto;
-  }
-}
-
-/* Chat tab layout */
-.chat-layout {
-  display: flex;
-  height: 700px;
-  gap: 2rem;
-  overflow: hidden;
-}
-
-/* Template + Agreement display */
-.chat-left {
-  flex: 0 0 480px;
-  display: flex;
-  flex-direction: column;
-
-  h4 {
-    margin-bottom: 0.5rem;
-  }
-
-  .doc-scroll {
-    overflow-y: auto;
-    max-height: 650px;
-
-    pre {
-      white-space: pre-wrap;
-      font-family: monospace;
-      background-color: #f9f9f9;
-      padding: 0.75rem;
-      border: 1px solid #ddd;
-      margin-bottom: 1rem;
-    }
-  }
-}
-
-/* Right side: summary + chat UI */
-.chat-right {
-  flex: 1;
-  display: flex;
-  flex-direction: column;
-  gap: 0.75rem;
-  overflow: hidden;
-
-  .summary-box {
-    font-size: 0.9rem;
-    padding: 0.5rem 0.75rem;
-    border-left: 3px solid #ccc;
-    background-color: #fafafa;
-    max-height: 100px;
-    overflow-y: auto;
-    white-space: pre-wrap;
-  }
-
-  .chat-controls {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-
-    select, button {
-      padding: 0.4rem 0.8rem;
-      border-radius: 4px;
-      border: 1px solid #aaa;
-    }
-
-    button {
-      background: #888;
-      color: white;
-
-      &:hover {
-        background: #555;
-      }
-    }
-  }
-
-  .chat-history {
-    flex: 1;
-    overflow-y: auto;
-    padding: 0.75rem;
-    background: #f8f8f8;
-    border-radius: 6px;
-    display: flex;
-    flex-direction: column;
-    gap: 0.5rem;
-
-    .user {
-      align-self: flex-end;
-      background: #d1eaff;
-      padding: 0.5rem;
-      border-radius: 12px 12px 0 12px;
-      max-width: 75%;
-    }
-
-    .assistant {
-      align-self: flex-start;
-      background: #eee;
-      padding: 0.5rem;
-      border-radius: 12px 12px 12px 0;
-      max-width: 75%;
-    }
-  }
-
-  .chat-input-box {
-    display: flex;
-    gap: 1rem;
-
-    input, textarea {
-      flex: 1;
-      padding: 0.6rem;
-      border-radius: 6px;
-      border: 1px solid #ccc;
-      resize: vertical;
-    }
-
-    button {
-      padding: 0.6rem 1.2rem;
-      background-color: #0a74da;
-      color: white;
-      border: none;
-      border-radius: 6px;
-
-      &:hover {
-        background-color: #095bb5;
-      }
-    }
-  }
-}
+      <div class="chat-input-box">
+        <input [(ngModel)]="chatInput" placeholder="Ask about the documents..." />
+        <button (click)="sendChat()">Send</button>
+      </div>
+    </div>
+  </div>
+</div>
