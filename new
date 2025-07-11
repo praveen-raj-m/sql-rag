@@ -1,147 +1,91 @@
-Great — now that you have:
-
-* ✅ `app.py` (Flask entry point)
-* ✅ `routes/attribution.py` (where your API endpoints live)
-* ✅ `utils/attribution_helper.py` (helper logic for prompt generation, etc.)
-* ✅ Angular frontend ready
-
-You're just a few steps away from full integration.
+Absolutely — let’s walk through how to test the Flask `/ping` route from your Angular app end-to-end.
 
 ---
 
-## ✅ Backend → Frontend Connection Plan
-
-Here's the plan to make your Angular frontend talk to your Flask backend.
+## ✅ GOAL: Test Flask CORS using Angular
 
 ---
 
-### ✅ 1. **Structure Flask App Properly**
+### 🔧 Step 1: Verify `HttpClientModule` Is Provided
 
-#### 🗂 Recommended Layout:
-
-```
-backend/
-├── app.py
-├── routes/
-│   └── attribution.py
-├── utils/
-│   └── attribution_helper.py
-└── __init__.py
-```
-
----
-
-### ✅ 2. **Update `app.py` to Register Blueprint**
-
-```python
-from flask import Flask
-from routes.attribution import attribution_bp
-
-app = Flask(__name__)
-app.register_blueprint(attribution_bp, url_prefix="/api/attribution")
-
-@app.route('/')
-def home():
-    return {"status": "Flask backend is running"}
-
-if __name__ == '__main__':
-    app.run(debug=True)
-```
-
----
-
-### ✅ 3. **Sample `routes/attribution.py`**
-
-```python
-from flask import Blueprint, request, jsonify
-from utils.attribution_helper import generate_prompt
-
-attribution_bp = Blueprint('attribution', __name__)
-
-@attribution_bp.route('/generate-prompt', methods=['POST'])
-def generate_prompt_route():
-    data = request.get_json()
-    csv_text = data.get('csv')
-    analyst = data.get('analyst')
-    date = data.get('date')
-
-    prompt = generate_prompt(csv_text, analyst, date)
-    return jsonify({"prompt": prompt})
-```
-
----
-
-### ✅ 4. **Enable CORS**
-
-Install:
-
-```bash
-pip install flask-cors
-```
-
-In `app.py`:
-
-```python
-from flask_cors import CORS
-CORS(app)
-```
-
----
-
-### ✅ 5. **Frontend Angular Service**
-
-In Angular, create a service like:
-
-```bash
-ng generate service services/attribution
-```
-
-Then in `attribution.service.ts`:
+Since you're using standalone components, your `app.config.ts` should already contain:
 
 ```ts
+import { provideHttpClient } from '@angular/common/http';
+
+export const appConfig: ApplicationConfig = {
+  providers: [
+    provideRouter(routes),
+    provideHttpClient() // ✅ Make sure this is present
+  ]
+};
+```
+
+---
+
+### 🔧 Step 2: Create a Test Button in Angular Component
+
+Open any component (e.g., `attribution.component.ts`) and add the following:
+
+#### 🔹 **In `attribution.component.ts`**
+
+```ts
+import { Component } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
-import { Injectable } from '@angular/core';
 
-@Injectable({ providedIn: 'root' })
-export class AttributionService {
-  private baseUrl = 'http://localhost:5000/api/attribution';
-
+@Component({
+  selector: 'app-attribution',
+  templateUrl: './attribution.component.html',
+  standalone: true,
+  imports: [],
+})
+export class AttributionComponent {
   constructor(private http: HttpClient) {}
 
-  generatePrompt(csv: string, analyst: string, date: string) {
-    return this.http.post<{ prompt: string }>(`${this.baseUrl}/generate-prompt`, {
-      csv, analyst, date
-    });
+  testFlaskPing() {
+    this.http.get('http://localhost:5000/ping', { responseType: 'text' })
+      .subscribe({
+        next: res => console.log('✅ Ping success:', res),
+        error: err => console.error('❌ Ping failed:', err)
+      });
   }
 }
 ```
 
 ---
 
-### ✅ 6. **Call From Component**
+### 🔹 **In `attribution.component.html`**
 
-In `attribution.component.ts`:
-
-```ts
-constructor(private attributionService: AttributionService) {}
-
-generatePrompt() {
-  this.attributionService.generatePrompt(this.rawCsv, this.analystName, this.analysisDate)
-    .subscribe(res => {
-      this.prompt = res.prompt;
-    });
-}
+```html
+<button (click)="testFlaskPing()">Test Flask Ping</button>
 ```
 
 ---
 
-## 🧪 Test it!
+### 🚀 Step 3: Run Both Servers
 
-* Start Flask with `python app.py` on port 5000
-* Start Angular with `ng serve`
-* Make sure Flask returns proper JSON
-* Network tab in browser should show `/api/attribution/generate-prompt` as successful
+1. **Flask backend**
+
+```bash
+python app.py
+```
+
+2. **Angular frontend**
+
+```bash
+ng serve
+```
 
 ---
 
-Would you like help wiring up the `generate-commentary` endpoint next?
+### 🧪 Step 4: Click the Button → Check Browser Console
+
+* ✅ If CORS is working:
+  You’ll see `✅ Ping success: pong`
+
+* ❌ If still blocked:
+  You’ll get a CORS error. Copy that error here, and I’ll resolve it.
+
+---
+
+Let me know once you try it!
