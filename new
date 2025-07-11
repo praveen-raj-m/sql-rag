@@ -1,123 +1,177 @@
-<!-- Chat Tab -->
-<div *ngIf="activeTab === 'chat'" class="chat-layout">
-  <!-- Left Column: Comparison -->
-  <div class="chat-left">
-    <h4>Comparison</h4>
-    <div class="doc-scroll">
-      <pre>{{ agreementText }}</pre>
-    </div>
-  </div>
-
-  <!-- Right Column: Chat -->
-  <div class="chat-right">
-    <div class="chat-controls">
-      <select [(ngModel)]="llmModel">
-        <option value="llama3">LLaMA 3</option>
-        <option value="gemma3-12b">Gemma 3:12B</option>
-        <option value="gemma3-27b">Gemma 3:27B</option>
-      </select>
-      <button (click)="clearChat()">Clear Chat</button>
-    </div>
-
-    <div class="chat-history">
-      <div *ngFor="let msg of chatHistory" class="chat-message" [ngClass]="msg.role">
-        <strong *ngIf="msg.role === 'user'">You:</strong>
-        <strong *ngIf="msg.role === 'assistant'">AI:</strong>
-        <span>{{ msg.content }}</span>
-      </div>
-    </div>
-
-    <div class="chat-input-box">
-      <input [(ngModel)]="chatInput" placeholder="Ask about the agreement..." />
-      <button (click)="sendChat()">Send</button>
-    </div>
-  </div>
-</div>
-
-
-
-Perfect. Here's a summary of the **three tasks** with actions to complete each:
+Perfect! Since you're starting from scratch and using a `venv`, I’ll walk you through a clean, scalable Flask project structure that matches your **Attribution backend** use case. We’ll then build the `/api/attribution/prompt` route first.
 
 ---
 
-### ✅ 1. **SCSS Update** for Chat Tab (Rename Summary → Comparison)
+## ✅ Step 1: Folder and File Structure
 
-In your `legaldoc.component.scss`, replace:
+Here’s the recommended minimal but organized layout:
 
-```scss
-.summary-box {
-  ...
-}
 ```
-
-with:
-
-```scss
-.comparison-box {
-  font-size: 0.9rem;
-  padding: 0.5rem 0.75rem;
-  border-left: 3px solid #ccc;
-  background-color: #fafafa;
-  max-height: 100px;
-  overflow-y: auto;
-  white-space: pre-wrap;
-
-  h4 {
-    margin: 0 0 0.25rem 0;
-    font-size: 1rem;
-  }
-
-  p {
-    margin: 0;
-    line-height: 1.2;
-  }
-}
-```
-
-And update the HTML if using the comparison box again later (optional).
-
----
-
-### ✅ 2. Enable Download Button After Commentary is Generated
-
-In `legaldoc.component.ts`, add a method to generate and download the doc:
-
-```ts
-downloadCommentaryAsDoc() {
-  const header = `Legal Document Analysis\nAnalyst: ${this.analystName}\nDate: ${this.analysisDate}\n\n`;
-  const input = `Template Document:\n${this.templateText}\n\nClient Agreement:\n${this.agreementText}\n\n`;
-  const promptText = `Prompt:\n${this.prompt}\n\n`;
-  const output = `LLM Commentary:\n${this.commentaryResult}\n\n---\n*This is an AI-generated commentary.*`;
-
-  const fullText = header + input + promptText + output;
-
-  const blob = new Blob([fullText], { type: 'application/msword' });
-  const link = document.createElement('a');
-  link.href = URL.createObjectURL(blob);
-  const safeDate = this.analysisDate.replaceAll('-', '');
-  link.download = `${this.analystName}_${safeDate}_LLMCommentary.doc`;
-  link.click();
-}
-```
-
-Update the `Download Output` button in the HTML:
-
-```html
-<button
-  [disabled]="isGenerating || !commentaryResult"
-  (click)="downloadCommentaryAsDoc()">
-  Download Output
-</button>
+financial_ai_backend/
+│
+├── venv/                     # Your virtual environment
+├── app/                      # All application code
+│   ├── __init__.py           # Initializes Flask app
+│   ├── routes/
+│   │   ├── __init__.py
+│   │   └── attribution.py    # Attribution-specific routes
+│   └── utils/
+│       ├── __init__.py
+│       └── attribution_helper.py  # CSV parsing + prompt generation
+│
+├── run.py                    # Entry point
+├── requirements.txt          # Package list
 ```
 
 ---
 
-### ✅ 3. Final Notes
+## ✅ Step 2: Initialize Environment
 
-* We already use `[disabled]="isGenerating || !commentaryResult"` for safe control.
-* The doc includes template, agreement, prompt, and commentary with disclaimers.
-* We added a `safeDate` to format the filename cleanly.
+### 1. Activate venv
+
+```bash
+python -m venv venv
+venv\Scripts\activate      # Windows
+# OR
+source venv/bin/activate   # Mac/Linux
+```
+
+### 2. Install Flask and Dependencies
+
+```bash
+pip install flask flask-cors pandas
+pip freeze > requirements.txt
+```
 
 ---
 
-Let me know if you want to format the downloaded Word doc better (like with HTML → DOCX conversion) or keep this as plain `.doc`.
+## ✅ Step 3: Create `run.py` (Entry Point)
+
+```python
+from app import create_app
+
+app = create_app()
+
+if __name__ == "__main__":
+    app.run(debug=True)
+```
+
+---
+
+## ✅ Step 4: Create `app/__init__.py`
+
+```python
+from flask import Flask
+from flask_cors import CORS
+
+def create_app():
+    app = Flask(__name__)
+    CORS(app)
+
+    from app.routes.attribution import attribution_bp
+    app.register_blueprint(attribution_bp, url_prefix='/api/attribution')
+
+    return app
+```
+
+---
+
+## ✅ Step 5: Create `app/routes/attribution.py`
+
+```python
+from flask import Blueprint, request, jsonify
+from app.utils.attribution_helper import generate_attribution_prompt
+
+attribution_bp = Blueprint('attribution', __name__)
+
+@attribution_bp.route('/prompt', methods=['POST'])
+def generate_prompt():
+    data = request.get_json()
+    csv_text = data.get('csv')
+    analyst_name = data.get('analyst')
+    analysis_date = data.get('date')
+
+    try:
+        prompt = generate_attribution_prompt(csv_text, analyst_name, analysis_date)
+        return jsonify({ 'prompt': prompt })
+    except Exception as e:
+        return jsonify({ 'error': str(e) }), 500
+```
+
+---
+
+## ✅ Step 6: Create `app/utils/attribution_helper.py`
+
+```python
+import pandas as pd
+from io import StringIO
+import json
+
+COLUMN_NAMES = [
+    "Sector", "Portfolio Avg Weight", "Portfolio Total Return", "Portfolio Wgtd Ctrb",
+    "Benchmark Avg Weight", "Benchmark Total Return", "Benchmark Wgtd Ctrb",
+    "Variance Avg Weight", "Variance Total Return", "Variance Wgtd Ctrb",
+    "Allocation", "Selection", "Total Management"
+]
+
+def generate_attribution_prompt(csv_text, analyst_name, analysis_date):
+    df = pd.read_csv(StringIO(csv_text), header=None, names=COLUMN_NAMES)
+
+    total_row = df.tail(1)
+    df = df.iloc[:-1]  # remove total row temporarily
+
+    df_sorted = df.sort_values(by="Total Management", ascending=False).reset_index(drop=True)
+
+    # Tag top and bottom performers
+    tags = {}
+    for i in range(min(3, len(df_sorted))):
+        tags[df_sorted.at[i, 'Sector']] = f'top_{i+1}'
+    for i in range(1, min(4, len(df_sorted))):
+        tags[df_sorted.at[-i, 'Sector']] = f'bottom_{i}'
+
+    def tag_row(row):
+        row_dict = row.to_dict()
+        tag = tags.get(row['Sector'])
+        if tag:
+            row_dict['tag'] = tag
+        return row_dict
+
+    tagged_rows = [tag_row(row) for _, row in df_sorted.iterrows()]
+    total_json = total_row.iloc[0].to_dict()
+    attribution_json = tagged_rows + [{'total': total_json}]
+
+    json_data = json.dumps(attribution_json, indent=2)
+
+    prompt = f"""
+You are a financial analyst preparing a monthly attribution commentary.
+
+Analyst: {analyst_name}
+Date: {analysis_date}
+
+Using the attribution data provided below in JSON format, identify the top and bottom contributors to portfolio performance.
+The data has been tagged to indicate the top 3 and bottom 3 sectors based on the Total Management score.
+Focus on these while analyzing.
+
+Be clear and concise. Use data to support the analysis, and maintain a professional, client-facing tone.
+
+Attribution Data (Tagged JSON):
+{json_data}
+""".strip()
+
+    return prompt
+```
+
+---
+
+## ✅ Final Step: Run the App
+
+```bash
+python run.py
+```
+
+Backend should now be live at:
+`http://localhost:5000/api/attribution/prompt`
+
+---
+
+Would you like to test this next with a sample CSV request using Postman or Angular frontend?
