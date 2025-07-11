@@ -1,108 +1,58 @@
-Perfect — you're ready to build the **commentary generation backend** using your local Ollama server.
-
-Let’s outline the structure and then give you the complete backend logic.
+Great question — yes, you **should** use Angular's built-in security tools to safely display markdown converted to HTML. Here's what you need to know:
 
 ---
 
-## ✅ Step-by-Step Plan: Generate Commentary
+## ✅ Why You Might See the Warning
 
-### 🔁 Frontend Flow
+Angular automatically **sanitizes HTML** in `[innerHTML]` to prevent XSS (cross-site scripting).
+However, if you're rendering markdown that has been converted to HTML (via `marked.parse()`), Angular may strip out safe tags like `<h1>`, `<ul>`, `<strong>`, etc.
 
-* From Angular:
-
-  * Send `prompt`, `model`, and `temperature` to Flask via `POST`.
-  * Show loading state while waiting.
-  * Display result in the markdown component.
+To render the full HTML safely, you can **explicitly trust** it using Angular's `DomSanitizer`.
 
 ---
 
-## ✅ Step 1: Flask Route (`routes/attribution.py`)
+## ✅ Updated `MarkdownPipe` Using `DomSanitizer`
 
-Add this to your attribution blueprint:
-
-```python
-import requests
-from flask import Blueprint, request, jsonify
-
-attribution_bp = Blueprint('attribution_bp', __name__)
-
-@attribution_bp.route('/generate-commentary', methods=['POST'])
-def generate_commentary():
-    data = request.get_json()
-    prompt = data.get('prompt', '')
-    model = data.get('model', 'llama3')
-    temperature = float(data.get('temperature', 0.7))
-
-    try:
-        # Send request to local Ollama server
-        ollama_response = requests.post(
-            'http://localhost:11434/api/generate',
-            json={
-                'model': model,
-                'prompt': prompt,
-                'temperature': temperature,
-                'stream': False
-            }
-        )
-        ollama_response.raise_for_status()
-        result = ollama_response.json()
-
-        return jsonify({ 'output': result.get('response', '') })
-    except Exception as e:
-        return jsonify({ 'error': str(e) }), 500
-```
-
----
-
-## ✅ Step 2: Update Angular Service (`attribution.service.ts`)
-
-Add this method:
+Here’s the secure and recommended way to implement it:
 
 ```ts
-generateCommentary(prompt: string, model: string, temperature: number): Observable<{ output: string }> {
-  return this.http.post<{ output: string }>(
-    'http://localhost:5000/api/attribution/generate-commentary',
-    { prompt, model, temperature }
-  );
+import { Pipe, PipeTransform } from '@angular/core';
+import { DomSanitizer, SafeHtml } from '@angular/platform-browser';
+import { marked } from 'marked';
+
+@Pipe({ name: 'markdown' })
+export class MarkdownPipe implements PipeTransform {
+  constructor(private sanitizer: DomSanitizer) {}
+
+  transform(value: string): SafeHtml {
+    const html = marked.parse(value || '');
+    return this.sanitizer.bypassSecurityTrustHtml(html);
+  }
 }
 ```
 
+> ⚠️ This tells Angular: “I trust the HTML coming out of `marked`” — assuming you're **not injecting user-generated raw HTML** into `marked`, this is safe.
+
 ---
 
-## ✅ Step 3: Angular Component (e.g., `attribution.component.ts`)
+## ✅ Usage in Template
 
-Replace your `generateCommentary()` dummy with:
+Keep this the same:
 
-```ts
-generateCommentary() {
-  this.isGenerating = true;
-  this.attributionService.generateCommentary(this.prompt, this.llmModel, this.temperature)
-    .subscribe({
-      next: (res) => {
-        this.commentaryResult = res.output;
-        this.isGenerating = false;
-      },
-      error: (err) => {
-        console.error('Error generating commentary:', err);
-        this.commentaryResult = '**Error:** Unable to generate commentary.';
-        this.isGenerating = false;
-      }
-    });
-}
+```html
+<div class="markdown-output" *ngIf="commentaryResult" [innerHTML]="commentaryResult | markdown"></div>
 ```
 
 ---
 
-## ✅ Result
+## ✅ Summary
 
-* Your backend will hit Ollama at `http://localhost:11434/api/generate`
-* Response will be returned to Angular and shown inside your markdown container
-* You can now generate client-facing commentary using LLaMA 3, Gemma, etc.
+| Requirement              | Solution                                              |
+| ------------------------ | ----------------------------------------------------- |
+| Keep markdown formatting | Use `marked.parse()` + `bypassSecurityTrustHtml()`    |
+| Avoid XSS issues         | Only trust **sanitized, backend-controlled markdown** |
+| Result                   | Clean, styled HTML rendering in your app              |
 
 ---
 
-Let me know if you want to:
-
-* Support streaming from Ollama
-* Add retry or model availability check
-* Add commentary saving or doc download feature next
+Let me know if you'd like CSS styles for headings, bold text, or lists inside `.markdown-output` to match your UI theme.
