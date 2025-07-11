@@ -1,97 +1,52 @@
-Excellent — let’s begin with **Step 1: Add page title and "Back to Home" with confirmation popup** on the **Attribution page**.
+Thanks — you're right. The `chatHistory` array wasn't defined in `attribution.component.ts` yet.
+
+Let’s fix that now ✅
 
 ---
 
-## ✅ Step 1: Add Title + Back Button with End Analysis Confirmation
+## ✅ Step: Add `chatHistory` to Attribution Component
 
-### 📄 Update `attribution.component.html` (Top of file)
-
-Add this block **above** the tabs:
-
-```html
-<div class="page-header">
-  <h2>Attribution Analysis</h2>
-  <button class="end-btn" (click)="confirmEndAnalysis()">← Back to Home</button>
-</div>
-```
-
-### 📄 Add Logic in `attribution.component.ts`
-
-Add this function:
+In your `attribution.component.ts`, right below your `renderedMarkdown` property, add this:
 
 ```ts
-import { Router } from '@angular/router';
+interface ChatMessage {
+  role: 'user' | 'assistant';
+  content: string;
+}
 
-// In constructor:
-constructor(private router: Router) {}
+chatInput: string = '';
+chatHistory: ChatMessage[] = [];
+selectedChatModel: string = 'gemma:2b';
+```
 
-confirmEndAnalysis() {
-  const confirmed = confirm('End analysis and return to home? All input will be cleared.');
-  if (confirmed) {
-    // Clear all state
-    this.attributionData = '';
-    this.analystName = '';
-    this.analysisDate = '';
-    this.promptText = '';
-    this.renderedMarkdown = '';
-    this.chatHistory = [];
+So your updated variables block should look like this:
 
-    this.router.navigate(['/']);
-  }
+```ts
+export class AttributionComponent {
+  activeTab: 'commentary' | 'chat' = 'commentary';
+
+  // Commentary Inputs
+  attributionData: string = '';
+  analystName: string = '';
+  analysisDate: string = '';
+  promptText: string = '';
+  temperature: number = 0.7;
+  selectedModel: string = 'gemma:2b';
+  renderedMarkdown: string = '';
+
+  // Chat Data
+  chatInput: string = '';
+  chatHistory: ChatMessage[] = [];
+  selectedChatModel: string = 'gemma:2b';
+
+  constructor(private router: Router) {}
+
+  // ... rest of your methods
 }
 ```
 
 ---
 
-### 🎨 Add Style in `attribution.component.scss`
+Once this is added, the error will go away and your **End Analysis** button will work as expected.
 
-```scss
-.page-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  max-width: 800px;
-  margin: 2rem auto 1rem;
-  padding: 0 1rem;
-
-  h2 {
-    font-size: 1.75rem;
-    margin: 0;
-  }
-
-  .end-btn {
-    background: none;
-    color: #0a74da;
-    border: 2px solid #0a74da;
-    padding: 0.4rem 0.75rem;
-    border-radius: 6px;
-    font-weight: 600;
-    cursor: pointer;
-    transition: all 0.2s ease;
-
-    &:hover {
-      background-color: #0a74da;
-      color: white;
-    }
-  }
-}
-```
-
----
-
-## 🧪 Test It
-
-1. Navigate to `/attribution`
-2. You should see:
-
-   * `Attribution Analysis` title
-   * Back button styled on the right
-3. Clicking back shows confirmation
-4. If confirmed:
-
-   * Clears all data
-   * Navigates to `/`
-
----
-
-Let me know once this works — then we’ll move to **Step 2: Add DOC Output Download button** in the Commentary tab.
+Let me know once you're ready for Step 2: **Download Output (.doc) button** logic.
