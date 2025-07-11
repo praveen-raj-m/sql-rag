@@ -1,4 +1,4 @@
-// 📁 legal.component.ts
+// 📁 legaldoc.component.ts
 import { Component } from '@angular/core';
 
 interface ChatMessage {
@@ -77,4 +77,4 @@ export class LegaldocComponent {
   clearChat() {
     this.chatHistory = [];
   }
-} 
+}
