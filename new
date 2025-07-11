@@ -1,105 +1,305 @@
-Perfect — let’s implement **Step 2: Add the “Download Output” `.doc` button** to the **Commentary tab** of the Attribution page.
+Awesome — let’s build **Step 3: The Chat Tab for Attribution**, which includes:
+
+1. Table preview from the input CSV
+2. AI summary placeholder
+3. Model selector & Clear Chat
+4. Chat history view
+5. Prompt input box + Send button
 
 ---
 
-## ✅ Step 2: Add Download Output Button
+## ✅ Step 3: Chat Tab – HTML Layout
 
-### 📄 Update `attribution.component.html`
+### 📄 In `attribution.component.html`
 
-Find and **replace the current Download Prompt button** with:
+Replace this block:
 
 ```html
-<button
-  [disabled]="!renderedMarkdown"
-  (click)="downloadOutput()"
->
-  Download Output (.doc)
-</button>
+<div *ngIf="activeTab === 'chat'">
+  <h3>Chat tab UI coming up next (based on your instructions)</h3>
+</div>
 ```
 
-You can place it next to the temperature/model controls or below the markdown output — up to you for visual flow.
+With this:
+
+```html
+<div *ngIf="activeTab === 'chat'" class="chat-tab">
+  <!-- 1. Table Preview -->
+  <div class="chat-table-section">
+    <h4>Attribution Table</h4>
+    <div class="table-wrapper">
+      <table>
+        <thead>
+          <tr>
+            <th>Sector</th>
+            <th>Port. Ctrb</th>
+            <th>Bench. Ctrb</th>
+            <th>Allocation</th>
+            <th>Selection</th>
+            <th>Total Mgmt</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr *ngFor="let row of parsedChatTable">
+            <td>{{ row.sector }}</td>
+            <td>{{ row.portfolio }}</td>
+            <td>{{ row.benchmark }}</td>
+            <td>{{ row.allocation }}</td>
+            <td>{{ row.selection }}</td>
+            <td>{{ row.total }}</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- 2. AI Summary Placeholder -->
+  <div class="summary-placeholder">
+    <h4>AI Summary (Coming Soon)</h4>
+    <p>This section will display AI-generated insights based on the table.</p>
+  </div>
+
+  <!-- 3. Controls -->
+  <div class="chat-controls">
+    <label>
+      Model:
+      <select [(ngModel)]="selectedChatModel">
+        <option value="gemma:2b">Gemma:2B</option>
+        <option value="llama:3">LLaMA 3</option>
+      </select>
+    </label>
+    <button (click)="clearChat()">Clear Chat</button>
+  </div>
+
+  <!-- 4. Chat History -->
+  <div class="chat-history">
+    <div *ngFor="let msg of chatHistory" [ngClass]="msg.role">
+      {{ msg.content }}
+    </div>
+  </div>
+
+  <!-- 5. Chat Input -->
+  <div class="chat-input-box">
+    <textarea rows="2" [(ngModel)]="chatInput" placeholder="Ask something about this attribution data..."></textarea>
+    <button (click)="sendMessage()">Send</button>
+  </div>
+</div>
+```
 
 ---
 
-### 🧠 Behavior Recap
+## ✅ Step 3B: Add Supporting Logic in `attribution.component.ts`
 
-* The button is **disabled until `renderedMarkdown` is non-empty**
-* Filename is: `AnalystName_AnalysisDate_LLMCommentary.doc`
-* Contents of the `.doc` file include:
-
-  * Analyst name
-  * Date
-  * Input data
-  * LLM output
-  * Prompt text
-  * Disclaimer
-
----
-
-### 📄 Add `downloadOutput()` Method in `attribution.component.ts`
+Add this **new field and parser method**:
 
 ```ts
-downloadOutput() {
-  const name = this.analystName.trim() || 'Analyst';
-  const date = this.analysisDate || new Date().toISOString().split('T')[0];
+parsedChatTable: {
+  sector: string;
+  portfolio: string;
+  benchmark: string;
+  allocation: string;
+  selection: string;
+  total: string;
+}[] = [];
 
-  const docName = `${name}_${date}_LLMCommentary.doc`.replace(/\s+/g, '_');
+ngOnInit(): void {
+  this.parseAttributionData();
+}
 
-  const docContent = `
-Analyst: ${name}
-Date: ${date}
+parseAttributionData() {
+  const cleaned = this.attributionData.replace(/,,+/g, ',');
+  const lines = cleaned.split('\n').filter(Boolean);
 
-----------------------------------------
-Attribution Input:
-${this.attributionData}
-
-----------------------------------------
-AI Commentary Output:
-${this.stripMarkdown(this.renderedMarkdown)}
-
-Disclaimer:
-This commentary is AI-generated. Please review before relying on it.
-
-----------------------------------------
-Prompt Sent to Model:
-${this.promptText}
-`;
-
-  const blob = new Blob([docContent], {
-    type: 'application/msword'
+  this.parsedChatTable = lines.map(line => {
+    const [sector, , , portCtrb, , , benchCtrb, , , , allocation, selection, total] = line.split(',');
+    return {
+      sector: sector?.trim() || '',
+      portfolio: portCtrb?.trim() || '',
+      benchmark: benchCtrb?.trim() || '',
+      allocation: allocation?.trim() || '',
+      selection: selection?.trim() || '',
+      total: total?.trim() || ''
+    };
   });
-
-  const link = document.createElement('a');
-  link.href = window.URL.createObjectURL(blob);
-  link.download = docName;
-  link.click();
-
-  window.URL.revokeObjectURL(link.href);
 }
 ```
 
-### Add Helper to Remove Markdown (Basic)
-
-Also add this method inside the same component:
+⚠️ Also update `switchTab()` to re-parse when opening chat:
 
 ```ts
-stripMarkdown(md: string): string {
-  return md
-    .replace(/[#_*`>~-]+/g, '') // remove markdown symbols
-    .replace(/\n{2,}/g, '\n\n'); // normalize spacing
+switchTab(tab: 'commentary' | 'chat') {
+  if (tab === 'chat' && !this.attributionData.trim()) {
+    alert('Please enter attribution data before using chat.');
+    return;
+  }
+
+  if (tab === 'chat') {
+    this.parseAttributionData();
+  }
+
+  this.activeTab = tab;
 }
 ```
 
 ---
 
-### ✅ Result
+## ✅ Step 3C: Chat Methods (Use same as before)
 
-You now have:
+Add if not already:
 
-* A clean **Download Output (.doc)** button
-* Disabled when no commentary is generated
-* Outputs a readable `.doc` with analyst info, input, output, prompt, and disclaimer
+```ts
+sendMessage() {
+  const content = this.chatInput.trim();
+  if (!content) return;
+
+  const userMessage: ChatMessage = {
+    role: 'user',
+    content
+  };
+  this.chatHistory.push(userMessage);
+  this.chatInput = '';
+
+  setTimeout(() => {
+    this.chatHistory.push({
+      role: 'assistant',
+      content: `This is a dummy response based on your attribution table using ${this.selectedChatModel}.`
+    });
+  }, 600);
+}
+
+clearChat() {
+  this.chatHistory = [];
+}
+```
 
 ---
 
-Let me know once you test it — and we’ll move on to **Step 3: Build the Chat Tab layout and table preview**.
+## ✅ Step 3D: Add Styling in `attribution.component.scss`
+
+Append:
+
+```scss
+.chat-tab {
+  max-width: 800px;
+  margin: 0 auto;
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.chat-table-section {
+  overflow-x: auto;
+
+  table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 0.95rem;
+
+    th, td {
+      padding: 0.5rem;
+      border: 1px solid #ccc;
+      text-align: left;
+    }
+
+    th {
+      background-color: #f0f0f0;
+    }
+  }
+}
+
+.summary-placeholder {
+  padding: 1rem;
+  border-left: 4px solid #ccc;
+  background: #fdfdfd;
+  font-style: italic;
+}
+
+.chat-controls {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+
+  select, button {
+    padding: 0.4rem 0.8rem;
+    border-radius: 4px;
+    border: 1px solid #aaa;
+  }
+
+  button {
+    background: #888;
+    color: white;
+    border: none;
+
+    &:hover {
+      background: #555;
+    }
+  }
+}
+
+.chat-history {
+  max-height: 250px;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  background: #f6f6f6;
+  padding: 1rem;
+  border-radius: 6px;
+
+  .user {
+    align-self: flex-end;
+    background: #d1eaff;
+    padding: 0.6rem;
+    border-radius: 12px 12px 0 12px;
+    max-width: 75%;
+  }
+
+  .assistant {
+    align-self: flex-start;
+    background: #eee;
+    padding: 0.6rem;
+    border-radius: 12px 12px 12px 0;
+    max-width: 75%;
+  }
+}
+
+.chat-input-box {
+  display: flex;
+  gap: 1rem;
+
+  textarea {
+    flex: 1;
+    padding: 0.6rem;
+    resize: vertical;
+    border: 1px solid #ccc;
+    border-radius: 6px;
+  }
+
+  button {
+    height: 100%;
+    padding: 0.6rem 1.2rem;
+    background-color: #0a74da;
+    color: white;
+    border: none;
+    border-radius: 6px;
+    cursor: pointer;
+
+    &:hover {
+      background-color: #095bb5;
+    }
+  }
+}
+```
+
+---
+
+## ✅ Test It
+
+* Switch to the **Chat with Data** tab after entering attribution input
+* Table should render cleaned rows
+* Model and Clear Chat should work
+* Sending a message adds user + dummy assistant response
+
+---
+
+Let me know once you're happy with the chat tab — and we’ll do enhancements or backend integration next!
