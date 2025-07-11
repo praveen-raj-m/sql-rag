@@ -1,58 +1,227 @@
-Great — here’s a lightweight custom solution using the `marked` library and Angular’s `DomSanitizer`.
+.container {
+  max-width: 100%;
+  padding: 0 2rem;
+  margin: 0 auto;
+}
 
----
+.header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 1.5rem;
 
-### ✅ Step 1: Install `marked`
+  h2 {
+    margin: 0;
+  }
 
-Run:
+  button {
+    padding: 0.5rem 1rem;
+    border: none;
+    background-color: #eee;
+    cursor: pointer;
+    border-radius: 4px;
 
-```bash
-npm install marked
-```
-
----
-
-### ✅ Step 2: Create the `MarkdownPipe`
-
-Create a file: `src/app/shared/pipes/markdown.pipe.ts` (or place it next to your component):
-
-```ts
-import { Pipe, PipeTransform } from '@angular/core';
-import { DomSanitizer, SafeHtml } from '@angular/platform-browser';
-import { marked } from 'marked';
-
-@Pipe({
-  name: 'markdown',
-  standalone: true
-})
-export class MarkdownPipe implements PipeTransform {
-  constructor(private sanitizer: DomSanitizer) {}
-
-  transform(value: string): SafeHtml {
-    const html = marked.parse(value || '');
-    return this.sanitizer.bypassSecurityTrustHtml(html);
+    &:hover {
+      background-color: #ddd;
+    }
   }
 }
-```
 
----
+.tabs {
+  display: flex;
+  margin-bottom: 1rem;
 
-### ✅ Step 3: Import Pipe in `legaldoc.component.ts`
+  button {
+    flex: 1;
+    padding: 0.75rem;
+    border: none;
+    background-color: #f0f0f0;
+    cursor: pointer;
 
-Update your `@Component` decorator:
+    &.active {
+      font-weight: bold;
+      background-color: #d0e6ff;
+    }
 
-```ts
-import { MarkdownPipe } from '../shared/pipes/markdown.pipe'; // adjust path if needed
+    &:disabled {
+      opacity: 0.6;
+      cursor: not-allowed;
+    }
+  }
+}
 
-@Component({
-  standalone: true,
-  selector: 'app-legaldoc',
-  imports: [CommonModule, FormsModule, MarkdownPipe],
-  templateUrl: './legaldoc.component.html',
-  styleUrls: ['./legaldoc.component.css']
-})
-```
+.tab-content {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
 
-✅ You can now use `| markdown` in the template safely and efficiently.
+.upload-section {
+  display: flex;
+  gap: 1rem;
+  justify-content: space-between;
 
-Let me know if you'd like me to write a test case or fallback formatting for plain text.
+  input[type="file"] {
+    padding: 0.3rem;
+  }
+
+  label {
+    display: block;
+    margin-bottom: 0.3rem;
+    font-weight: 500;
+  }
+
+  div {
+    flex: 1;
+  }
+}
+
+.doc-viewer {
+  display: flex;
+  gap: 1rem;
+
+  textarea {
+    flex: 1;
+    height: 200px;
+    resize: vertical;
+    padding: 0.5rem;
+    font-family: monospace;
+  }
+}
+
+.meta-inputs {
+  display: flex;
+  gap: 1rem;
+
+  input[type="text"],
+  input[type="date"] {
+    flex: 1;
+    padding: 0.5rem;
+  }
+}
+
+textarea {
+  padding: 0.5rem;
+  font-family: monospace;
+  resize: vertical;
+}
+
+.action-button {
+  padding: 0.6rem 1rem;
+  background-color: #007bff;
+  color: white;
+  border: none;
+  width: fit-content;
+  align-self: flex-start;
+  border-radius: 4px;
+
+  &:disabled {
+    background-color: #b4d3f4;
+    cursor: not-allowed;
+  }
+}
+
+.row-controls {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+
+  select,
+  input[type="number"] {
+    padding: 0.5rem;
+  }
+
+  button {
+    padding: 0.5rem 1rem;
+    background-color: #f5f5f5;
+    border: 1px solid #ccc;
+  }
+}
+
+.markdown-output {
+  border: 1px solid #ddd;
+  padding: 1rem;
+  background-color: #f9f9f9;
+  max-height: 400px;
+  overflow-y: auto;
+}
+
+.chat-mode {
+  .split-pane {
+    display: flex;
+    gap: 1rem;
+  }
+
+  .doc-summary {
+    flex: 1;
+    border: 1px solid #ddd;
+    padding: 1rem;
+    overflow-y: auto;
+    max-height: 500px;
+
+    h5 {
+      margin-top: 1rem;
+    }
+
+    pre {
+      white-space: pre-wrap;
+      font-family: monospace;
+    }
+  }
+
+  .chat-box {
+    flex: 2;
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+
+    .chat-controls {
+      display: flex;
+      justify-content: space-between;
+
+      select {
+        padding: 0.5rem;
+      }
+
+      button {
+        padding: 0.5rem 1rem;
+      }
+    }
+
+    .chat-window {
+      flex: 1;
+      border: 1px solid #ccc;
+      padding: 1rem;
+      overflow-y: auto;
+      height: 300px;
+      background-color: #fff;
+
+      .chat-message {
+        margin-bottom: 0.75rem;
+
+        &.user {
+          text-align: right;
+        }
+
+        &.assistant {
+          text-align: left;
+        }
+
+        strong {
+          display: block;
+          margin-bottom: 0.2rem;
+        }
+      }
+    }
+
+    .chat-input {
+      display: flex;
+      gap: 0.5rem;
+
+      input {
+        flex: 1;
+        padding: 0.5rem;
+      }
+
+      button {
+        paddi
