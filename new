@@ -1,52 +1,105 @@
-Thanks — you're right. The `chatHistory` array wasn't defined in `attribution.component.ts` yet.
-
-Let’s fix that now ✅
+Perfect — let’s implement **Step 2: Add the “Download Output” `.doc` button** to the **Commentary tab** of the Attribution page.
 
 ---
 
-## ✅ Step: Add `chatHistory` to Attribution Component
+## ✅ Step 2: Add Download Output Button
 
-In your `attribution.component.ts`, right below your `renderedMarkdown` property, add this:
+### 📄 Update `attribution.component.html`
 
-```ts
-interface ChatMessage {
-  role: 'user' | 'assistant';
-  content: string;
-}
+Find and **replace the current Download Prompt button** with:
 
-chatInput: string = '';
-chatHistory: ChatMessage[] = [];
-selectedChatModel: string = 'gemma:2b';
+```html
+<button
+  [disabled]="!renderedMarkdown"
+  (click)="downloadOutput()"
+>
+  Download Output (.doc)
+</button>
 ```
 
-So your updated variables block should look like this:
+You can place it next to the temperature/model controls or below the markdown output — up to you for visual flow.
+
+---
+
+### 🧠 Behavior Recap
+
+* The button is **disabled until `renderedMarkdown` is non-empty**
+* Filename is: `AnalystName_AnalysisDate_LLMCommentary.doc`
+* Contents of the `.doc` file include:
+
+  * Analyst name
+  * Date
+  * Input data
+  * LLM output
+  * Prompt text
+  * Disclaimer
+
+---
+
+### 📄 Add `downloadOutput()` Method in `attribution.component.ts`
 
 ```ts
-export class AttributionComponent {
-  activeTab: 'commentary' | 'chat' = 'commentary';
+downloadOutput() {
+  const name = this.analystName.trim() || 'Analyst';
+  const date = this.analysisDate || new Date().toISOString().split('T')[0];
 
-  // Commentary Inputs
-  attributionData: string = '';
-  analystName: string = '';
-  analysisDate: string = '';
-  promptText: string = '';
-  temperature: number = 0.7;
-  selectedModel: string = 'gemma:2b';
-  renderedMarkdown: string = '';
+  const docName = `${name}_${date}_LLMCommentary.doc`.replace(/\s+/g, '_');
 
-  // Chat Data
-  chatInput: string = '';
-  chatHistory: ChatMessage[] = [];
-  selectedChatModel: string = 'gemma:2b';
+  const docContent = `
+Analyst: ${name}
+Date: ${date}
 
-  constructor(private router: Router) {}
+----------------------------------------
+Attribution Input:
+${this.attributionData}
 
-  // ... rest of your methods
+----------------------------------------
+AI Commentary Output:
+${this.stripMarkdown(this.renderedMarkdown)}
+
+Disclaimer:
+This commentary is AI-generated. Please review before relying on it.
+
+----------------------------------------
+Prompt Sent to Model:
+${this.promptText}
+`;
+
+  const blob = new Blob([docContent], {
+    type: 'application/msword'
+  });
+
+  const link = document.createElement('a');
+  link.href = window.URL.createObjectURL(blob);
+  link.download = docName;
+  link.click();
+
+  window.URL.revokeObjectURL(link.href);
+}
+```
+
+### Add Helper to Remove Markdown (Basic)
+
+Also add this method inside the same component:
+
+```ts
+stripMarkdown(md: string): string {
+  return md
+    .replace(/[#_*`>~-]+/g, '') // remove markdown symbols
+    .replace(/\n{2,}/g, '\n\n'); // normalize spacing
 }
 ```
 
 ---
 
-Once this is added, the error will go away and your **End Analysis** button will work as expected.
+### ✅ Result
 
-Let me know once you're ready for Step 2: **Download Output (.doc) button** logic.
+You now have:
+
+* A clean **Download Output (.doc)** button
+* Disabled when no commentary is generated
+* Outputs a readable `.doc` with analyst info, input, output, prompt, and disclaimer
+
+---
+
+Let me know once you test it — and we’ll move on to **Step 3: Build the Chat Tab layout and table preview**.
