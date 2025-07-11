@@ -1,103 +1,123 @@
-<div class="container">
-  <!-- Header -->
-  <div class="page-header">
-    <h2>Legal Document Analysis</h2>
-    <button class="end-btn" (click)="goBackToLanding()">← Back</button>
+<!-- Chat Tab -->
+<div *ngIf="activeTab === 'chat'" class="chat-layout">
+  <!-- Left Column: Comparison -->
+  <div class="chat-left">
+    <h4>Comparison</h4>
+    <div class="doc-scroll">
+      <pre>{{ agreementText }}</pre>
+    </div>
   </div>
 
-  <!-- Tabs -->
-  <div class="tab-selector">
-    <button [class.active]="activeTab === 'generate'" (click)="switchTab('generate')">Generate Commentary</button>
-    <button [class.active]="activeTab === 'chat'" [disabled]="!templateText || !agreementText" (click)="switchTab('chat')">Chat with Data</button>
-  </div>
-
-  <!-- Commentary Tab -->
-  <div *ngIf="activeTab === 'generate'" class="commentary-form">
-    <!-- Upload -->
-    <div class="file-upload-row">
-      <div>
-        <label>Template Document</label>
-        <input type="file" (change)="onFileUpload($event, 'template')" />
-      </div>
-      <div>
-        <label>Client Agreement</label>
-        <input type="file" (change)="onFileUpload($event, 'agreement')" />
-      </div>
-    </div>
-
-    <!-- View -->
-    <div class="doc-view">
-      <textarea [value]="templateText" placeholder="Template Document..." readonly></textarea>
-      <textarea [value]="agreementText" placeholder="Client Agreement..." readonly></textarea>
-    </div>
-
-    <!-- Meta -->
-    <div class="info-row">
-      <input type="text" [(ngModel)]="analystName" placeholder="Analyst Name" />
-      <input type="date" [(ngModel)]="analysisDate" />
-    </div>
-
-    <!-- Prompt -->
-    <button class="generate-button" (click)="generatePrompt()">Generate Prompt</button>
-    <textarea rows="6" [(ngModel)]="prompt" placeholder="Prompt will appear here..."></textarea>
-
-    <!-- Model/Temp/Download -->
-    <div class="controls-row">
+  <!-- Right Column: Chat -->
+  <div class="chat-right">
+    <div class="chat-controls">
       <select [(ngModel)]="llmModel">
         <option value="llama3">LLaMA 3</option>
         <option value="gemma3-12b">Gemma 3:12B</option>
         <option value="gemma3-27b">Gemma 3:27B</option>
       </select>
-      <input type="number" [(ngModel)]="temperature" min="0" max="1" step="0.1" />
-      <button [disabled]="isGenerating || !commentaryResult">Download Output</button>
+      <button (click)="clearChat()">Clear Chat</button>
     </div>
 
-    <!-- Commentary Output -->
-    <button class="generate-button" (click)="generateCommentary()" [disabled]="isGenerating">Generate Commentary</button>
-    <div class="markdown-output" *ngIf="commentaryResult" [innerHTML]="commentaryResult | markdown"></div>
-  </div>
-
-  <!-- Chat Tab -->
-  <div *ngIf="activeTab === 'chat'" class="chat-layout">
-    <!-- Left: Document -->
-    <div class="chat-left">
-      <h4>Document Comparison</h4>
-      <div class="doc-scroll">
-        <h5>Template</h5>
-        <pre>{{ templateText }}</pre>
-        <h5>Agreement</h5>
-        <pre>{{ agreementText }}</pre>
+    <div class="chat-history">
+      <div *ngFor="let msg of chatHistory" class="chat-message" [ngClass]="msg.role">
+        <strong *ngIf="msg.role === 'user'">You:</strong>
+        <strong *ngIf="msg.role === 'assistant'">AI:</strong>
+        <span>{{ msg.content }}</span>
       </div>
     </div>
 
-    <!-- Right: Chat -->
-    <div class="chat-right">
-      <div class="summary-box">
-        <h4>Summary</h4>
-        <p>This will contain an AI-generated summary of key differences.</p>
-      </div>
-
-      <div class="chat-controls">
-        <select [(ngModel)]="llmModel">
-          <option value="llama3">LLaMA 3</option>
-          <option value="gemma3-12b">Gemma 3:12B</option>
-          <option value="gemma3-27b">Gemma 3:27B</option>
-        </select>
-        <button (click)="clearChat()">Clear Chat</button>
-      </div>
-
-      <div class="chat-history">
-        <div *ngFor="let msg of chatHistory" class="chat-message" [ngClass]="msg.role">
-          <strong *ngIf="msg.role === 'user'">You:</strong>
-          <strong *ngIf="msg.role === 'assistant'">AI:</strong>
-          <span>{{ msg.content }}</span>
-        </div>
-      </div>
-
-      <div class="chat-input-box">
-        <input [(ngModel)]="chatInput" placeholder="Ask about the documents..." />
-        <button (click)="sendChat()">Send</button>
-      </div>
+    <div class="chat-input-box">
+      <input [(ngModel)]="chatInput" placeholder="Ask about the agreement..." />
+      <button (click)="sendChat()">Send</button>
     </div>
   </div>
 </div>
+
+
+
+Perfect. Here's a summary of the **three tasks** with actions to complete each:
+
+---
+
+### ✅ 1. **SCSS Update** for Chat Tab (Rename Summary → Comparison)
+
+In your `legaldoc.component.scss`, replace:
+
+```scss
+.summary-box {
+  ...
+}
+```
+
+with:
+
+```scss
+.comparison-box {
+  font-size: 0.9rem;
+  padding: 0.5rem 0.75rem;
+  border-left: 3px solid #ccc;
+  background-color: #fafafa;
+  max-height: 100px;
+  overflow-y: auto;
+  white-space: pre-wrap;
+
+  h4 {
+    margin: 0 0 0.25rem 0;
+    font-size: 1rem;
+  }
+
+  p {
+    margin: 0;
+    line-height: 1.2;
+  }
+}
+```
+
+And update the HTML if using the comparison box again later (optional).
+
+---
+
+### ✅ 2. Enable Download Button After Commentary is Generated
+
+In `legaldoc.component.ts`, add a method to generate and download the doc:
+
+```ts
+downloadCommentaryAsDoc() {
+  const header = `Legal Document Analysis\nAnalyst: ${this.analystName}\nDate: ${this.analysisDate}\n\n`;
+  const input = `Template Document:\n${this.templateText}\n\nClient Agreement:\n${this.agreementText}\n\n`;
+  const promptText = `Prompt:\n${this.prompt}\n\n`;
+  const output = `LLM Commentary:\n${this.commentaryResult}\n\n---\n*This is an AI-generated commentary.*`;
+
+  const fullText = header + input + promptText + output;
+
+  const blob = new Blob([fullText], { type: 'application/msword' });
+  const link = document.createElement('a');
+  link.href = URL.createObjectURL(blob);
+  const safeDate = this.analysisDate.replaceAll('-', '');
+  link.download = `${this.analystName}_${safeDate}_LLMCommentary.doc`;
+  link.click();
+}
+```
+
+Update the `Download Output` button in the HTML:
+
+```html
+<button
+  [disabled]="isGenerating || !commentaryResult"
+  (click)="downloadCommentaryAsDoc()">
+  Download Output
+</button>
+```
+
+---
+
+### ✅ 3. Final Notes
+
+* We already use `[disabled]="isGenerating || !commentaryResult"` for safe control.
+* The doc includes template, agreement, prompt, and commentary with disclaimers.
+* We added a `safeDate` to format the filename cleanly.
+
+---
+
+Let me know if you want to format the downloaded Word doc better (like with HTML → DOCX conversion) or keep this as plain `.doc`.
