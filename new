@@ -1,64 +1,28 @@
-Perfect! Since you're starting from scratch and using a `venv`, I’ll walk you through a clean, scalable Flask project structure that matches your **Attribution backend** use case. We’ll then build the `/api/attribution/prompt` route first.
+Thanks, that structure works too. Here's how we can adapt everything to your layout:
 
 ---
 
-## ✅ Step 1: Folder and File Structure
-
-Here’s the recommended minimal but organized layout:
+## ✅ Your Folder Structure
 
 ```
-financial_ai_backend/
-│
-├── venv/                     # Your virtual environment
-├── app/                      # All application code
-│   ├── __init__.py           # Initializes Flask app
-│   ├── routes/
-│   │   ├── __init__.py
-│   │   └── attribution.py    # Attribution-specific routes
-│   └── utils/
-│       ├── __init__.py
-│       └── attribution_helper.py  # CSV parsing + prompt generation
-│
-├── run.py                    # Entry point
-├── requirements.txt          # Package list
+server/
+├── __init__.py
+├── app.py                 # Entry point
+├── views.py               # Optional if used for frontend templates
+├── routes/
+│   └── attribution.py     # Flask API routes for attribution
+├── utils/
+│   └── attribution_helper.py
+└── ... (venv outside or inside)
 ```
 
 ---
 
-## ✅ Step 2: Initialize Environment
+## ✅ Updated Files Based on Your Layout
 
-### 1. Activate venv
+### 🔹 `server/__init__.py`
 
-```bash
-python -m venv venv
-venv\Scripts\activate      # Windows
-# OR
-source venv/bin/activate   # Mac/Linux
-```
-
-### 2. Install Flask and Dependencies
-
-```bash
-pip install flask flask-cors pandas
-pip freeze > requirements.txt
-```
-
----
-
-## ✅ Step 3: Create `run.py` (Entry Point)
-
-```python
-from app import create_app
-
-app = create_app()
-
-if __name__ == "__main__":
-    app.run(debug=True)
-```
-
----
-
-## ✅ Step 4: Create `app/__init__.py`
+Initialize the app here:
 
 ```python
 from flask import Flask
@@ -68,7 +32,8 @@ def create_app():
     app = Flask(__name__)
     CORS(app)
 
-    from app.routes.attribution import attribution_bp
+    # Register Blueprints
+    from server.routes.attribution import attribution_bp
     app.register_blueprint(attribution_bp, url_prefix='/api/attribution')
 
     return app
@@ -76,11 +41,28 @@ def create_app():
 
 ---
 
-## ✅ Step 5: Create `app/routes/attribution.py`
+### 🔹 `server/app.py`
+
+Your main run file:
+
+```python
+from server import create_app
+
+app = create_app()
+
+if __name__ == '__main__':
+    app.run(debug=True)
+```
+
+---
+
+### 🔹 `server/routes/attribution.py`
+
+This defines your prompt endpoint:
 
 ```python
 from flask import Blueprint, request, jsonify
-from app.utils.attribution_helper import generate_attribution_prompt
+from server.utils.attribution_helper import generate_attribution_prompt
 
 attribution_bp = Blueprint('attribution', __name__)
 
@@ -100,78 +82,10 @@ def generate_prompt():
 
 ---
 
-## ✅ Step 6: Create `app/utils/attribution_helper.py`
+### 🔹 `server/utils/attribution_helper.py`
 
-```python
-import pandas as pd
-from io import StringIO
-import json
-
-COLUMN_NAMES = [
-    "Sector", "Portfolio Avg Weight", "Portfolio Total Return", "Portfolio Wgtd Ctrb",
-    "Benchmark Avg Weight", "Benchmark Total Return", "Benchmark Wgtd Ctrb",
-    "Variance Avg Weight", "Variance Total Return", "Variance Wgtd Ctrb",
-    "Allocation", "Selection", "Total Management"
-]
-
-def generate_attribution_prompt(csv_text, analyst_name, analysis_date):
-    df = pd.read_csv(StringIO(csv_text), header=None, names=COLUMN_NAMES)
-
-    total_row = df.tail(1)
-    df = df.iloc[:-1]  # remove total row temporarily
-
-    df_sorted = df.sort_values(by="Total Management", ascending=False).reset_index(drop=True)
-
-    # Tag top and bottom performers
-    tags = {}
-    for i in range(min(3, len(df_sorted))):
-        tags[df_sorted.at[i, 'Sector']] = f'top_{i+1}'
-    for i in range(1, min(4, len(df_sorted))):
-        tags[df_sorted.at[-i, 'Sector']] = f'bottom_{i}'
-
-    def tag_row(row):
-        row_dict = row.to_dict()
-        tag = tags.get(row['Sector'])
-        if tag:
-            row_dict['tag'] = tag
-        return row_dict
-
-    tagged_rows = [tag_row(row) for _, row in df_sorted.iterrows()]
-    total_json = total_row.iloc[0].to_dict()
-    attribution_json = tagged_rows + [{'total': total_json}]
-
-    json_data = json.dumps(attribution_json, indent=2)
-
-    prompt = f"""
-You are a financial analyst preparing a monthly attribution commentary.
-
-Analyst: {analyst_name}
-Date: {analysis_date}
-
-Using the attribution data provided below in JSON format, identify the top and bottom contributors to portfolio performance.
-The data has been tagged to indicate the top 3 and bottom 3 sectors based on the Total Management score.
-Focus on these while analyzing.
-
-Be clear and concise. Use data to support the analysis, and maintain a professional, client-facing tone.
-
-Attribution Data (Tagged JSON):
-{json_data}
-""".strip()
-
-    return prompt
-```
+Same as before — CSV → JSON → tagged → prompt.
 
 ---
 
-## ✅ Final Step: Run the App
-
-```bash
-python run.py
-```
-
-Backend should now be live at:
-`http://localhost:5000/api/attribution/prompt`
-
----
-
-Would you like to test this next with a sample CSV request using Postman or Angular frontend?
+Let me know if you'd like me to regenerate any file exactly matching this updated structure.
