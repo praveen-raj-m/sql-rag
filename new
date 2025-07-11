@@ -1,7 +1,8 @@
-def generate_attribution_prompt(csv_data: str, analyst_name: str, analysis_date: str):
-    import csv
-    import io
+import csv
+import io
+import json
 
+def generate_attribution_prompt(csv_data: str, analyst_name: str, analysis_date: str):
     headers = [
         "sector", "portfolio_avg_weight", "portfolio_total_return", "portfolio_weighted_contribution",
         "benchmark_avg_weight", "benchmark_total_return", "benchmark_weighted_contribution",
@@ -9,44 +10,53 @@ def generate_attribution_prompt(csv_data: str, analyst_name: str, analysis_date:
         "allocation", "selection", "total_management"
     ]
 
-    reader = csv.reader(io.StringIO(csv_data.replace(",,", ",").strip()))
+    # Parse the CSV from the string
+    csv_lines = csv_data.strip().splitlines()
+    reader = csv.reader(csv_lines)
+
     rows = []
-
     for row in reader:
-        if len(row) < 13:
-            continue  # Skip malformed rows
+        if len(row) != 13:
+            continue  # Skip malformed lines
         cleaned = [col.strip() for col in row]
-        entry = {headers[i]: cleaned[i] if i == 0 else float(cleaned[i]) for i in range(13)}
-        rows.append(entry)
+        parsed = {
+            headers[i]: cleaned[i] if i == 0 else float(cleaned[i])
+            for i in range(13)
+        }
+        rows.append(parsed)
 
-    # Remove and store total row separately
-    total_row = next((r for r in rows if r['sector'].lower() == 'total'), None)
-    rows = [r for r in rows if r['sector'].lower() != 'total']
+    # Separate total row
+    total_row = next((r for r in rows if r['sector'].strip().lower() == 'total'), None)
+    rows = [r for r in rows if r['sector'].strip().lower() != 'total']
 
-    # Sort by total_management descending
-    sorted_rows = sorted(rows, key=lambda x: x['total_management'], reverse=True)
+    # Sort by total_management
+    rows_sorted = sorted(rows, key=lambda x: x['total_management'], reverse=True)
 
-    # Tagging top and bottom 3
-    for idx, row in enumerate(sorted_rows):
-        if idx < 3:
-            row['tag'] = f"top_{idx+1}"
-        elif idx >= len(sorted_rows) - 3:
-            row['tag'] = f"bottom_{len(sorted_rows) - idx}"
+    # Tag top and bottom 3 sectors
+    for i, r in enumerate(rows_sorted):
+        if i < 3:
+            r['tag'] = f'top_{i+1}'
+        elif i >= len(rows_sorted) - 3:
+            r['tag'] = f'bottom_{len(rows_sorted) - i}'
 
-    # Append total row at the end
+    # Append total row at the end without tags
     if total_row:
-        sorted_rows.append(total_row)
+        rows_sorted.append(total_row)
 
-    analyst_block = f"Analyst: {analyst_name}\n" if analyst_name else ""
-    date_block = f"Analysis Date: {analysis_date}\n" if analysis_date else ""
+    # Create a pretty JSON string for LLM input
+    json_data = json.dumps(rows_sorted, indent=2)
+
+    # Build the final prompt
+    analyst_line = f"Analyst: {analyst_name}\n" if analyst_name else ""
+    date_line = f"Date: {analysis_date}\n" if analysis_date else ""
 
     prompt = (
-        f"{analyst_block}{date_block}"
-        f"You are a financial analyst. Analyze the following performance attribution data. "
-        f"Focus especially on the sectors tagged with top_ and bottom_ labels. "
-        f"Summarize the portfolio performance, highlight key contributors and detractors, "
-        f"and write in a professional tone suitable for a client-facing report.\n\n"
-        f"Data:\n{sorted_rows}"
+        f"{analyst_line}{date_line}"
+        "You are a financial analyst. Analyze the following performance attribution data.\n"
+        "Pay special attention to sectors tagged as top or bottom performers based on total_management score.\n"
+        "Write a 250–300 word client-facing commentary that explains the key drivers of performance, referencing specific numbers.\n\n"
+        "Data:\n"
+        f"{json_data}"
     )
 
     return prompt
