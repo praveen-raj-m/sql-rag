@@ -1,247 +1,97 @@
-Perfect — we’ll shift focus to the **Attribution page** now and get its layout ready ✅
+Excellent — let’s begin with **Step 1: Add page title and "Back to Home" with confirmation popup** on the **Attribution page**.
 
 ---
 
-## 🧾 Attribution Page Overview
+## ✅ Step 1: Add Title + Back Button with End Analysis Confirmation
 
-From earlier instructions, the **Generate Commentary** tab will include:
+### 📄 Update `attribution.component.html` (Top of file)
 
-* A large **textarea** for attribution table input (CSV-like or JSON-style)
-* Two small input boxes:
+Add this block **above** the tabs:
 
-  * Analyst **Name**
-  * Analysis **Date**
-* A **Generate Prompt** button
-* A **prompt editor textarea**
-* Temp, model dropdown, download button
-* **Generate Commentary** button
-* Markdown output
+```html
+<div class="page-header">
+  <h2>Attribution Analysis</h2>
+  <button class="end-btn" (click)="confirmEndAnalysis()">← Back to Home</button>
+</div>
+```
 
-The **Chat tab** will be added next after your extra instructions.
+### 📄 Add Logic in `attribution.component.ts`
 
----
-
-## ✅ Step 1: Prepare Attribution Page Skeleton
-
-Go to:
-📄 `attribution.component.ts`
-
-Update it like this:
+Add this function:
 
 ```ts
-import { Component } from '@angular/core';
-import { CommonModule } from '@angular/common';
-import { FormsModule } from '@angular/forms';
+import { Router } from '@angular/router';
 
-@Component({
-  standalone: true,
-  selector: 'app-attribution',
-  imports: [CommonModule, FormsModule],
-  templateUrl: './attribution.component.html',
-  styleUrls: ['./attribution.component.scss']
-})
-export class AttributionComponent {
-  activeTab: 'commentary' | 'chat' = 'commentary';
+// In constructor:
+constructor(private router: Router) {}
 
-  // Commentary Inputs
-  attributionData: string = '';
-  analystName: string = '';
-  analysisDate: string = '';
-  promptText: string = '';
-  temperature: number = 0.7;
-  selectedModel: string = 'gemma:2b';
-  renderedMarkdown: string = '';
+confirmEndAnalysis() {
+  const confirmed = confirm('End analysis and return to home? All input will be cleared.');
+  if (confirmed) {
+    // Clear all state
+    this.attributionData = '';
+    this.analystName = '';
+    this.analysisDate = '';
+    this.promptText = '';
+    this.renderedMarkdown = '';
+    this.chatHistory = [];
 
-  switchTab(tab: 'commentary' | 'chat') {
-    if (tab === 'chat' && !this.attributionData.trim()) {
-      alert('Please enter attribution data before using chat.');
-      return;
-    }
-    this.activeTab = tab;
-  }
-
-  generatePrompt() {
-    this.promptText = `Attribution Report\n\nAnalyst: ${this.analystName}\nDate: ${this.analysisDate}\n\nData:\n${this.attributionData}`;
-  }
-
-  generateCommentary() {
-    this.renderedMarkdown = `
-## Attribution Commentary
-
-Model: **${this.selectedModel}**, Temp: **${this.temperature}**
-
-> This is a dummy markdown output. Real backend will provide a full summary.
-    `;
-  }
-
-  downloadPrompt() {
-    const blob = new Blob([this.promptText], { type: 'text/plain' });
-    const url = window.URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = 'attribution_prompt.txt';
-    a.click();
-    window.URL.revokeObjectURL(url);
+    this.router.navigate(['/']);
   }
 }
 ```
 
 ---
 
-## ✅ Step 2: Add Attribution HTML
-
-📄 `attribution.component.html`
-
-```html
-<!-- Tabs -->
-<div class="tab-selector">
-  <button [class.active]="activeTab === 'commentary'" (click)="switchTab('commentary')">Generate Commentary</button>
-  <button [class.active]="activeTab === 'chat'" (click)="switchTab('chat')">Chat with Data</button>
-</div>
-
-<!-- Commentary Tab -->
-<div *ngIf="activeTab === 'commentary'" class="commentary-form">
-  <label>Attribution Table Input</label>
-  <textarea rows="10" [(ngModel)]="attributionData" placeholder="Paste attribution data here..."></textarea>
-
-  <div class="info-row">
-    <label>
-      Analyst Name:
-      <input type="text" [(ngModel)]="analystName">
-    </label>
-
-    <label>
-      Analysis Date:
-      <input type="date" [(ngModel)]="analysisDate">
-    </label>
-  </div>
-
-  <button (click)="generatePrompt()">Generate Prompt</button>
-
-  <label>Prompt</label>
-  <textarea rows="6" [(ngModel)]="promptText"></textarea>
-
-  <div class="controls-row">
-    <label>
-      Temperature
-      <input type="number" step="0.1" min="0" max="1" [(ngModel)]="temperature">
-    </label>
-
-    <label>
-      Model
-      <select [(ngModel)]="selectedModel">
-        <option value="gemma:2b">Gemma:2B</option>
-        <option value="llama:3">LLaMA 3</option>
-      </select>
-    </label>
-
-    <button (click)="downloadPrompt()">Download Prompt</button>
-  </div>
-
-  <button (click)="generateCommentary()">Generate Commentary</button>
-
-  <div class="markdown-output" [innerHTML]="renderedMarkdown"></div>
-</div>
-
-<!-- Chat Tab -->
-<div *ngIf="activeTab === 'chat'">
-  <h3>Chat tab UI coming up next (based on your instructions)</h3>
-</div>
-```
-
----
-
-## ✅ Step 3: Add Styling
-
-📄 `attribution.component.scss`
+### 🎨 Add Style in `attribution.component.scss`
 
 ```scss
-.tab-selector {
+.page-header {
   display: flex;
-  gap: 1rem;
-  margin-bottom: 1.5rem;
+  justify-content: space-between;
+  align-items: center;
+  max-width: 800px;
+  margin: 2rem auto 1rem;
+  padding: 0 1rem;
 
-  button {
-    padding: 0.75rem 1.5rem;
-    border: none;
-    background-color: #eee;
-    border-radius: 4px;
-    cursor: pointer;
+  h2 {
+    font-size: 1.75rem;
+    margin: 0;
+  }
+
+  .end-btn {
+    background: none;
+    color: #0a74da;
+    border: 2px solid #0a74da;
+    padding: 0.4rem 0.75rem;
+    border-radius: 6px;
     font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s ease;
 
-    &.active {
+    &:hover {
       background-color: #0a74da;
       color: white;
     }
   }
 }
-
-.commentary-form {
-  display: flex;
-  flex-direction: column;
-  gap: 1rem;
-  max-width: 800px;
-  margin: 0 auto;
-
-  textarea, input, select {
-    width: 100%;
-    padding: 0.6rem;
-    border-radius: 6px;
-    border: 1px solid #ccc;
-  }
-
-  .info-row {
-    display: flex;
-    gap: 1rem;
-    flex-wrap: wrap;
-
-    input {
-      width: 200px;
-    }
-  }
-
-  .controls-row {
-    display: flex;
-    gap: 1rem;
-    flex-wrap: wrap;
-    align-items: center;
-
-    input, select {
-      min-width: 100px;
-    }
-  }
-
-  button {
-    padding: 0.6rem 1.2rem;
-    background-color: #0a74da;
-    color: white;
-    border: none;
-    border-radius: 4px;
-    cursor: pointer;
-
-    &:hover {
-      background-color: #095bb5;
-    }
-  }
-
-  .markdown-output {
-    margin-top: 1.5rem;
-    padding: 1rem;
-    border-left: 4px solid #0a74da;
-    background: #f5f5f5;
-    white-space: pre-wrap;
-  }
-}
 ```
 
 ---
 
-✅ You now have a fully structured **Attribution page** with:
+## 🧪 Test It
 
-* Working form
-* Tab switching
-* Dummy logic for prompt + commentary
+1. Navigate to `/attribution`
+2. You should see:
+
+   * `Attribution Analysis` title
+   * Back button styled on the right
+3. Clicking back shows confirmation
+4. If confirmed:
+
+   * Clears all data
+   * Navigates to `/`
 
 ---
 
-Let me know your special instructions for the **Chat tab of Attribution**, and we’ll wire that up next.
+Let me know once this works — then we’ll move to **Step 2: Add DOC Output Download button** in the Commentary tab.
