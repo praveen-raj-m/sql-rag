@@ -1,65 +1,99 @@
-Ah — thank you! That **gap between `<ol>` and `<p>`** is a common HTML rendering behavior, especially when the markdown has:
+Perfect — thanks for clarifying!
 
-```md
-1. First item
-
-Some paragraph text here.
-```
-
-This renders to:
-
-```html
-<ol>
-  <li>First item</li>
-</ol>
-<p>Some paragraph text here.</p>
-```
-
-And browsers often apply **default margin** to both `<ol>` and `<p>`, causing visible vertical spacing.
+Since you already have `attribution.service.ts` inside the `services/` folder, we’ll do the following:
 
 ---
 
-### ✅ Fix It with SCSS (Recommended)
+### ✅ Final Structure
 
-Update your `.markdown-output` style to normalize spacing:
+**Frontend folder setup:**
 
-```scss
-.markdown-output {
-  ol, ul {
-    margin-top: 0.5rem;
-    margin-bottom: 0.5rem;
-    padding-left: 1.25rem;
-  }
-
-  p {
-    margin-top: 0.25rem;
-    margin-bottom: 0.25rem;
-  }
-
-  li {
-    margin-bottom: 0.25rem;
-  }
-}
 ```
-
-> This reduces the spacing between lists and paragraphs and keeps things tight and readable.
-
----
-
-### ✅ Bonus: Remove Top/Bottom Margin from First/Last Child (Optional)
-
-If you're rendering a block of markdown, also consider:
-
-```scss
-.markdown-output > *:first-child {
-  margin-top: 0;
-}
-
-.markdown-output > *:last-child {
-  margin-bottom: 0;
-}
+src/
+├── app/
+│   ├── features/
+│   │   └── attribution/
+│   │       ├── attribution.component.ts
+│   │       └── attribution.component.html
+│   ├── services/
+│   │   └── attribution.service.ts  ← We’ll add chat logic here
 ```
 
 ---
 
-Let me know if you're seeing any unwanted space **within the list items themselves** or need a more compact layout!
+### ✅ Step-by-Step Update
+
+#### 1. **Update `attribution.service.ts`**
+
+Add this function to handle the chat API call:
+
+```ts
+sendChat(
+  model: string,
+  temperature: number,
+  dataJson: any,
+  history: { role: 'user' | 'assistant', content: string }[],
+  userQuery: string
+): Observable<{ response: string }> {
+  const url = 'http://localhost:5000/chat';
+  return this.http.post<{ response: string }>(url, {
+    model,
+    temperature,
+    dataJson,
+    history,
+    userQuery
+  });
+}
+```
+
+> 💡 Make sure `HttpClient` is already injected in the constructor:
+
+```ts
+constructor(private http: HttpClient) {}
+```
+
+---
+
+#### 2. **Use it inside `attribution.component.ts`**
+
+Update the constructor:
+
+```ts
+constructor(private attributionService: AttributionService) {}
+```
+
+Then use:
+
+```ts
+sendChat() {
+  const query = this.chatInput.trim();
+  if (!query) return;
+
+  this.chatHistory.push({ role: 'user', content: query });
+  this.chatInput = '';
+  this.isChatLoading = true;
+
+  const history = this.chatHistory.slice(-6); // trim to recent messages
+  this.attributionService.sendChat(
+    this.llmModel,
+    this.temperature,
+    this.attributionJson,  // store this during generate prompt
+    history,
+    query
+  ).subscribe({
+    next: (res) => {
+      this.chatHistory.push({ role: 'assistant', content: res.response });
+      this.isChatLoading = false;
+    },
+    error: (err) => {
+      console.error('Chat error:', err);
+      this.chatHistory.push({ role: 'assistant', content: '⚠️ Error getting response.' });
+      this.isChatLoading = false;
+    }
+  });
+}
+```
+
+---
+
+Let me know when this is working — then we’ll build the backend `/chat` route in Flask to receive and respond!
