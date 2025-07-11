@@ -1,54 +1,48 @@
-Thanks, that structure works too. Here's how we can adapt everything to your layout:
+Great — now that you have:
+
+* ✅ `app.py` (Flask entry point)
+* ✅ `routes/attribution.py` (where your API endpoints live)
+* ✅ `utils/attribution_helper.py` (helper logic for prompt generation, etc.)
+* ✅ Angular frontend ready
+
+You're just a few steps away from full integration.
 
 ---
 
-## ✅ Your Folder Structure
+## ✅ Backend → Frontend Connection Plan
+
+Here's the plan to make your Angular frontend talk to your Flask backend.
+
+---
+
+### ✅ 1. **Structure Flask App Properly**
+
+#### 🗂 Recommended Layout:
 
 ```
-server/
-├── __init__.py
-├── app.py                 # Entry point
-├── views.py               # Optional if used for frontend templates
+backend/
+├── app.py
 ├── routes/
-│   └── attribution.py     # Flask API routes for attribution
+│   └── attribution.py
 ├── utils/
 │   └── attribution_helper.py
-└── ... (venv outside or inside)
+└── __init__.py
 ```
 
 ---
 
-## ✅ Updated Files Based on Your Layout
-
-### 🔹 `server/__init__.py`
-
-Initialize the app here:
+### ✅ 2. **Update `app.py` to Register Blueprint**
 
 ```python
 from flask import Flask
-from flask_cors import CORS
+from routes.attribution import attribution_bp
 
-def create_app():
-    app = Flask(__name__)
-    CORS(app)
+app = Flask(__name__)
+app.register_blueprint(attribution_bp, url_prefix="/api/attribution")
 
-    # Register Blueprints
-    from server.routes.attribution import attribution_bp
-    app.register_blueprint(attribution_bp, url_prefix='/api/attribution')
-
-    return app
-```
-
----
-
-### 🔹 `server/app.py`
-
-Your main run file:
-
-```python
-from server import create_app
-
-app = create_app()
+@app.route('/')
+def home():
+    return {"status": "Flask backend is running"}
 
 if __name__ == '__main__':
     app.run(debug=True)
@@ -56,36 +50,98 @@ if __name__ == '__main__':
 
 ---
 
-### 🔹 `server/routes/attribution.py`
-
-This defines your prompt endpoint:
+### ✅ 3. **Sample `routes/attribution.py`**
 
 ```python
 from flask import Blueprint, request, jsonify
-from server.utils.attribution_helper import generate_attribution_prompt
+from utils.attribution_helper import generate_prompt
 
 attribution_bp = Blueprint('attribution', __name__)
 
-@attribution_bp.route('/prompt', methods=['POST'])
-def generate_prompt():
+@attribution_bp.route('/generate-prompt', methods=['POST'])
+def generate_prompt_route():
     data = request.get_json()
     csv_text = data.get('csv')
-    analyst_name = data.get('analyst')
-    analysis_date = data.get('date')
+    analyst = data.get('analyst')
+    date = data.get('date')
 
-    try:
-        prompt = generate_attribution_prompt(csv_text, analyst_name, analysis_date)
-        return jsonify({ 'prompt': prompt })
-    except Exception as e:
-        return jsonify({ 'error': str(e) }), 500
+    prompt = generate_prompt(csv_text, analyst, date)
+    return jsonify({"prompt": prompt})
 ```
 
 ---
 
-### 🔹 `server/utils/attribution_helper.py`
+### ✅ 4. **Enable CORS**
 
-Same as before — CSV → JSON → tagged → prompt.
+Install:
+
+```bash
+pip install flask-cors
+```
+
+In `app.py`:
+
+```python
+from flask_cors import CORS
+CORS(app)
+```
 
 ---
 
-Let me know if you'd like me to regenerate any file exactly matching this updated structure.
+### ✅ 5. **Frontend Angular Service**
+
+In Angular, create a service like:
+
+```bash
+ng generate service services/attribution
+```
+
+Then in `attribution.service.ts`:
+
+```ts
+import { HttpClient } from '@angular/common/http';
+import { Injectable } from '@angular/core';
+
+@Injectable({ providedIn: 'root' })
+export class AttributionService {
+  private baseUrl = 'http://localhost:5000/api/attribution';
+
+  constructor(private http: HttpClient) {}
+
+  generatePrompt(csv: string, analyst: string, date: string) {
+    return this.http.post<{ prompt: string }>(`${this.baseUrl}/generate-prompt`, {
+      csv, analyst, date
+    });
+  }
+}
+```
+
+---
+
+### ✅ 6. **Call From Component**
+
+In `attribution.component.ts`:
+
+```ts
+constructor(private attributionService: AttributionService) {}
+
+generatePrompt() {
+  this.attributionService.generatePrompt(this.rawCsv, this.analystName, this.analysisDate)
+    .subscribe(res => {
+      this.prompt = res.prompt;
+    });
+}
+```
+
+---
+
+## 🧪 Test it!
+
+* Start Flask with `python app.py` on port 5000
+* Start Angular with `ng serve`
+* Make sure Flask returns proper JSON
+* Network tab in browser should show `/api/attribution/generate-prompt` as successful
+
+---
+
+Would you like help wiring up the `generate-commentary` endpoint next?
