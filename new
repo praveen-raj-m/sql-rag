@@ -1,223 +1,75 @@
-Awesome — let’s start building your Flask backend **step by step from scratch**, with the first route: `/generate-prompt`.
+// 📁 legal.component.ts
+import { Component } from '@angular/core';
 
-We'll set up a clean, modular Flask structure for your Financial AI Assistant.
-
----
-
-## ✅ Step 1: Basic Flask Server Setup
-
-In your server folder (e.g., `server/`), create a file called `app.py` with this minimal Flask app:
-
-### 📄 `app.py`
-
-```python
-from flask import Flask, request, jsonify
-from flask_cors import CORS
-
-app = Flask(__name__)
-CORS(app)  # Allow requests from Angular frontend
-
-@app.route("/")
-def home():
-    return "Financial AI Assistant Backend Running"
-
-if __name__ == "__main__":
-    app.run(debug=True)
-```
-
-Run it with:
-
-```bash
-python app.py
-```
-
-You should see: `Running on http://127.0.0.1:5000/`
-
----
-
-## ✅ Step 2: Plan File Structure
-
-Let’s organize for clarity:
-
-```
-server/
-│
-├── app.py
-├── utils/
-│   └── attribution_utils.py   <-- CSV → JSON + prompt logic
-├── routes/
-│   └── attribution.py         <-- Flask route: /generate-prompt
-```
-
----
-
-## ✅ Step 3: Add Attribution Logic
-
-### 📄 `utils/attribution_utils.py`
-
-```python
-import csv
-import io
-
-HEADERS = [
-    "name",  # Sector name
-    "port_avg_weight",
-    "port_return",
-    "port_ctrb",
-    "bench_avg_weight",
-    "bench_return",
-    "bench_ctrb",
-    "var_avg_weight",
-    "var_return",
-    "var_ctrb",
-    "allocation",
-    "selection",
-    "total_management"
-]
-
-def parse_attribution_csv(csv_data):
-    reader = csv.reader(io.StringIO(csv_data.strip()))
-    rows = list(reader)
-
-    # Clean empty rows
-    rows = [row for row in rows if any(cell.strip() for cell in row)]
-
-    # Detect and extract total row
-    total_row = rows[-1]
-    sector_rows = rows[:-1]
-
-    # Build sector data with headers
-    parsed_data = []
-    for row in sector_rows:
-        if len(row) < 13:
-            continue  # Skip malformed
-        entry = {HEADERS[i]: try_cast(row[i]) for i in range(13)}
-        parsed_data.append(entry)
-
-    # Sort by total_management
-    sorted_data = sorted(parsed_data, key=lambda x: x["total_management"], reverse=True)
-
-    # Tag top 3 and bottom 3
-    for i, row in enumerate(sorted_data[:3]):
-        row["top_rank"] = i + 1
-    for i, row in enumerate(sorted_data[-3:]):
-        row["bottom_rank"] = i + 1
-
-    # Parse total row
-    total_dict = {HEADERS[i]: try_cast(total_row[i]) for i in range(13)}
-
-    return sorted_data, total_dict
-
-def try_cast(value):
-    try:
-        return float(value)
-    except ValueError:
-        return value.strip()
-```
-
----
-
-## ✅ Step 4: Flask Route
-
-### 📄 `routes/attribution.py`
-
-````python
-from flask import Blueprint, request, jsonify
-from utils.attribution_utils import parse_attribution_csv
-
-attribution_bp = Blueprint("attribution", __name__)
-
-@attribution_bp.route("/generate-prompt", methods=["POST"])
-def generate_prompt():
-    data = request.json
-    csv_data = data.get("csv")
-    analyst = data.get("analyst")
-    date = data.get("date")
-
-    if not csv_data:
-        return jsonify({"error": "Missing CSV data"}), 400
-
-    sectors, total = parse_attribution_csv(csv_data)
-
-    prompt = build_prompt(sectors, total, analyst, date)
-
-    return jsonify({
-        "prompt": prompt,
-        "attribution_data": sectors,
-        "total_row": total
-    })
-
-def build_prompt(sectors, total, analyst, date):
-    return f"""You are a financial analyst writing a concise attribution commentary for a client-facing report.
-
-The analysis is by {analyst} on {date}.
-
-You are provided with sector-level attribution data in JSON format, already sorted by total_management descending. The top 3 and bottom 3 performers are pre-tagged with `top_rank` and `bottom_rank`.
-
-Your job is to:
-- Explain performance of top 3 and bottom 3
-- Summarize the overall portfolio vs benchmark
-- Mention allocation and selection effects
-- Use numerical values
-- Tone: professional, client-facing, 250–300 words
-
-Attribution data:
-```json
-{sectors}
-````
-
-Total portfolio row:
-
-```json
-{total}
-```
-
-Use the tags and data as-is. Do not recalculate or re-sort anything.
-"""
-
-````
-
----
-
-## ✅ Step 5: Register Blueprint
-
-Update your `app.py`:
-
-```python
-from flask import Flask
-from flask_cors import CORS
-from routes.attribution import attribution_bp
-
-app = Flask(__name__)
-CORS(app)
-
-app.register_blueprint(attribution_bp, url_prefix="/api")
-
-@app.route("/")
-def home():
-    return "Financial AI Assistant Backend Running"
-
-if __name__ == "__main__":
-    app.run(debug=True)
-````
-
----
-
-## ✅ Step 6: Test
-
-Send a `POST` request to:
-
-```
-POST http://localhost:5000/api/generate-prompt
-Content-Type: application/json
-
-{
-  "csv": "Technology,0.12,0.07,0.45,...",
-  "analyst": "John Doe",
-  "date": "2025-07-10"
+interface ChatMessage {
+  role: 'user' | 'assistant';
+  content: string;
 }
-```
 
----
+@Component({
+  selector: 'app-legal',
+  templateUrl: './legal.component.html',
+  styleUrls: ['./legal.component.css']
+})
+export class LegalComponent {
+  activeTab: 'generate' | 'chat' = 'generate';
 
-Let me know once this is done and we’ll move on to `/generate-commentary` to integrate the LLM call (Ollama).
+  analystName: string = '';
+  analysisDate: string = '';
+
+  templateText: string = '';
+  agreementText: string = '';
+  prompt: string = '';
+
+  llmModel: string = 'llama3';
+  temperature: number = 0.7;
+
+  commentaryResult: string = '';
+  isGenerating: boolean = false;
+
+  chatInput: string = '';
+  chatHistory: ChatMessage[] = [];
+
+  switchTab(tab: 'generate' | 'chat') {
+    if (tab === 'chat' && (!this.templateText || !this.agreementText)) return;
+    this.activeTab = tab;
+  }
+
+  onFileUpload(event: any, target: 'template' | 'agreement') {
+    const file = event.target.files[0];
+    const reader = new FileReader();
+    reader.onload = () => {
+      if (target === 'template') this.templateText = reader.result as string;
+      else this.agreementText = reader.result as string;
+    };
+    reader.readAsText(file);
+  }
+
+  generatePrompt() {
+    this.prompt = `You are a legal analyst. Compare the following agreements.\n\nTemplate:\n${this.templateText}\n\nAgreement:\n${this.agreementText}`;
+  }
+
+  generateCommentary() {
+    this.isGenerating = true;
+    setTimeout(() => {
+      this.commentaryResult = `**AI Generated Commentary**\n\nBased on the comparison, several clauses differ...`;
+      this.isGenerating = false;
+    }, 1000);
+  }
+
+  sendChat() {
+    if (!this.chatInput.trim()) return;
+    const msg: ChatMessage = { role: 'user', content: this.chatInput.trim() };
+    this.chatHistory.push(msg);
+    this.chatInput = '';
+
+    setTimeout(() => {
+      this.chatHistory.push({ role: 'assistant', content: 'This clause appears to differ from the template.' });
+    }, 600);
+  }
+
+  clearChat() {
+    this.chatHistory = [];
+  }
+} 
+
