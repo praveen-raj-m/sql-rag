@@ -1,90 +1,58 @@
-<div class="container">
-  <div class="header">
-    <h2>Legal Document Analysis</h2>
-    <button (click)="goBackToLanding()">← Back</button>
-  </div>
+Great — here’s a lightweight custom solution using the `marked` library and Angular’s `DomSanitizer`.
 
-  <div class="tabs">
-    <button [class.active]="activeTab === 'generate'" (click)="switchTab('generate')">Generate Commentary</button>
-    <button [class.active]="activeTab === 'chat'" [disabled]="!templateText || !agreementText" (click)="switchTab('chat')">Chat with Data</button>
-  </div>
+---
 
-  <!-- ===================== Generate Commentary Tab ===================== -->
-  <div *ngIf="activeTab === 'generate'" class="tab-content">
-    <div class="upload-section">
-      <div>
-        <label>Template Document</label>
-        <input type="file" (change)="onFileUpload($event, 'template')" />
-      </div>
-      <div>
-        <label>Client Agreement</label>
-        <input type="file" (change)="onFileUpload($event, 'agreement')" />
-      </div>
-    </div>
+### ✅ Step 1: Install `marked`
 
-    <div class="doc-viewer">
-      <textarea [value]="templateText" placeholder="Template Document..." readonly></textarea>
-      <textarea [value]="agreementText" placeholder="Client Agreement..." readonly></textarea>
-    </div>
+Run:
 
-    <div class="meta-inputs">
-      <input type="text" [(ngModel)]="analystName" placeholder="Analyst Name" />
-      <input type="date" [(ngModel)]="analysisDate" />
-    </div>
+```bash
+npm install marked
+```
 
-    <button class="action-button" (click)="generatePrompt()">Generate Prompt</button>
-    <textarea rows="6" [(ngModel)]="prompt" placeholder="Prompt will appear here..."></textarea>
+---
 
-    <div class="row-controls">
-      <select [(ngModel)]="llmModel">
-        <option value="llama3">LLaMA 3</option>
-        <option value="gemma3-12b">Gemma 3:12B</option>
-        <option value="gemma3-27b">Gemma 3:27B</option>
-      </select>
-      <input type="number" [(ngModel)]="temperature" min="0" max="1" step="0.1" />
-      <button [disabled]="isGenerating || !commentaryResult">Download Output</button>
-    </div>
+### ✅ Step 2: Create the `MarkdownPipe`
 
-    <button class="action-button" (click)="generateCommentary()" [disabled]="isGenerating">Generate Commentary</button>
-    <div class="markdown-output" *ngIf="commentaryResult" [innerHTML]="commentaryResult | markdown"></div>
-  </div>
+Create a file: `src/app/shared/pipes/markdown.pipe.ts` (or place it next to your component):
 
-  <!-- ===================== Chat Tab ===================== -->
-  <div *ngIf="activeTab === 'chat'" class="tab-content chat-mode">
-    <div class="split-pane">
-      <div class="doc-summary">
-        <h4>Document Comparison</h4>
-        <div class="scroll-area">
-          <h5>Template</h5>
-          <pre>{{ templateText }}</pre>
-          <h5>Agreement</h5>
-          <pre>{{ agreementText }}</pre>
-        </div>
-      </div>
+```ts
+import { Pipe, PipeTransform } from '@angular/core';
+import { DomSanitizer, SafeHtml } from '@angular/platform-browser';
+import { marked } from 'marked';
 
-      <div class="chat-box">
-        <div class="chat-controls">
-          <select [(ngModel)]="llmModel">
-            <option value="llama3">LLaMA 3</option>
-            <option value="gemma3-12b">Gemma 3:12B</option>
-            <option value="gemma3-27b">Gemma 3:27B</option>
-          </select>
-          <button (click)="clearChat()">Clear Chat</button>
-        </div>
+@Pipe({
+  name: 'markdown',
+  standalone: true
+})
+export class MarkdownPipe implements PipeTransform {
+  constructor(private sanitizer: DomSanitizer) {}
 
-        <div class="chat-window">
-          <div *ngFor="let msg of chatHistory" class="chat-message" [ngClass]="msg.role">
-            <strong *ngIf="msg.role === 'user'">You:</strong>
-            <strong *ngIf="msg.role === 'assistant'">AI:</strong>
-            <span>{{ msg.content }}</span>
-          </div>
-        </div>
+  transform(value: string): SafeHtml {
+    const html = marked.parse(value || '');
+    return this.sanitizer.bypassSecurityTrustHtml(html);
+  }
+}
+```
 
-        <div class="chat-input">
-          <input [(ngModel)]="chatInput" placeholder="Ask about the documents..." />
-          <button (click)="sendChat()">Send</button>
-        </div>
-      </div>
-    </div>
-  </div>
-</div>
+---
+
+### ✅ Step 3: Import Pipe in `legaldoc.component.ts`
+
+Update your `@Component` decorator:
+
+```ts
+import { MarkdownPipe } from '../shared/pipes/markdown.pipe'; // adjust path if needed
+
+@Component({
+  standalone: true,
+  selector: 'app-legaldoc',
+  imports: [CommonModule, FormsModule, MarkdownPipe],
+  templateUrl: './legaldoc.component.html',
+  styleUrls: ['./legaldoc.component.css']
+})
+```
+
+✅ You can now use `| markdown` in the template safely and efficiently.
+
+Let me know if you'd like me to write a test case or fallback formatting for plain text.
