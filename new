@@ -1,62 +1,108 @@
-import csv
-import io
-import json
+Perfect — you're ready to build the **commentary generation backend** using your local Ollama server.
 
-def generate_attribution_prompt(csv_data: str, analyst_name: str, analysis_date: str):
-    headers = [
-        "sector", "portfolio_avg_weight", "portfolio_total_return", "portfolio_weighted_contribution",
-        "benchmark_avg_weight", "benchmark_total_return", "benchmark_weighted_contribution",
-        "variance_avg_weight", "variance_total_return", "variance_weighted_contribution",
-        "allocation", "selection", "total_management"
-    ]
+Let’s outline the structure and then give you the complete backend logic.
 
-    # Parse the CSV from the string
-    csv_lines = csv_data.strip().splitlines()
-    reader = csv.reader(csv_lines)
+---
 
-    rows = []
-    for row in reader:
-        if len(row) != 13:
-            continue  # Skip malformed lines
-        cleaned = [col.strip() for col in row]
-        parsed = {
-            headers[i]: cleaned[i] if i == 0 else float(cleaned[i])
-            for i in range(13)
-        }
-        rows.append(parsed)
+## ✅ Step-by-Step Plan: Generate Commentary
 
-    # Separate total row
-    total_row = next((r for r in rows if r['sector'].strip().lower() == 'total'), None)
-    rows = [r for r in rows if r['sector'].strip().lower() != 'total']
+### 🔁 Frontend Flow
 
-    # Sort by total_management
-    rows_sorted = sorted(rows, key=lambda x: x['total_management'], reverse=True)
+* From Angular:
 
-    # Tag top and bottom 3 sectors
-    for i, r in enumerate(rows_sorted):
-        if i < 3:
-            r['tag'] = f'top_{i+1}'
-        elif i >= len(rows_sorted) - 3:
-            r['tag'] = f'bottom_{len(rows_sorted) - i}'
+  * Send `prompt`, `model`, and `temperature` to Flask via `POST`.
+  * Show loading state while waiting.
+  * Display result in the markdown component.
 
-    # Append total row at the end without tags
-    if total_row:
-        rows_sorted.append(total_row)
+---
 
-    # Create a pretty JSON string for LLM input
-    json_data = json.dumps(rows_sorted, indent=2)
+## ✅ Step 1: Flask Route (`routes/attribution.py`)
 
-    # Build the final prompt
-    analyst_line = f"Analyst: {analyst_name}\n" if analyst_name else ""
-    date_line = f"Date: {analysis_date}\n" if analysis_date else ""
+Add this to your attribution blueprint:
 
-    prompt = (
-        f"{analyst_line}{date_line}"
-        "You are a financial analyst. Analyze the following performance attribution data.\n"
-        "Pay special attention to sectors tagged as top or bottom performers based on total_management score.\n"
-        "Write a 250–300 word client-facing commentary that explains the key drivers of performance, referencing specific numbers.\n\n"
-        "Data:\n"
-        f"{json_data}"
-    )
+```python
+import requests
+from flask import Blueprint, request, jsonify
 
-    return prompt
+attribution_bp = Blueprint('attribution_bp', __name__)
+
+@attribution_bp.route('/generate-commentary', methods=['POST'])
+def generate_commentary():
+    data = request.get_json()
+    prompt = data.get('prompt', '')
+    model = data.get('model', 'llama3')
+    temperature = float(data.get('temperature', 0.7))
+
+    try:
+        # Send request to local Ollama server
+        ollama_response = requests.post(
+            'http://localhost:11434/api/generate',
+            json={
+                'model': model,
+                'prompt': prompt,
+                'temperature': temperature,
+                'stream': False
+            }
+        )
+        ollama_response.raise_for_status()
+        result = ollama_response.json()
+
+        return jsonify({ 'output': result.get('response', '') })
+    except Exception as e:
+        return jsonify({ 'error': str(e) }), 500
+```
+
+---
+
+## ✅ Step 2: Update Angular Service (`attribution.service.ts`)
+
+Add this method:
+
+```ts
+generateCommentary(prompt: string, model: string, temperature: number): Observable<{ output: string }> {
+  return this.http.post<{ output: string }>(
+    'http://localhost:5000/api/attribution/generate-commentary',
+    { prompt, model, temperature }
+  );
+}
+```
+
+---
+
+## ✅ Step 3: Angular Component (e.g., `attribution.component.ts`)
+
+Replace your `generateCommentary()` dummy with:
+
+```ts
+generateCommentary() {
+  this.isGenerating = true;
+  this.attributionService.generateCommentary(this.prompt, this.llmModel, this.temperature)
+    .subscribe({
+      next: (res) => {
+        this.commentaryResult = res.output;
+        this.isGenerating = false;
+      },
+      error: (err) => {
+        console.error('Error generating commentary:', err);
+        this.commentaryResult = '**Error:** Unable to generate commentary.';
+        this.isGenerating = false;
+      }
+    });
+}
+```
+
+---
+
+## ✅ Result
+
+* Your backend will hit Ollama at `http://localhost:11434/api/generate`
+* Response will be returned to Angular and shown inside your markdown container
+* You can now generate client-facing commentary using LLaMA 3, Gemma, etc.
+
+---
+
+Let me know if you want to:
+
+* Support streaming from Ollama
+* Add retry or model availability check
+* Add commentary saving or doc download feature next
