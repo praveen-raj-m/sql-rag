@@ -1,33 +1,36 @@
-Awesome — let’s build **Step 3: The Chat Tab for Attribution**, which includes:
+Perfect — that’s a great UX improvement. Let’s **restructure the Chat tab layout** so the user can:
 
-1. Table preview from the input CSV
-2. AI summary placeholder
-3. Model selector & Clear Chat
-4. Chat history view
-5. Prompt input box + Send button
+* See the **table on the left**
+* See the **AI summary + chat interface on the right**
+* Keep both panels **fixed-height and independently scrollable**
+* Allow user to type while viewing the table and commentary
 
 ---
 
-## ✅ Step 3: Chat Tab – HTML Layout
+## ✅ Updated Layout Plan
 
-### 📄 In `attribution.component.html`
-
-Replace this block:
-
-```html
-<div *ngIf="activeTab === 'chat'">
-  <h3>Chat tab UI coming up next (based on your instructions)</h3>
-</div>
+```
++------------------+-----------------------------+
+|                  |                             |
+|  Attribution     |   Summary Placeholder       |
+|  Table (left)    |   Chat History              |
+|  Fixed Width     |   Prompt Input + Send       |
+|  Scrollable      |   Model Dropdown, Clear     |
++------------------+-----------------------------+
 ```
 
-With this:
+---
+
+## ✅ Step 1: Updated HTML
+
+Replace your existing `chat-tab` HTML block in `attribution.component.html` with:
 
 ```html
-<div *ngIf="activeTab === 'chat'" class="chat-tab">
-  <!-- 1. Table Preview -->
-  <div class="chat-table-section">
+<div class="chat-tab-grid">
+  <!-- Left: Table View -->
+  <div class="chat-left">
     <h4>Attribution Table</h4>
-    <div class="table-wrapper">
+    <div class="table-scroll">
       <table>
         <thead>
           <tr>
@@ -53,239 +56,171 @@ With this:
     </div>
   </div>
 
-  <!-- 2. AI Summary Placeholder -->
-  <div class="summary-placeholder">
-    <h4>AI Summary (Coming Soon)</h4>
-    <p>This section will display AI-generated insights based on the table.</p>
-  </div>
-
-  <!-- 3. Controls -->
-  <div class="chat-controls">
-    <label>
-      Model:
-      <select [(ngModel)]="selectedChatModel">
-        <option value="gemma:2b">Gemma:2B</option>
-        <option value="llama:3">LLaMA 3</option>
-      </select>
-    </label>
-    <button (click)="clearChat()">Clear Chat</button>
-  </div>
-
-  <!-- 4. Chat History -->
-  <div class="chat-history">
-    <div *ngFor="let msg of chatHistory" [ngClass]="msg.role">
-      {{ msg.content }}
+  <!-- Right: Chat UI -->
+  <div class="chat-right">
+    <div class="summary-placeholder">
+      <h4>AI Summary (Coming Soon)</h4>
+      <p>This section will display AI-generated insights based on the table.</p>
     </div>
-  </div>
 
-  <!-- 5. Chat Input -->
-  <div class="chat-input-box">
-    <textarea rows="2" [(ngModel)]="chatInput" placeholder="Ask something about this attribution data..."></textarea>
-    <button (click)="sendMessage()">Send</button>
+    <div class="chat-controls">
+      <label>
+        Model:
+        <select [(ngModel)]="selectedChatModel">
+          <option value="gemma:2b">Gemma:2B</option>
+          <option value="llama:3">LLaMA 3</option>
+        </select>
+      </label>
+      <button (click)="clearChat()">Clear Chat</button>
+    </div>
+
+    <div class="chat-history">
+      <div *ngFor="let msg of chatHistory" [ngClass]="msg.role">
+        {{ msg.content }}
+      </div>
+    </div>
+
+    <div class="chat-input-box">
+      <textarea rows="2" [(ngModel)]="chatInput" placeholder="Ask something..."></textarea>
+      <button (click)="sendMessage()">Send</button>
+    </div>
   </div>
 </div>
 ```
 
 ---
 
-## ✅ Step 3B: Add Supporting Logic in `attribution.component.ts`
+## ✅ Step 2: Update Styles in `attribution.component.scss`
 
-Add this **new field and parser method**:
-
-```ts
-parsedChatTable: {
-  sector: string;
-  portfolio: string;
-  benchmark: string;
-  allocation: string;
-  selection: string;
-  total: string;
-}[] = [];
-
-ngOnInit(): void {
-  this.parseAttributionData();
-}
-
-parseAttributionData() {
-  const cleaned = this.attributionData.replace(/,,+/g, ',');
-  const lines = cleaned.split('\n').filter(Boolean);
-
-  this.parsedChatTable = lines.map(line => {
-    const [sector, , , portCtrb, , , benchCtrb, , , , allocation, selection, total] = line.split(',');
-    return {
-      sector: sector?.trim() || '',
-      portfolio: portCtrb?.trim() || '',
-      benchmark: benchCtrb?.trim() || '',
-      allocation: allocation?.trim() || '',
-      selection: selection?.trim() || '',
-      total: total?.trim() || ''
-    };
-  });
-}
-```
-
-⚠️ Also update `switchTab()` to re-parse when opening chat:
-
-```ts
-switchTab(tab: 'commentary' | 'chat') {
-  if (tab === 'chat' && !this.attributionData.trim()) {
-    alert('Please enter attribution data before using chat.');
-    return;
-  }
-
-  if (tab === 'chat') {
-    this.parseAttributionData();
-  }
-
-  this.activeTab = tab;
-}
-```
-
----
-
-## ✅ Step 3C: Chat Methods (Use same as before)
-
-Add if not already:
-
-```ts
-sendMessage() {
-  const content = this.chatInput.trim();
-  if (!content) return;
-
-  const userMessage: ChatMessage = {
-    role: 'user',
-    content
-  };
-  this.chatHistory.push(userMessage);
-  this.chatInput = '';
-
-  setTimeout(() => {
-    this.chatHistory.push({
-      role: 'assistant',
-      content: `This is a dummy response based on your attribution table using ${this.selectedChatModel}.`
-    });
-  }, 600);
-}
-
-clearChat() {
-  this.chatHistory = [];
-}
-```
-
----
-
-## ✅ Step 3D: Add Styling in `attribution.component.scss`
-
-Append:
+Append or update:
 
 ```scss
-.chat-tab {
-  max-width: 800px;
+.chat-tab-grid {
+  display: flex;
+  max-height: 600px;
+  border-top: 1px solid #ccc;
+  padding-top: 1rem;
+  gap: 1.5rem;
   margin: 0 auto;
+}
+
+.chat-left,
+.chat-right {
+  flex: 1;
   display: flex;
   flex-direction: column;
   gap: 1rem;
+  overflow: hidden;
 }
 
-.chat-table-section {
-  overflow-x: auto;
+.chat-left {
+  max-width: 400px;
 
-  table {
-    width: 100%;
-    border-collapse: collapse;
-    font-size: 0.95rem;
+  .table-scroll {
+    overflow-y: auto;
+    max-height: 550px;
 
-    th, td {
-      padding: 0.5rem;
-      border: 1px solid #ccc;
-      text-align: left;
-    }
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 0.85rem;
 
-    th {
-      background-color: #f0f0f0;
-    }
-  }
-}
+      th, td {
+        padding: 0.4rem;
+        border: 1px solid #ccc;
+        text-align: left;
+      }
 
-.summary-placeholder {
-  padding: 1rem;
-  border-left: 4px solid #ccc;
-  background: #fdfdfd;
-  font-style: italic;
-}
-
-.chat-controls {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-
-  select, button {
-    padding: 0.4rem 0.8rem;
-    border-radius: 4px;
-    border: 1px solid #aaa;
-  }
-
-  button {
-    background: #888;
-    color: white;
-    border: none;
-
-    &:hover {
-      background: #555;
+      th {
+        background-color: #f2f2f2;
+        position: sticky;
+        top: 0;
+      }
     }
   }
 }
 
-.chat-history {
-  max-height: 250px;
-  overflow-y: auto;
+.chat-right {
   display: flex;
   flex-direction: column;
-  gap: 0.75rem;
-  background: #f6f6f6;
-  padding: 1rem;
-  border-radius: 6px;
-
-  .user {
-    align-self: flex-end;
-    background: #d1eaff;
-    padding: 0.6rem;
-    border-radius: 12px 12px 0 12px;
-    max-width: 75%;
-  }
-
-  .assistant {
-    align-self: flex-start;
-    background: #eee;
-    padding: 0.6rem;
-    border-radius: 12px 12px 12px 0;
-    max-width: 75%;
-  }
-}
-
-.chat-input-box {
-  display: flex;
   gap: 1rem;
+  overflow: hidden;
 
-  textarea {
+  .summary-placeholder {
+    font-size: 0.9rem;
+    padding: 0.75rem;
+    border-left: 3px solid #ccc;
+    background-color: #fafafa;
+  }
+
+  .chat-controls {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+
+    select, button {
+      padding: 0.4rem 0.6rem;
+      border-radius: 4px;
+      border: 1px solid #aaa;
+    }
+
+    button {
+      background: #888;
+      color: white;
+
+      &:hover {
+        background: #555;
+      }
+    }
+  }
+
+  .chat-history {
     flex: 1;
-    padding: 0.6rem;
-    resize: vertical;
-    border: 1px solid #ccc;
+    overflow-y: auto;
+    padding: 1rem;
+    background: #f8f8f8;
     border-radius: 6px;
+
+    .user {
+      align-self: flex-end;
+      background: #d1eaff;
+      padding: 0.5rem;
+      border-radius: 12px 12px 0 12px;
+      max-width: 75%;
+      margin-bottom: 0.5rem;
+    }
+
+    .assistant {
+      align-self: flex-start;
+      background: #eee;
+      padding: 0.5rem;
+      border-radius: 12px 12px 12px 0;
+      max-width: 75%;
+      margin-bottom: 0.5rem;
+    }
   }
 
-  button {
-    height: 100%;
-    padding: 0.6rem 1.2rem;
-    background-color: #0a74da;
-    color: white;
-    border: none;
-    border-radius: 6px;
-    cursor: pointer;
+  .chat-input-box {
+    display: flex;
+    gap: 1rem;
 
-    &:hover {
-      background-color: #095bb5;
+    textarea {
+      flex: 1;
+      padding: 0.5rem;
+      border-radius: 6px;
+      border: 1px solid #ccc;
+    }
+
+    button {
+      padding: 0.5rem 1rem;
+      background-color: #0a74da;
+      color: white;
+      border: none;
+      border-radius: 6px;
+
+      &:hover {
+        background-color: #095bb5;
+      }
     }
   }
 }
@@ -293,13 +228,16 @@ Append:
 
 ---
 
-## ✅ Test It
+## ✅ Final Experience
 
-* Switch to the **Chat with Data** tab after entering attribution input
-* Table should render cleaned rows
-* Model and Clear Chat should work
-* Sending a message adds user + dummy assistant response
+* **Left panel**: Fixed-width attribution table (scrollable if long)
+* **Right panel**: AI summary, model selector, chat history, and input
+* Entire layout is responsive and fits within \~600px height
 
 ---
 
-Let me know once you're happy with the chat tab — and we’ll do enhancements or backend integration next!
+Let me know when it’s working — we can then:
+
+* Hook this into real backend
+* Apply similar UI to other pages
+* Add markdown rendering, skeleton loaders, etc.
