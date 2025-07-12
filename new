@@ -1,41 +1,182 @@
-import os
+Excellent. Here's your **complete backend route for summarizing a single legal document**, using **paragraph-aware chunking**, **traceable prompts**, and integration with a **local LLM via Ollama**.
+
+---
+
+## ✅ Summary of What This Does:
+
+* Accepts a POST request with:
+
+  * `text` (full legal document)
+  * `model` (e.g., `gemma:7b`)
+  * `temperature` (e.g., `0.2`)
+* Chunks the document by **paragraphs**, keeping context natural and intact
+* Sends each chunk to the LLM using a detailed, traceable prompt
+* Returns an aggregated, bullet-point summary with **line references**
+
+---
+
+## ✅ Backend: `routes/summary.py`
+
+```python
 from flask import Blueprint, request, jsonify
 from werkzeug.utils import secure_filename
-import mammoth
-import docx
+import requests
 
-legaldoc_bp = Blueprint('legaldoc', __name__)
-UPLOAD_FOLDER = 'uploads'
+summary_bp = Blueprint('summary', __name__)
 
-def extract_text_from_docx(path):
-    doc = docx.Document(path)
-    return "\n".join([para.text for para in doc.paragraphs])
+def chunk_by_paragraphs(text, max_words=800):
+    lines = text.splitlines()
+    line_map = {i: line for i, line in enumerate(lines)}
 
-def extract_text_from_doc(path):
-    with open(path, "rb") as doc_file:
-        result = mammoth.extract_raw_text(doc_file)
-        return result.value  # Plain text
+    paragraphs = text.split("\n\n")
+    chunks = []
+    current_chunk = []
+    current_word_count = 0
+    current_start_line = 0
+    current_line_count = 0
+    line_index = 0
 
-@legaldoc_bp.route('/upload-one', methods=['POST'])
-def upload_single_document():
-    if 'file' not in request.files:
-        return jsonify({'error': 'Missing file'}), 400
+    for para in paragraphs:
+        para = para.strip()
+        if not para:
+            continue
 
-    file = request.files['file']
-    filename = secure_filename(file.filename)
-    filepath = os.path.join(UPLOAD_FOLDER, filename)
+        para_lines = para.splitlines()
+        word_count = len(para.split())
 
-    os.makedirs(UPLOAD_FOLDER, exist_ok=True)
-    file.save(filepath)
+        if current_word_count == 0:
+            current_start_line = line_index
 
+        current_chunk.append(para)
+        current_word_count += word_count
+        line_index += len(para_lines)
+
+        if current_word_count >= max_words:
+            chunk_text = "\n\n".join(current_chunk)
+            ref = f"Lines {current_start_line}–{line_index}"
+            chunks.append((ref, chunk_text))
+
+            # Reset
+            current_chunk = []
+            current_word_count = 0
+
+    if current_chunk:
+        chunk_text = "\n\n".join(current_chunk)
+        ref = f"Lines {current_start_line}–{line_index}"
+        chunks.append((ref, chunk_text))
+
+    return chunks
+
+def build_prompt(ref, chunk):
+    return f"""
+You are a legal analyst reviewing a section of a legal agreement.
+
+Your task is to extract all important legal insights, including obligations, rights, clauses, exceptions, payment terms, timelines, penalties, governing laws, and any subtle implications or risks.
+
+Avoid general summaries. Focus on what a lawyer or compliance officer would want to know.
+Include the reference: “{ref}” in your bullet points.
+
+Use concise bullet points.
+
+Reference: {ref}
+
+Document Section:
+\"\"\"
+{chunk}
+\"\"\"
+"""
+
+def call_local_llm(model, temperature, prompt):
+    response = requests.post(
+        "http://localhost:11434/api/generate",  # Change port if different
+        json={
+            "model": model,
+            "prompt": prompt,
+            "stream": False,
+            "options": {
+                "temperature": temperature
+            }
+        }
+    )
+    if response.status_code != 200:
+        raise Exception(f"LLM call failed: {response.text}")
+    return response.json()["response"]
+
+@summary_bp.route('/summarize', methods=['POST'])
+def summarize_document():
     try:
-        if filename.lower().endswith('.docx'):
-            text = extract_text_from_docx(filepath)
-        elif filename.lower().endswith('.doc'):
-            text = extract_text_from_doc(filepath)
-        else:
-            return jsonify({'error': 'Unsupported file format'}), 400
-    except Exception as e:
-        return jsonify({'error': f'Failed to extract text: {str(e)}'}), 500
+        data = request.json
+        full_text = data['text']
+        model = data.get('model', 'gemma:7b')
+        temperature = float(data.get('temperature', 0.2))
 
-    return jsonify({'text': text})
+        chunks = chunk_by_paragraphs(full_text)
+        all_summaries = []
+
+        for ref, chunk in chunks:
+            prompt = build_prompt(ref, chunk)
+            result = call_local_llm(model, temperature, prompt)
+            all_summaries.append(f"📌 **{ref}**\n{result.strip()}\n")
+
+        return jsonify({
+            "summary": "\n\n".join(all_summaries)
+        })
+
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+```
+
+---
+
+## ✅ Also Register This Blueprint in `app.py`
+
+```python
+from routes.summary import summary_bp
+app.register_blueprint(summary_bp, url_prefix='/api/summary')
+```
+
+---
+
+## ✅ Test With a Sample JSON Payload
+
+Send a POST to:
+
+```
+http://localhost:5000/api/summary/summarize
+```
+
+With body:
+
+```json
+{
+  "text": "<insert full agreement here>",
+  "model": "gemma:7b",
+  "temperature": 0.2
+}
+```
+
+---
+
+## ✅ Output Example
+
+```json
+{
+  "summary": "📌 **Lines 0–75**\n- Agreement is between Party A and Party B...\n- Payment due quarterly by 15th...\n\n📌 **Lines 76–150**\n- Either party may terminate with 30-day notice...\n..."
+}
+```
+
+---
+
+## ✅ What’s Next?
+
+* Apply this same endpoint to **template document**
+* Later: allow chat by storing chunks in memory or embeddings (RAG-style)
+* Or generate a downloadable summary (PDF, Word)
+
+Let me know if you want:
+
+* JSON-formatted summary instead of Markdown
+* Async/Ollama stream handling
+* Live status per chunk (for progress bar)
+
+Ready to move to template summarization next?
