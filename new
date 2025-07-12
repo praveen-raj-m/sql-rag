@@ -1,149 +1,76 @@
-Thanks, that’s a solid overview. Here's a quick recap before we implement the service and backend route, just to make sure we're aligned:
-
-### ✅ Requirements Recap:
-
-* **Frontend Angular App:**
-
-  * File upload (DOC/DOCX, side-by-side).
-  * On file upload, call backend API.
-  * Backend reads and extracts text from file.
-  * Return extracted text.
-  * Set `this.agreementText` and `this.templateText` accordingly in `legaldoc.component.ts`.
-
-* **Backend Flask App:**
-
-  * Route to receive file path or file directly.
-  * Use something like `python-docx` or `textract` to extract text.
-  * Send back JSON: `{ "agreementText": "...", "templateText": "..." }`.
+Got it — you want the **Flask backend to treat uploads generically**, and the **frontend will decide** whether the returned text is for the agreement or template. Let's streamline both sides.
 
 ---
 
-## 1️⃣ Angular Service (`legaldoc.service.ts`)
+## ✅ Flask Backend: Generic Upload Handler
 
-Create this in `client/src/app/services/legaldoc.service.ts`:
+Route: `POST /api/legaldoc/upload-one`
+
+```python
+@legaldoc_bp.route('/upload-one', methods=['POST'])
+def upload_single_document():
+    if 'file' not in request.files:
+        return jsonify({'error': 'Missing file'}), 400
+
+    file = request.files['file']
+    filename = secure_filename(file.filename)
+    filepath = os.path.join('uploads', filename)
+
+    os.makedirs('uploads', exist_ok=True)
+    file.save(filepath)
+
+    try:
+        text = textract.process(filepath).decode('utf-8')
+    except Exception as e:
+        return jsonify({'error': f'Failed to extract text: {str(e)}'}), 500
+
+    return jsonify({'text': text})
+```
+
+✅ No `type` required. The backend just returns the text, and the frontend decides what to do with it.
+
+---
+
+## ✅ Angular Service (`legaldoc.service.ts`)
 
 ```ts
-import { HttpClient } from '@angular/common/http';
-import { Injectable } from '@angular/core';
-import { Observable } from 'rxjs';
-
-@Injectable({
-  providedIn: 'root'
-})
-export class LegalDocService {
-  private apiUrl = 'http://localhost:5000/api/legaldoc'; // Adjust if needed
-
-  constructor(private http: HttpClient) {}
-
-  uploadDocuments(formData: FormData): Observable<any> {
-    return this.http.post(`${this.apiUrl}/upload`, formData);
-  }
+uploadDocument(file: File): Observable<any> {
+  const formData = new FormData();
+  formData.append('file', file);
+  return this.http.post('http://localhost:5000/api/legaldoc/upload-one', formData);
 }
 ```
 
 ---
 
-## 2️⃣ Angular Component Usage (`legaldoc.component.ts`)
+## ✅ Angular Component (`legaldoc.component.ts`)
 
 ```ts
-onFileUpload(event: any, type: 'agreement' | 'template') {
+onFileUpload(event: any, target: 'agreement' | 'template') {
   const file = event.target.files[0];
   if (!file) return;
 
-  const formData = new FormData();
-  formData.append(type, file); // 'agreement' or 'template'
-
-  this.legalDocService.uploadDocuments(formData).subscribe({
+  this.legalDocService.uploadDocument(file).subscribe({
     next: (res) => {
-      this.agreementText = res.agreementText || '';
-      this.templateText = res.templateText || '';
+      const text = res.text || '';
+      if (target === 'agreement') {
+        this.agreementText = text;
+      } else {
+        this.templateText = text;
+      }
     },
     error: (err) => {
-      console.error('File upload failed:', err);
+      console.error('Error uploading file:', err);
     }
   });
 }
 ```
 
-> If you want to upload both files together after both are selected, let me know—we’ll combine them into a single `FormData`.
-
 ---
 
-## 3️⃣ Flask Backend Route (`routes/legaldoc.py`)
+### ✅ Result:
 
-```python
-from flask import Blueprint, request, jsonify
-import os
-from werkzeug.utils import secure_filename
-import textract  # or python-docx for .docx only
+* Backend just returns extracted text.
+* Frontend uses `target` argument to assign it to `agreementText` or `templateText`.
 
-legaldoc_bp = Blueprint('legaldoc', __name__)
-
-UPLOAD_FOLDER = 'uploads'
-
-@legaldoc_bp.route('/upload', methods=['POST'])
-def upload_documents():
-    os.makedirs(UPLOAD_FOLDER, exist_ok=True)
-
-    agreement_text = ''
-    template_text = ''
-
-    if 'agreement' in request.files:
-        file = request.files['agreement']
-        filename = secure_filename(file.filename)
-        filepath = os.path.join(UPLOAD_FOLDER, filename)
-        file.save(filepath)
-        agreement_text = textract.process(filepath).decode('utf-8')
-
-    if 'template' in request.files:
-        file = request.files['template']
-        filename = secure_filename(file.filename)
-        filepath = os.path.join(UPLOAD_FOLDER, filename)
-        file.save(filepath)
-        template_text = textract.process(filepath).decode('utf-8')
-
-    return jsonify({
-        'agreementText': agreement_text,
-        'templateText': template_text
-    })
-```
-
----
-
-## 4️⃣ Register Blueprint in `app.py`
-
-```python
-from flask import Flask
-from routes.legaldoc import legaldoc_bp
-
-app = Flask(__name__)
-app.config['UPLOAD_FOLDER'] = 'uploads'
-app.register_blueprint(legaldoc_bp, url_prefix='/api/legaldoc')
-```
-
----
-
-## 5️⃣ CORS (Allow Angular to Connect)
-
-Add this to your Flask `app.py`:
-
-```python
-from flask_cors import CORS
-CORS(app)
-```
-
----
-
-## Questions Before We Proceed Further:
-
-1. Should file upload happen **together** (after both are selected), or **immediately** on file selection?
-2. Do you want to extract **only text from DOCX**, or support **PDF** and other formats too?
-3. Are you okay with `textract` (broader file support), or prefer `python-docx` (faster but DOCX only)?
-
-Once you confirm, I can help you:
-
-* Handle multiple file uploads more elegantly
-* Add loading indicators / error handling
-* Extend server parsing logic (e.g., extract sections/clauses)
-
-Ready to proceed?
+Would you like me to help with the HTML part for file upload and preview next?
