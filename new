@@ -1,12 +1,21 @@
-Got it — you want the **Flask backend to treat uploads generically**, and the **frontend will decide** whether the returned text is for the agreement or template. Let's streamline both sides.
+import os
+from flask import Blueprint, request, jsonify
+from werkzeug.utils import secure_filename
+import mammoth
+import docx
 
----
+legaldoc_bp = Blueprint('legaldoc', __name__)
+UPLOAD_FOLDER = 'uploads'
 
-## ✅ Flask Backend: Generic Upload Handler
+def extract_text_from_docx(path):
+    doc = docx.Document(path)
+    return "\n".join([para.text for para in doc.paragraphs])
 
-Route: `POST /api/legaldoc/upload-one`
+def extract_text_from_doc(path):
+    with open(path, "rb") as doc_file:
+        result = mammoth.extract_raw_text(doc_file)
+        return result.value  # Plain text
 
-```python
 @legaldoc_bp.route('/upload-one', methods=['POST'])
 def upload_single_document():
     if 'file' not in request.files:
@@ -14,63 +23,19 @@ def upload_single_document():
 
     file = request.files['file']
     filename = secure_filename(file.filename)
-    filepath = os.path.join('uploads', filename)
+    filepath = os.path.join(UPLOAD_FOLDER, filename)
 
-    os.makedirs('uploads', exist_ok=True)
+    os.makedirs(UPLOAD_FOLDER, exist_ok=True)
     file.save(filepath)
 
     try:
-        text = textract.process(filepath).decode('utf-8')
+        if filename.lower().endswith('.docx'):
+            text = extract_text_from_docx(filepath)
+        elif filename.lower().endswith('.doc'):
+            text = extract_text_from_doc(filepath)
+        else:
+            return jsonify({'error': 'Unsupported file format'}), 400
     except Exception as e:
         return jsonify({'error': f'Failed to extract text: {str(e)}'}), 500
 
     return jsonify({'text': text})
-```
-
-✅ No `type` required. The backend just returns the text, and the frontend decides what to do with it.
-
----
-
-## ✅ Angular Service (`legaldoc.service.ts`)
-
-```ts
-uploadDocument(file: File): Observable<any> {
-  const formData = new FormData();
-  formData.append('file', file);
-  return this.http.post('http://localhost:5000/api/legaldoc/upload-one', formData);
-}
-```
-
----
-
-## ✅ Angular Component (`legaldoc.component.ts`)
-
-```ts
-onFileUpload(event: any, target: 'agreement' | 'template') {
-  const file = event.target.files[0];
-  if (!file) return;
-
-  this.legalDocService.uploadDocument(file).subscribe({
-    next: (res) => {
-      const text = res.text || '';
-      if (target === 'agreement') {
-        this.agreementText = text;
-      } else {
-        this.templateText = text;
-      }
-    },
-    error: (err) => {
-      console.error('Error uploading file:', err);
-    }
-  });
-}
-```
-
----
-
-### ✅ Result:
-
-* Backend just returns extracted text.
-* Frontend uses `target` argument to assign it to `agreementText` or `templateText`.
-
-Would you like me to help with the HTML part for file upload and preview next?
