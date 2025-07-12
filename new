@@ -1,68 +1,37 @@
-Perfect — let’s implement your system in two parts:
+Perfect — let's do everything **without `sentence-transformers` or any external model downloads**, and fully local using your **Ollama server** for generating **embeddings and chat**. This keeps your app lightweight and dependency-free.
 
 ---
 
-## ✅ PART 1: Upload and Chunking
+## ✅ Plan: Pure Ollama RAG (No Transformers, No Vector DB)
 
-This handles:
-
-* Reading uploaded `.docx` files
-* Chunking them (using paragraph-based logic)
-* Appending chunks with `doc_name` as source
-* Storing them in memory or file (we'll default to file-based JSON)
-
----
-
-### 🔹 1.1: Dependencies
-
-```bash
-pip install python-docx
-```
+| Task                      | Tool                                       |
+| ------------------------- | ------------------------------------------ |
+| Get embeddings for chunks | ✅ `POST /api/embeddings` (Ollama)          |
+| Compare with user query   | ✅ Cosine similarity (NumPy or manual math) |
+| Chat with top-k chunks    | ✅ `POST /api/chat` (Ollama)                |
 
 ---
 
-### 🔹 1.2: Chunking Function
+## ✅ Step-by-Step Backend Flow
+
+---
+
+### 🔹 1. Compute Embeddings on Upload (and store with each chunk)
+
+#### 🔸 Update `store_chunks()` to include embeddings:
 
 ```python
-import docx
-import json
-import os
+import requests
+import numpy as np
 
-CHUNK_DIR = "doc_chunks"
-os.makedirs(CHUNK_DIR, exist_ok=True)
-
-def extract_text_from_docx(file_path):
-    doc = docx.Document(file_path)
-    return "\n\n".join([para.text for para in doc.paragraphs if para.text.strip()])
-
-def chunk_text(text, max_words=800):
-    paragraphs = text.split("\n\n")
-    chunks = []
-    current_chunk = []
-    word_count = 0
-    line_counter = 0
-
-    for para in paragraphs:
-        if not para.strip():
-            continue
-
-        word_count += len(para.split())
-        current_chunk.append((line_counter, para))
-        line_counter += para.count("\n") + 1
-
-        if word_count >= max_words:
-            combined = "\n\n".join(p for _, p in current_chunk)
-            ref = f"Lines {current_chunk[0][0]}–{current_chunk[-1][0]}"
-            chunks.append({"ref": ref, "text": combined})
-            current_chunk = []
-            word_count = 0
-
-    if current_chunk:
-        combined = "\n\n".join(p for _, p in current_chunk)
-        ref = f"Lines {current_chunk[0][0]}–{current_chunk[-1][0]}"
-        chunks.append({"ref": ref, "text": combined})
-
-    return chunks
+def get_ollama_embedding(text, model="nomic-embed-text"):
+    res = requests.post(
+        "http://localhost:11434/api/embeddings",
+        json={"model": model, "prompt": text}
+    )
+    if res.status_code != 200:
+        raise Exception("Embedding failed: " + res.text)
+    return res.json()["embedding"]  # List[float]
 
 def store_chunks(doc_name, chunks):
     file_path = os.path.join(CHUNK_DIR, "all_chunks.json")
@@ -74,6 +43,8 @@ def store_chunks(doc_name, chunks):
 
     for c in chunks:
         c["source"] = doc_name
+        c["embedding"] = get_ollama_embedding(c["text"])
+
     all_chunks.extend(chunks)
 
     with open(file_path, "w") as f:
@@ -82,77 +53,36 @@ def store_chunks(doc_name, chunks):
 
 ---
 
-### 🔹 1.3: Flask Upload Endpoint
+### 🔹 2. During Chat: Get Query Embedding + Cosine Similarity
 
 ```python
-from flask import Blueprint, request, jsonify
-from werkzeug.utils import secure_filename
+def cosine_similarity(vec1, vec2):
+    a = np.array(vec1)
+    b = np.array(vec2)
+    return np.dot(a, b) / (np.linalg.norm(a) * np.linalg.norm(b))
+```
 
-upload_bp = Blueprint("upload", __name__)
+```python
+def get_top_chunks(query, all_chunks, k=4):
+    query_embedding = get_ollama_embedding(query)
+    scored = []
 
-@upload_bp.route("/upload-doc", methods=["POST"])
-def upload_doc():
-    file = request.files["file"]
-    doc_name = request.form.get("doc_name") or secure_filename(file.filename)
+    for chunk in all_chunks:
+        sim = cosine_similarity(query_embedding, chunk["embedding"])
+        scored.append((sim, chunk))
 
-    temp_path = os.path.join("uploads", secure_filename(file.filename))
-    os.makedirs("uploads", exist_ok=True)
-    file.save(temp_path)
-
-    text = extract_text_from_docx(temp_path)
-    chunks = chunk_text(text)
-    store_chunks(doc_name, chunks)
-
-    return jsonify({"message": f"{doc_name} uploaded and chunked."})
+    scored.sort(reverse=True, key=lambda x: x[0])
+    return [chunk for _, chunk in scored[:k]]
 ```
 
 ---
 
-## ✅ PART 2: Chat with Retrieved Chunks
-
-You already have:
-
-* Model, temperature
-* History
-* User question
-
-Now you:
-
-* Load all chunks from file
-* Retrieve top-k relevant ones via cosine similarity
-* Build a system prompt + history + user query
-* Call `/api/chat` on Ollama
-
----
-
-### 🔹 2.1: Setup for Embedding (In-Memory)
-
-```python
-from sklearn.metrics.pairwise import cosine_similarity
-from sentence_transformers import SentenceTransformer
-import numpy as np
-
-embed_model = SentenceTransformer("all-MiniLM-L6-v2")
-
-def embed_chunks_and_query(chunks, query, top_k=4):
-    chunk_texts = [c["text"] for c in chunks]
-    chunk_embeddings = embed_model.encode(chunk_texts)
-    query_embedding = embed_model.encode([query])
-
-    sims = cosine_similarity(query_embedding, chunk_embeddings)[0]
-    top_indices = np.argsort(sims)[::-1][:top_k]
-
-    return [chunks[i] for i in top_indices]
-```
-
----
-
-### 🔹 2.2: Chat Prompt Builder
+### 🔹 3. Chat Prompt Builder
 
 ```python
 def build_chat_prompt(query, selected_chunks):
     context = "\n\n".join([f"[{c['source']} – {c['ref']}]:\n{c['text']}" for c in selected_chunks])
-    return f"""You are a legal assistant. Based on the following document excerpts, answer the user's question.
+    return f"""You are a legal assistant. Use the following document excerpts to answer the user's question.
 
 User Question:
 {query}
@@ -160,17 +90,15 @@ User Question:
 Relevant Context:
 {context}
 
-Answer clearly and cite the document name and line references in your response.
+Answer clearly and cite the document name and line references.
 """
 ```
 
 ---
 
-### 🔹 2.3: Flask Chat Route
+### 🔹 4. Final Chat Route (Flask)
 
 ```python
-import requests
-
 @chat_bp.route("/chat/legal-docs", methods=["POST"])
 def chat_with_docs():
     data = request.json
@@ -182,7 +110,7 @@ def chat_with_docs():
     with open(os.path.join(CHUNK_DIR, "all_chunks.json")) as f:
         all_chunks = json.load(f)
 
-    selected_chunks = embed_chunks_and_query(all_chunks, query)
+    selected_chunks = get_top_chunks(query, all_chunks)
     prompt = build_chat_prompt(query, selected_chunks)
 
     messages = history + [{"role": "user", "content": prompt}]
@@ -202,20 +130,13 @@ def chat_with_docs():
 
 ## ✅ Summary
 
-| Functionality  | Handled By                                             |
-| -------------- | ------------------------------------------------------ |
-| Upload & chunk | `/upload-doc`                                          |
-| Storage        | `all_chunks.json`                                      |
-| Retrieval      | cosine similarity + top-k                              |
-| Prompt build   | Context from matched chunks                            |
-| Chat           | `/chat/legal-docs` endpoint calling Ollama `/api/chat` |
+| Step            | Tool                                                          |
+| --------------- | ------------------------------------------------------------- |
+| Embeddings      | Ollama `/api/embeddings` with `nomic-embed-text`              |
+| Similarity      | `numpy` cosine similarity                                     |
+| Chat            | Ollama `/api/chat`                                            |
+| No Dependencies | ❌ No `sentence-transformers`, ❌ No `sklearn`, ❌ No vector DBs |
 
 ---
 
-Would you like to:
-
-* Structure stored chunks per user/session?
-* Add search filters (e.g., only use “template” chunks)?
-* Persist embeddings for speed?
-
-Let me know — this is production-ready with minimal infra.
+Ready to test it? I can help generate a sample upload + chat script or simplify this further into modules.
