@@ -1,107 +1,33 @@
-Excellent. Here's your **complete backend route for summarizing a single legal document**, using **paragraph-aware chunking**, **traceable prompts**, and integration with a **local LLM via Ollama**.
+Perfect — this step will give your users a **clean, cohesive final summary** that reads like a polished executive brief, instead of a stitched-together bullet dump.
+
+Let’s refine the pipeline by **adding a final LLM pass** after chunk-wise summaries are generated.
 
 ---
 
-## ✅ Summary of What This Does:
+## ✅ Updated Pipeline:
 
-* Accepts a POST request with:
+1. ✅ **Chunk** document by paragraph (as we already do)
+2. ✅ For each chunk:
 
-  * `text` (full legal document)
-  * `model` (e.g., `gemma:7b`)
-  * `temperature` (e.g., `0.2`)
-* Chunks the document by **paragraphs**, keeping context natural and intact
-* Sends each chunk to the LLM using a detailed, traceable prompt
-* Returns an aggregated, bullet-point summary with **line references**
+   * Summarize with traceable prompt
+   * Collect bullet points
+3. ✅ **Concatenate all bullet summaries**
+4. ✅ Send to LLM again:
+
+   * "Write a clean, concise, structured legal summary"
+   * Output: 1–2 paragraph executive summary
+5. ✅ Return:
+
+   * `raw_bullets`: full reference summary
+   * `clean_summary`: final clean version
 
 ---
 
-## ✅ Backend: `routes/summary.py`
+## ✅ Updated Flask Route (Final Pass Included)
+
+Update your `/summarize` route in `routes/summary.py`:
 
 ```python
-from flask import Blueprint, request, jsonify
-from werkzeug.utils import secure_filename
-import requests
-
-summary_bp = Blueprint('summary', __name__)
-
-def chunk_by_paragraphs(text, max_words=800):
-    lines = text.splitlines()
-    line_map = {i: line for i, line in enumerate(lines)}
-
-    paragraphs = text.split("\n\n")
-    chunks = []
-    current_chunk = []
-    current_word_count = 0
-    current_start_line = 0
-    current_line_count = 0
-    line_index = 0
-
-    for para in paragraphs:
-        para = para.strip()
-        if not para:
-            continue
-
-        para_lines = para.splitlines()
-        word_count = len(para.split())
-
-        if current_word_count == 0:
-            current_start_line = line_index
-
-        current_chunk.append(para)
-        current_word_count += word_count
-        line_index += len(para_lines)
-
-        if current_word_count >= max_words:
-            chunk_text = "\n\n".join(current_chunk)
-            ref = f"Lines {current_start_line}–{line_index}"
-            chunks.append((ref, chunk_text))
-
-            # Reset
-            current_chunk = []
-            current_word_count = 0
-
-    if current_chunk:
-        chunk_text = "\n\n".join(current_chunk)
-        ref = f"Lines {current_start_line}–{line_index}"
-        chunks.append((ref, chunk_text))
-
-    return chunks
-
-def build_prompt(ref, chunk):
-    return f"""
-You are a legal analyst reviewing a section of a legal agreement.
-
-Your task is to extract all important legal insights, including obligations, rights, clauses, exceptions, payment terms, timelines, penalties, governing laws, and any subtle implications or risks.
-
-Avoid general summaries. Focus on what a lawyer or compliance officer would want to know.
-Include the reference: “{ref}” in your bullet points.
-
-Use concise bullet points.
-
-Reference: {ref}
-
-Document Section:
-\"\"\"
-{chunk}
-\"\"\"
-"""
-
-def call_local_llm(model, temperature, prompt):
-    response = requests.post(
-        "http://localhost:11434/api/generate",  # Change port if different
-        json={
-            "model": model,
-            "prompt": prompt,
-            "stream": False,
-            "options": {
-                "temperature": temperature
-            }
-        }
-    )
-    if response.status_code != 200:
-        raise Exception(f"LLM call failed: {response.text}")
-    return response.json()["response"]
-
 @summary_bp.route('/summarize', methods=['POST'])
 def summarize_document():
     try:
@@ -111,15 +37,34 @@ def summarize_document():
         temperature = float(data.get('temperature', 0.2))
 
         chunks = chunk_by_paragraphs(full_text)
-        all_summaries = []
+        all_bullets = []
 
         for ref, chunk in chunks:
             prompt = build_prompt(ref, chunk)
             result = call_local_llm(model, temperature, prompt)
-            all_summaries.append(f"📌 **{ref}**\n{result.strip()}\n")
+            all_bullets.append(f"📌 **{ref}**\n{result.strip()}\n")
+
+        combined_summary = "\n\n".join(all_bullets)
+
+        # Final cleanup prompt
+        cleanup_prompt = f"""
+You are a legal analyst. Given the following bullet-point summaries from various sections of a legal agreement, generate a clear and concise executive summary.
+
+Summarize the full agreement, highlight key points such as parties, obligations, timelines, payment terms, legal risks, and termination clauses.
+
+Avoid repeating references or headings. Keep the tone formal and professional.
+
+Summaries:
+\"\"\"
+{combined_summary}
+\"\"\"
+"""
+
+        final_summary = call_local_llm(model, temperature, cleanup_prompt)
 
         return jsonify({
-            "summary": "\n\n".join(all_summaries)
+            "raw_bullets": combined_summary,
+            "clean_summary": final_summary.strip()
         })
 
     except Exception as e:
@@ -128,55 +73,120 @@ def summarize_document():
 
 ---
 
-## ✅ Also Register This Blueprint in `app.py`
+## ✅ Result Format
+
+```json
+{
+  "raw_bullets": "📌 Lines 0–50\n- ...",
+  "clean_summary": "This agreement outlines a service relationship between Alpha Inc. and Beta Corp. The agreement requires..."
+}
+```
+
+---
+
+## ✅ Bonus Ideas (Optional)
+
+* Return both summaries to UI: one collapsible “raw view” + one “clean executive view”
+* Allow users to **export** both to Word/PDF
+* For long clean summaries, split into sections (like “Termination Summary”, “Payment Summary”)
+
+---
+
+Let me know if you'd like help:
+
+* Sending this to Angular frontend
+* Structuring the final summary into JSON
+* Repeating this flow for the **template document** next
+
+Ready when you are.
+
+
+
+
+Excellent — if we want the **final cleaned summary to still mention references** (like `Lines 500–700` or `Section: Termination`), we need to strike a balance between:
+
+* ✨ **Readable, polished output**
+* 📌 **Traceability** (so the user knows where each insight came from)
+
+---
+
+## ✅ Updated Design Goal
+
+Return a **structured summary** that:
+
+* Groups findings by legal topics (e.g., Parties, Payment Terms, Termination)
+* Mentions references like `Lines X–Y` subtly in the output
+* Is readable enough for a lawyer or client to use directly
+
+---
+
+## ✅ What Changes?
+
+We will update the **final LLM cleanup prompt** to *preserve references* while still producing a clean narrative.
+
+---
+
+## ✅ Final Cleanup Prompt (with references)
+
+Update this part in your `/summarize` route:
 
 ```python
-from routes.summary import summary_bp
-app.register_blueprint(summary_bp, url_prefix='/api/summary')
+        cleanup_prompt = f"""
+You are a legal analyst. Given the following bullet-point summaries from a legal agreement, write a structured, formal executive summary.
+
+Group related points into categories such as:
+- Parties Involved
+- Agreement Dates
+- Obligations
+- Payment Terms
+- Termination Clauses
+- Governing Law
+- Risks and Limitations
+
+For each point, include the reference line(s) where it came from, such as “(Lines 120–150)”.
+
+Avoid repeating headings. Present it clearly and professionally, but preserve references for legal traceability.
+
+Summaries:
+\"\"\"
+{combined_summary}
+\"\"\"
+"""
 ```
 
 ---
 
-## ✅ Test With a Sample JSON Payload
+## ✅ Example Output
 
-Send a POST to:
+```text
+Parties Involved:
+- This agreement is made between Alpha Corp. and Beta LLC. (Lines 1–45)
 
+Payment Terms:
+- Payments are due quarterly by the 15th of each month. Late payments incur a 5% penalty. (Lines 120–150)
+
+Termination Clauses:
+- Either party may terminate the agreement with 30 days written notice under defined breach conditions. (Lines 300–350)
 ```
-http://localhost:5000/api/summary/summarize
-```
 
-With body:
+---
+
+## ✅ Final API Response
+
+Keep the response JSON like this:
 
 ```json
 {
-  "text": "<insert full agreement here>",
-  "model": "gemma:7b",
-  "temperature": 0.2
+  "raw_bullets": "...",           // All traceable bullet points per chunk
+  "clean_summary": "...",         // Clean, readable but still traceable
+  "model_used": "gemma:7b"
 }
 ```
 
 ---
 
-## ✅ Output Example
+## ✅ Final Touch
 
-```json
-{
-  "summary": "📌 **Lines 0–75**\n- Agreement is between Party A and Party B...\n- Payment due quarterly by 15th...\n\n📌 **Lines 76–150**\n- Either party may terminate with 30-day notice...\n..."
-}
-```
+If you’d prefer the clean summary as **structured JSON** (e.g., keys like `"termination"`, `"payment_terms"`), I can also format that way — useful for UI filtering or clause search.
 
----
-
-## ✅ What’s Next?
-
-* Apply this same endpoint to **template document**
-* Later: allow chat by storing chunks in memory or embeddings (RAG-style)
-* Or generate a downloadable summary (PDF, Word)
-
-Let me know if you want:
-
-* JSON-formatted summary instead of Markdown
-* Async/Ollama stream handling
-* Live status per chunk (for progress bar)
-
-Ready to move to template summarization next?
+Would you like to structure the final summary like that as well? Or just keep it formatted text with references?
