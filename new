@@ -1,70 +1,101 @@
-Perfect — this step will give your users a **clean, cohesive final summary** that reads like a polished executive brief, instead of a stitched-together bullet dump.
-
-Let’s refine the pipeline by **adding a final LLM pass** after chunk-wise summaries are generated.
+Great — now that you have two full summaries (from agreement and template, both generated using Gemma 3:12B), the next step is to **compare them** and extract meaningful differences.
 
 ---
 
-## ✅ Updated Pipeline:
+## ✅ Goal:
 
-1. ✅ **Chunk** document by paragraph (as we already do)
-2. ✅ For each chunk:
+Create a Flask backend route that:
 
-   * Summarize with traceable prompt
-   * Collect bullet points
-3. ✅ **Concatenate all bullet summaries**
-4. ✅ Send to LLM again:
+* Accepts:
 
-   * "Write a clean, concise, structured legal summary"
-   * Output: 1–2 paragraph executive summary
-5. ✅ Return:
-
-   * `raw_bullets`: full reference summary
-   * `clean_summary`: final clean version
+  * `summary_1` (e.g., from agreement)
+  * `summary_2` (e.g., from template)
+  * Optional `model` and `temperature`
+* Sends a **comparison prompt** to the local LLM (Ollama)
+* Returns a **diff-style or bullet-style** comparison of what's missing, added, or altered
 
 ---
 
-## ✅ Updated Flask Route (Final Pass Included)
+## 🧠 What the Comparison Should Cover:
 
-Update your `/summarize` route in `routes/summary.py`:
+* Differences in obligations, parties, terms
+* Missing clauses in either
+* Changed amounts, timelines, risks
+* Clear explanation of what’s **unique** or **misaligned**
+
+---
+
+## ✅ Flask Backend: `routes/compare.py`
 
 ```python
-@summary_bp.route('/summarize', methods=['POST'])
-def summarize_document():
-    try:
-        data = request.json
-        full_text = data['text']
-        model = data.get('model', 'gemma:7b')
-        temperature = float(data.get('temperature', 0.2))
+from flask import Blueprint, request, jsonify
+import requests
 
-        chunks = chunk_by_paragraphs(full_text)
-        all_bullets = []
+compare_bp = Blueprint('compare', __name__)
 
-        for ref, chunk in chunks:
-            prompt = build_prompt(ref, chunk)
-            result = call_local_llm(model, temperature, prompt)
-            all_bullets.append(f"📌 **{ref}**\n{result.strip()}\n")
+def build_comparison_prompt(summary1, summary2):
+    return f"""
+You are a legal compliance analyst.
 
-        combined_summary = "\n\n".join(all_bullets)
+You are given two legal agreement summaries. Your task is to **compare them and identify all key differences**.
 
-        # Final cleanup prompt
-        cleanup_prompt = f"""
-You are a legal analyst. Given the following bullet-point summaries from various sections of a legal agreement, generate a clear and concise executive summary.
+Focus on:
+- Obligations
+- Payment terms
+- Termination conditions
+- Clauses added, removed, or changed
+- Legal risks or liabilities introduced or omitted
 
-Summarize the full agreement, highlight key points such as parties, obligations, timelines, payment terms, legal risks, and termination clauses.
+Present your findings clearly in bullet points.
 
-Avoid repeating references or headings. Keep the tone formal and professional.
+Use this format:
+- Difference: <explanation>
+  - Found in Summary 1: ...
+  - Found in Summary 2: ...
 
 Summaries:
+
+Summary 1:
 \"\"\"
-{combined_summary}
+{summary1}
+\"\"\"
+
+Summary 2:
+\"\"\"
+{summary2}
 \"\"\"
 """
 
-        final_summary = call_local_llm(model, temperature, cleanup_prompt)
+def call_llm(prompt, model="gemma:12b", temperature=0.2):
+    response = requests.post(
+        "http://localhost:11434/api/generate",
+        json={
+            "model": model,
+            "prompt": prompt,
+            "stream": False,
+            "options": {
+                "temperature": temperature
+            }
+        }
+    )
+    if response.status_code != 200:
+        raise Exception(f"LLM error: {response.text}")
+    return response.json()["response"]
+
+@compare_bp.route('/compare-summaries', methods=['POST'])
+def compare_summaries():
+    try:
+        data = request.json
+        summary1 = data['summary_1']
+        summary2 = data['summary_2']
+        model = data.get('model', 'gemma:12b')
+        temperature = float(data.get('temperature', 0.2))
+
+        prompt = build_comparison_prompt(summary1, summary2)
+        result = call_llm(prompt, model, temperature)
 
         return jsonify({
-            "raw_bullets": combined_summary,
-            "clean_summary": final_summary.strip()
+            "differences": result.strip()
         })
 
     except Exception as e:
@@ -73,120 +104,42 @@ Summaries:
 
 ---
 
-## ✅ Result Format
-
-```json
-{
-  "raw_bullets": "📌 Lines 0–50\n- ...",
-  "clean_summary": "This agreement outlines a service relationship between Alpha Inc. and Beta Corp. The agreement requires..."
-}
-```
-
----
-
-## ✅ Bonus Ideas (Optional)
-
-* Return both summaries to UI: one collapsible “raw view” + one “clean executive view”
-* Allow users to **export** both to Word/PDF
-* For long clean summaries, split into sections (like “Termination Summary”, “Payment Summary”)
-
----
-
-Let me know if you'd like help:
-
-* Sending this to Angular frontend
-* Structuring the final summary into JSON
-* Repeating this flow for the **template document** next
-
-Ready when you are.
-
-
-
-
-Excellent — if we want the **final cleaned summary to still mention references** (like `Lines 500–700` or `Section: Termination`), we need to strike a balance between:
-
-* ✨ **Readable, polished output**
-* 📌 **Traceability** (so the user knows where each insight came from)
-
----
-
-## ✅ Updated Design Goal
-
-Return a **structured summary** that:
-
-* Groups findings by legal topics (e.g., Parties, Payment Terms, Termination)
-* Mentions references like `Lines X–Y` subtly in the output
-* Is readable enough for a lawyer or client to use directly
-
----
-
-## ✅ What Changes?
-
-We will update the **final LLM cleanup prompt** to *preserve references* while still producing a clean narrative.
-
----
-
-## ✅ Final Cleanup Prompt (with references)
-
-Update this part in your `/summarize` route:
+## ✅ Register This Route in `app.py`
 
 ```python
-        cleanup_prompt = f"""
-You are a legal analyst. Given the following bullet-point summaries from a legal agreement, write a structured, formal executive summary.
-
-Group related points into categories such as:
-- Parties Involved
-- Agreement Dates
-- Obligations
-- Payment Terms
-- Termination Clauses
-- Governing Law
-- Risks and Limitations
-
-For each point, include the reference line(s) where it came from, such as “(Lines 120–150)”.
-
-Avoid repeating headings. Present it clearly and professionally, but preserve references for legal traceability.
-
-Summaries:
-\"\"\"
-{combined_summary}
-\"\"\"
-"""
+from routes.compare import compare_bp
+app.register_blueprint(compare_bp, url_prefix='/api/compare')
 ```
 
 ---
 
-## ✅ Example Output
-
-```text
-Parties Involved:
-- This agreement is made between Alpha Corp. and Beta LLC. (Lines 1–45)
-
-Payment Terms:
-- Payments are due quarterly by the 15th of each month. Late payments incur a 5% penalty. (Lines 120–150)
-
-Termination Clauses:
-- Either party may terminate the agreement with 30 days written notice under defined breach conditions. (Lines 300–350)
-```
-
----
-
-## ✅ Final API Response
-
-Keep the response JSON like this:
+## ✅ Sample Request Payload
 
 ```json
 {
-  "raw_bullets": "...",           // All traceable bullet points per chunk
-  "clean_summary": "...",         // Clean, readable but still traceable
-  "model_used": "gemma:7b"
+  "summary_1": "Agreement summary from Gemma 3:12B...",
+  "summary_2": "Template summary from Gemma 3:12B...",
+  "model": "gemma:12b",
+  "temperature": 0.2
 }
 ```
 
 ---
 
-## ✅ Final Touch
+## ✅ Sample Output
 
-If you’d prefer the clean summary as **structured JSON** (e.g., keys like `"termination"`, `"payment_terms"`), I can also format that way — useful for UI filtering or clause search.
+```json
+{
+  "differences": "- Difference: Payment frequency changed\n  - Found in Summary 1: Quarterly payments due on the 15th.\n  - Found in Summary 2: Monthly payments without a fixed date.\n\n- Difference: Termination clause removed\n  - Found in Summary 1: Either party may terminate with 30 days notice.\n  - Found in Summary 2: No termination clause found."
+}
+```
 
-Would you like to structure the final summary like that as well? Or just keep it formatted text with references?
+---
+
+Let me know if you’d like to:
+
+* Format response in **diff view** (e.g., added/removed markers)
+* Return **structured JSON** per clause type (for side-by-side UI)
+* Run comparison on full text instead of summaries (if needed later)
+
+Want to test it with real examples next?
