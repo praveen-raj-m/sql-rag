@@ -1,110 +1,149 @@
-Great — let’s implement the backend Flask `/chat` route in `attribution.py`.
+Thanks, that’s a solid overview. Here's a quick recap before we implement the service and backend route, just to make sure we're aligned:
+
+### ✅ Requirements Recap:
+
+* **Frontend Angular App:**
+
+  * File upload (DOC/DOCX, side-by-side).
+  * On file upload, call backend API.
+  * Backend reads and extracts text from file.
+  * Return extracted text.
+  * Set `this.agreementText` and `this.templateText` accordingly in `legaldoc.component.ts`.
+
+* **Backend Flask App:**
+
+  * Route to receive file path or file directly.
+  * Use something like `python-docx` or `textract` to extract text.
+  * Send back JSON: `{ "agreementText": "...", "templateText": "..." }`.
 
 ---
 
-### ✅ Goal
+## 1️⃣ Angular Service (`legaldoc.service.ts`)
 
-Receive this from frontend:
+Create this in `client/src/app/services/legaldoc.service.ts`:
 
-```json
-{
-  "model": "llama3",
-  "temperature": 0.7,
-  "dataJson": { ... },         // from attribution prompt
-  "history": [
-    { "role": "user", "content": "What happened in energy?" },
-    { "role": "assistant", "content": "Energy sector underperformed due to..." }
-  ],
-  "userQuery": "And healthcare?"
-}
-```
+```ts
+import { HttpClient } from '@angular/common/http';
+import { Injectable } from '@angular/core';
+import { Observable } from 'rxjs';
 
-Return:
+@Injectable({
+  providedIn: 'root'
+})
+export class LegalDocService {
+  private apiUrl = 'http://localhost:5000/api/legaldoc'; // Adjust if needed
 
-```json
-{
-  "response": "Healthcare sector contributed positively due to..."
+  constructor(private http: HttpClient) {}
+
+  uploadDocuments(formData: FormData): Observable<any> {
+    return this.http.post(`${this.apiUrl}/upload`, formData);
+  }
 }
 ```
 
 ---
 
-### ✅ Step-by-Step Code for `attribution.py`
+## 2️⃣ Angular Component Usage (`legaldoc.component.ts`)
+
+```ts
+onFileUpload(event: any, type: 'agreement' | 'template') {
+  const file = event.target.files[0];
+  if (!file) return;
+
+  const formData = new FormData();
+  formData.append(type, file); // 'agreement' or 'template'
+
+  this.legalDocService.uploadDocuments(formData).subscribe({
+    next: (res) => {
+      this.agreementText = res.agreementText || '';
+      this.templateText = res.templateText || '';
+    },
+    error: (err) => {
+      console.error('File upload failed:', err);
+    }
+  });
+}
+```
+
+> If you want to upload both files together after both are selected, let me know—we’ll combine them into a single `FormData`.
+
+---
+
+## 3️⃣ Flask Backend Route (`routes/legaldoc.py`)
 
 ```python
-from flask import request, jsonify
-from routes import attribution_bp
-import requests
+from flask import Blueprint, request, jsonify
+import os
+from werkzeug.utils import secure_filename
+import textract  # or python-docx for .docx only
 
-@attribution_bp.route('/chat', methods=['POST'])
-def chat_with_llm():
-    try:
-        data = request.get_json()
+legaldoc_bp = Blueprint('legaldoc', __name__)
 
-        model = data.get('model', 'llama3')
-        temperature = data.get('temperature', 0.7)
-        attribution_json = data.get('dataJson', {})
-        history = data.get('history', [])
-        user_query = data.get('userQuery', '')
+UPLOAD_FOLDER = 'uploads'
 
-        if not user_query.strip():
-            return jsonify({'response': 'No query provided.'}), 400
+@legaldoc_bp.route('/upload', methods=['POST'])
+def upload_documents():
+    os.makedirs(UPLOAD_FOLDER, exist_ok=True)
 
-        # Build the prompt
-        messages = [
-            {
-                "role": "system",
-                "content": "You are a financial analyst. Answer user questions based on the attribution data provided."
-            },
-            {
-                "role": "system",
-                "content": f"Here is the attribution data:\n\n{attribution_json}"
-            }
-        ]
+    agreement_text = ''
+    template_text = ''
 
-        # Add trimmed history
-        for item in history[-6:]:
-            messages.append({"role": item["role"], "content": item["content"]})
+    if 'agreement' in request.files:
+        file = request.files['agreement']
+        filename = secure_filename(file.filename)
+        filepath = os.path.join(UPLOAD_FOLDER, filename)
+        file.save(filepath)
+        agreement_text = textract.process(filepath).decode('utf-8')
 
-        # Add user query
-        messages.append({"role": "user", "content": user_query})
+    if 'template' in request.files:
+        file = request.files['template']
+        filename = secure_filename(file.filename)
+        filepath = os.path.join(UPLOAD_FOLDER, filename)
+        file.save(filepath)
+        template_text = textract.process(filepath).decode('utf-8')
 
-        # Send to Ollama
-        ollama_payload = {
-            "model": model,
-            "temperature": temperature,
-            "messages": messages
-        }
-
-        ollama_response = requests.post(
-            "http://localhost:11434/api/chat", json=ollama_payload, timeout=30
-        )
-
-        if ollama_response.status_code != 200:
-            return jsonify({'response': '⚠️ LLM failed to respond'}), 500
-
-        result = ollama_response.json()
-        reply = result.get("message", {}).get("content", "").strip()
-
-        return jsonify({'response': reply})
-
-    except Exception as e:
-        print("Error:", e)
-        return jsonify({'response': '⚠️ Error during chat.'}), 500
+    return jsonify({
+        'agreementText': agreement_text,
+        'templateText': template_text
+    })
 ```
 
 ---
 
-### 🧪 Test It
+## 4️⃣ Register Blueprint in `app.py`
 
-You can test with Postman or your Angular chat UI:
+```python
+from flask import Flask
+from routes.legaldoc import legaldoc_bp
 
-```bash
-curl -X POST http://localhost:5000/chat \
--H "Content-Type: application/json" \
--d '{"model":"llama3", "temperature":0.7, "dataJson":{"Sector":"Energy",...}, "history":[], "userQuery":"What about energy?"}'
+app = Flask(__name__)
+app.config['UPLOAD_FOLDER'] = 'uploads'
+app.register_blueprint(legaldoc_bp, url_prefix='/api/legaldoc')
 ```
 
 ---
 
-Ready to connect the frontend and try it out? Let me know if you want help improving the prompt quality or minimizing token use.
+## 5️⃣ CORS (Allow Angular to Connect)
+
+Add this to your Flask `app.py`:
+
+```python
+from flask_cors import CORS
+CORS(app)
+```
+
+---
+
+## Questions Before We Proceed Further:
+
+1. Should file upload happen **together** (after both are selected), or **immediately** on file selection?
+2. Do you want to extract **only text from DOCX**, or support **PDF** and other formats too?
+3. Are you okay with `textract` (broader file support), or prefer `python-docx` (faster but DOCX only)?
+
+Once you confirm, I can help you:
+
+* Handle multiple file uploads more elegantly
+* Add loading indicators / error handling
+* Extend server parsing logic (e.g., extract sections/clauses)
+
+Ready to proceed?
