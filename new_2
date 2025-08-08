@@ -1,0 +1,705 @@
+#!/usr/bin/env python3
+# -*- coding: utf-8 -*-
+
+"""
+Attribution Report Builder (Single-Period, Country-Level Brinson Attribution)
+
+Inputs:
+- data: list of dicts with keys:
+    country (or sector), port_avg_wt, port_total_ret, port_weighted_contrib,
+    bench_avg_wt, bench_total_ret, bench_weighted_contrib,
+    allocation, selection, total
+- portfolio_name: str
+- period: str (e.g., "July 2025" or "2025-07")
+- output_prefix: str for file naming (e.g., "global_equity_q2_2025")
+
+Outputs:
+- JSON with formulas + computed scores + tags for each country
+- TXT file with LLM prompt (descriptive-only, PM-friendly)
+- DOCX report with main table, AI commentary, and charts
+
+Notes:
+- Charts use matplotlib (no seaborn, no custom colors) per constraints.
+- If python-docx is unavailable in your env, install via: pip install python-docx
+"""
+
+import json
+import math
+from statistics import mean, pstdev
+from typing import List, Dict, Tuple, Any
+import os
+
+import matplotlib
+matplotlib.use("Agg")
+import matplotlib.pyplot as plt
+
+try:
+    from docx import Document
+    from docx.shared import Inches, Pt
+    from docx.enum.text import WD_ALIGN_PARAGRAPH
+    from docx.oxml.ns import qn
+except Exception as e:
+    Document = None
+
+# -------------------------------
+# Utilities
+# -------------------------------
+
+def _safe_name(row: Dict[str, Any]) -> str:
+    if "country" in row and row["country"]:
+        return str(row["country"])
+    if "sector" in row and row["sector"]:
+        return str(row["sector"])
+    return "Unknown"
+
+def _get_numeric(row: Dict[str, Any], key: str, default: float = 0.0) -> float:
+    try:
+        v = row.get(key, default)
+        if v is None:
+            return default
+        return float(v)
+    except Exception:
+        return default
+
+def _z_scores(values: List[float]) -> List[float]:
+    if not values:
+        return []
+    mu = mean(values)
+    # population std dev; if zero, all z become 0
+    sigma = pstdev(values) if len(values) > 1 else 0.0
+    if sigma == 0.0:
+        return [0.0 for _ in values]
+    return [(v - mu) / sigma for v in values]
+
+def _rank_percentiles(values: List[float]) -> List[float]:
+    # Simple percentile rank by sorting unique values; tie-average handling simplified
+    sorted_vals = sorted(values)
+    n = len(sorted_vals)
+    res = []
+    for v in values:
+        # percentile position of v (0..100)
+        # fraction of values <= v
+        count_le = sum(1 for x in sorted_vals if x <= v)
+        pct = 100.0 * count_le / n
+        res.append(pct)
+    return res
+
+def _top_bottom_indices(values: List[float], frac: float = 0.10) -> Tuple[set, set]:
+    n = max(1, int(round(len(values) * frac)))
+    # Indices of top n and bottom n by value
+    idx_sorted = sorted(range(len(values)), key=lambda i: values[i])
+    bottom = set(idx_sorted[:n])
+    top = set(idx_sorted[-n:]) if n > 0 else set()
+    # Ensure at least one when length < 10
+    if len(values) < 10:
+        bottom = set([idx_sorted[0]])
+        top = set([idx_sorted[-1]])
+    return top, bottom
+
+# -------------------------------
+# Core computation
+# -------------------------------
+
+FORMULAS = {
+    "excess_weight": "port_avg_wt - bench_avg_wt",
+    "excess_return": "port_total_ret - bench_total_ret",
+    "contribution_share": "total / sum(total for all countries)",
+    "allocation_z": "(allocation - mean(allocation)) / std(allocation)",
+    "selection_z": "(selection - mean(selection)) / std(selection)",
+    "total_z": "(total - mean(total)) / std(total)",
+    "selection_efficiency": "selection / max(port_avg_wt, 1e-9)",
+    "interaction": "total - allocation - selection",
+    "decision_flag": "OW+beat if excess_weight>0 & excess_return>0; UW+lag if <0 & <0; OW+lag if >0 & <0; UW+beat if <0 & >0",
+    "divergence_flag": "Divergent if sign(allocation) != sign(selection)",
+    "large_interaction_share": "abs(interaction)/abs(total) > 0.2 when abs(total)>0",
+    "top_contributor": "top 10% by total (or top 1 if <10 rows)",
+    "top_detractor": "bottom 10% by total (or bottom 1 if <10 rows)",
+    "strong_allocation": "allocation_z > +1",
+    "weak_allocation": "allocation_z < -1",
+    "strong_selection": "selection_z > +1",
+    "weak_selection": "selection_z < -1",
+    "high_efficiency_selection": "selection_efficiency in top 10%"
+}
+
+def compute_scores(data: List[Dict[str, Any]], thresholds: Dict[str, Any]) -> List[Dict[str, Any]]:
+    # Prepare lists for cross-sectional stats
+    allocation_vals = []
+    selection_vals = []
+    total_vals = []
+    port_wts = []
+
+    # Prepass to compute interaction if missing and collect arrays
+    prepared = []
+    for row in data:
+        name = _safe_name(row)
+        port_w = _get_numeric(row, "port_avg_wt")
+        bench_w = _get_numeric(row, "bench_avg_wt")
+        port_r = _get_numeric(row, "port_total_ret")
+        bench_r = _get_numeric(row, "bench_total_ret")
+        alloc = _get_numeric(row, "allocation")
+        sel = _get_numeric(row, "selection")
+        tot = _get_numeric(row, "total")
+
+        # Compute interaction if needed
+        interaction = tot - alloc - sel
+
+        prepared.append({
+            "name": name,
+            "port_avg_wt": port_w,
+            "bench_avg_wt": bench_w,
+            "port_total_ret": port_r,
+            "bench_total_ret": bench_r,
+            "allocation": alloc,
+            "selection": sel,
+            "total": tot,
+            "interaction": interaction
+        })
+        allocation_vals.append(alloc)
+        selection_vals.append(sel)
+        total_vals.append(tot)
+        port_wts.append(port_w)
+
+    # Cross-sectional stats
+    alloc_z = _z_scores(allocation_vals)
+    sel_z = _z_scores(selection_vals)
+    tot_z = _z_scores(total_vals)
+    eff_sel = [ (selection_vals[i] / (port_wts[i] if abs(port_wts[i]) > 1e-9 else 1e-9)) for i in range(len(prepared)) ]
+
+    eff_sel_pct = _rank_percentiles(eff_sel)
+    tot_pct = _rank_percentiles(total_vals)
+
+    top_set, bottom_set = _top_bottom_indices(total_vals, frac=float(thresholds.get(\"top_bottom_pct\", 10))/100.0)
+    # Percentiles for allocation, selection, totals, and interaction share
+    alloc_pct = _rank_percentiles(allocation_vals)
+    sel_pct = _rank_percentiles(selection_vals)
+    tot_pct = _rank_percentiles(total_vals)
+    inter_share = [
+        (abs(prepared[i][\"interaction\"]) / max(abs(prepared[i][\"total\"]), 1e-12)) if abs(prepared[i][\"total\"])>0 else 0.0
+        for i in range(len(prepared))
+    ]
+    inter_pct = _rank_percentiles(inter_share)
+
+    # Sum total for contribution share
+    sum_total = sum(total_vals) if len(total_vals) > 0 else 0.0
+
+    # Build records with tags
+    records = []
+    for i, row in enumerate(prepared):
+        excess_w = row["port_avg_wt"] - row["bench_avg_wt"]
+        excess_r = row["port_total_ret"] - row["bench_total_ret"]
+        decision_flag = None
+        if excess_w > 0 and excess_r > 0:
+            decision_flag = "OW+beat"
+        elif excess_w < 0 and excess_r < 0:
+            decision_flag = "UW+lag"
+        elif excess_w > 0 and excess_r < 0:
+            decision_flag = "OW+lag"
+        elif excess_w < 0 and excess_r > 0:
+            decision_flag = "UW+beat"
+
+        divergence_flag = (row["allocation"] * row["selection"] < 0)
+
+        contribution_share = (row["total"] / sum_total) if abs(sum_total) > 1e-12 else 0.0
+        large_interaction_share = (abs(row["total"]) > 0 and abs(row["interaction"]) / max(abs(row["total"]), 1e-12) > 0.2)
+
+        tags = []
+
+        # Top Contributor/Detractor
+        if i in top_set:
+            tags.append({
+                "tag": "Top Contributor",
+                "reason": "Total effect ranked in the top decile of the cross-section.",
+                "supporting_numbers": {
+                    "total": row["total"],
+                    "total_rank_percentile": tot_pct[i]
+                }
+            })
+        if i in bottom_set:
+            tags.append({
+                "tag": "Top Detractor",
+                "reason": "Total effect ranked in the bottom decile of the cross-section.",
+                "supporting_numbers": {
+                    "total": row["total"],
+                    "total_rank_percentile": tot_pct[i]
+                }
+            })
+
+        # Allocation/Selection strength
+                if alloc_pct[i] >= float(thresholds.get(\"strong_pct\", 84)):
+            tags.append({
+                \"tag\": \"Strong Allocation\",
+                \"reason\": \"Allocation effect percentile above threshold in this period.\",
+                \"supporting_numbers\": {
+                    \"allocation\": row[\"allocation\"],
+                    \"allocation_percentile\": alloc_pct[i],
+                    \"allocation_z\": alloc_z[i]
+                }
+            })
+                if alloc_pct[i] <= float(thresholds.get(\"weak_pct\", 16)):
+            tags.append({
+                \"tag\": \"Weak Allocation\",
+                \"reason\": \"Allocation effect percentile below threshold in this period.\",
+                \"supporting_numbers\": {
+                    \"allocation\": row[\"allocation\"],
+                    \"allocation_percentile\": alloc_pct[i],
+                    \"allocation_z\": alloc_z[i]
+                }
+            })
+                if sel_pct[i] >= float(thresholds.get(\"strong_pct\", 84)):
+            tags.append({
+                \"tag\": \"Strong Selection\",
+                \"reason\": \"Selection effect percentile above threshold in this period.\",
+                \"supporting_numbers\": {
+                    \"selection\": row[\"selection\"],
+                    \"selection_percentile\": sel_pct[i],
+                    \"selection_z\": sel_z[i]
+                }
+            })
+                if sel_pct[i] <= float(thresholds.get(\"weak_pct\", 16)):
+            tags.append({
+                \"tag\": \"Weak Selection\",
+                \"reason\": \"Selection effect percentile below threshold in this period.\",
+                \"supporting_numbers\": {
+                    \"selection\": row[\"selection\"],
+                    \"selection_percentile\": sel_pct[i],
+                    \"selection_z\": sel_z[i]
+                }
+            })
+
+        # Decision quadrant flags
+        if decision_flag == "OW+beat":
+            tags.append({
+                "tag": "Overweight Outperformance",
+                "reason": "Overweight and positive excess return.",
+                "supporting_numbers": {
+                    "excess_weight": excess_w,
+                    "excess_return": excess_r
+                }
+            })
+        if decision_flag == "UW+lag":
+            tags.append({
+                "tag": "Underweight Underperformance",
+                "reason": "Underweight and negative excess return.",
+                "supporting_numbers": {
+                    "excess_weight": excess_w,
+                    "excess_return": excess_r
+                }
+            })
+        if decision_flag == "OW+lag":
+            tags.append({
+                "tag": "Overweight Underperformance",
+                "reason": "Overweight and negative excess return.",
+                "supporting_numbers": {
+                    "excess_weight": excess_w,
+                    "excess_return": excess_r
+                }
+            })
+        if decision_flag == "UW+beat":
+            tags.append({
+                "tag": "Underweight Outperformance",
+                "reason": "Underweight and positive excess return.",
+                "supporting_numbers": {
+                    "excess_weight": excess_w,
+                    "excess_return": excess_r
+                }
+            })
+
+        # High efficiency selection (top decile by selection/weight)
+        # Use percentile >= 90 as top decile
+                if eff_sel_pct[i] >= float(thresholds.get(\"efficiency_pct\", 90)):
+            tags.append({
+                \"tag\": \"High Efficiency Selection\",
+                \"reason\": \"Selection per unit of portfolio weight ranked above percentile threshold.\",
+                \"supporting_numbers\": {
+                    \"selection_efficiency\": eff_sel[i],
+                    \"portfolio_weight\": row[\"port_avg_wt\"],
+                    \"selection\": row[\"selection\"],
+                    \"efficiency_percentile\": eff_sel_pct[i]
+                }
+            })
+
+        # Divergence & Interaction watch
+        if divergence_flag:
+            tags.append({
+                "tag": "Divergent Effects",
+                "reason": "Allocation and selection effects had opposite signs.",
+                "supporting_numbers": {
+                    "allocation": row["allocation"],
+                    "selection": row["selection"]
+                }
+            })
+        if large_interaction_share:
+            tags.append({
+                "tag": "Large Interaction Share",
+                "reason": "Interaction exceeded 20% of total effect in absolute terms.",
+                "supporting_numbers": {
+                    "interaction": row["interaction"],
+                    "total": row["total"],
+                    "share": (abs(row["interaction"]) / max(abs(row["total"]), 1e-12))
+                }
+            })
+
+        record = {
+            "country": row["name"],
+            "port_avg_wt": row["port_avg_wt"],
+            "bench_avg_wt": row["bench_avg_wt"],
+            "port_total_ret": row["port_total_ret"],
+            "bench_total_ret": row["bench_total_ret"],
+            "allocation": row["allocation"],
+            "selection": row["selection"],
+            "total": row["total"],
+            "interaction": row["interaction"],
+            "excess_weight": excess_w,
+            "excess_return": excess_r,
+            "contribution_share": contribution_share,
+            "allocation_z": alloc_z[i],
+            "selection_z": sel_z[i],
+            "total_z": tot_z[i],
+            "selection_efficiency": eff_sel[i],
+            "decision_flag": decision_flag,
+            "tags": tags
+        }
+        records.append(record)
+
+    return records
+
+# -------------------------------
+# Prompt
+# -------------------------------
+
+def build_commentary_prompt(records: List[Dict[str, Any]], portfolio_name: str, period: str, max_items: int = 12) -> str:
+    """
+    Build a descriptive-only prompt for an LLM (e.g., Gemma via Ollama).
+    - Neutral tone
+    - Financial language
+    - Use only numbers provided
+    - Include only tagged sectors (limit to max_items for brevity)
+    """
+    # Keep only countries with any tags
+    tagged = [r for r in records if r.get("tags")]
+    # Sort by absolute total effect desc to prioritize most material
+    tagged.sort(key=lambda r: abs(r.get("total", 0.0)), reverse=True)
+    tagged = tagged[:max_items]
+
+    # Condensed JSON-ish snippet to pass
+    # Keep only core numbers + tag names + minimal support
+    items = []
+    for r in tagged:
+        items.append({
+            "country": r["country"],
+            "allocation": r["allocation"],
+            "selection": r["selection"],
+            "total": r["total"],
+            "excess_weight": r["excess_weight"],
+            "excess_return": r["excess_return"],
+            "tags": [
+                {
+                    "tag": t["tag"],
+                    "supporting_numbers": t.get("supporting_numbers", {})
+                } for t in r["tags"]
+            ]
+        })
+
+    summary_json = json.dumps(items, ensure_ascii=False)
+
+    prompt = f"""
+You are a portfolio attribution analyst. 
+Write a concise, factual, and professional commentary based on single-period Brinson attribution at the country level.
+
+Rules:
+- Describe only; do not criticize, recommend, or opine.
+- Use financial terminology (allocation effect, selection effect, total effect, excess return, overweight/underweight).
+- Support each statement with specific figures provided.
+- Mention only the countries included in the data summary.
+- Tone: neutral and suitable for portfolio managers.
+- Length: 3–6 sentences.
+
+Portfolio Name: {portfolio_name}
+Time Period: {period}
+
+Data Summary (numbers already computed; do not invent new ones):
+{summary_json}
+"""
+    return prompt.strip()
+
+# -------------------------------
+# Charts
+# -------------------------------
+
+def _ensure_dir(path: str):
+    os.makedirs(os.path.dirname(path), exist_ok=True)
+
+def chart_top_contributors_detractors(records: List[Dict[str, Any]], save_path: str, top_n: int = 10):
+    # Sort by total effect
+    sorted_recs = sorted(records, key=lambda r: r["total"])
+    neg = sorted_recs[:top_n]
+    pos = sorted_recs[-top_n:]
+    # Combine: negatives first, then positives
+    combined = neg + pos
+    labels = [r["country"] for r in combined]
+    values = [r["total"] for r in combined]
+
+    plt.figure()
+    plt.bar(range(len(values)), values)
+    plt.xticks(range(len(labels)), labels, rotation=45, ha='right')
+    plt.ylabel("Total Effect")
+    plt.title("Top Contributors & Detractors (Total Effect)")
+    plt.tight_layout()
+    _ensure_dir(save_path)
+    plt.savefig(save_path, dpi=200)
+    plt.close()
+
+def chart_excess_wt_vs_excess_ret(records: List[Dict[str, Any]], save_path: str, annotate_top_k: int = 10):
+    xs = [r["excess_weight"] for r in records]
+    ys = [r["excess_return"] for r in records]
+    sizes = [max(20.0, 8000.0 * abs(r["total"])) for r in records]  # size scales with |total|
+
+    plt.figure()
+    plt.scatter(xs, ys, s=sizes, alpha=0.6)
+    plt.axhline(0, linewidth=1)
+    plt.axvline(0, linewidth=1)
+    plt.xlabel("Excess Weight")
+    plt.ylabel("Excess Return")
+    plt.title("Excess Weight vs. Excess Return (bubble size = |Total Effect|)")
+
+    # Annotate top |total|
+    top = sorted(records, key=lambda r: abs(r["total"]), reverse=True)[:annotate_top_k]
+    for r in top:
+        plt.annotate(r["country"], (r["excess_weight"], r["excess_return"]))
+
+    plt.tight_layout()
+    _ensure_dir(save_path)
+    plt.savefig(save_path, dpi=200)
+    plt.close()
+
+def chart_allocation_selection_bars(records: List[Dict[str, Any]], save_path: str, top_n: int = 10):
+    # Rank by absolute z of allocation and selection, merge top names
+    alloc = sorted(records, key=lambda r: abs(r["allocation"]), reverse=True)[:top_n]
+    sel = sorted(records, key=lambda r: abs(r["selection"]), reverse=True)[:top_n]
+
+    labels_a = [r["country"] for r in alloc]
+    vals_a = [r["allocation"] for r in alloc]
+
+    labels_s = [r["country"] for r in sel]
+    vals_s = [r["selection"] for r in sel]
+
+    # Two separate charts (one figure each, no subplots per constraints)
+    # Allocation
+    plt.figure()
+    plt.barh(range(len(vals_a)), vals_a)
+    plt.yticks(range(len(labels_a)), labels_a)
+    plt.xlabel("Allocation Effect")
+    plt.title("Top |Allocation| Effects")
+    plt.tight_layout()
+    _ensure_dir(save_path.replace(".png", "_alloc.png"))
+    plt.savefig(save_path.replace(".png", "_alloc.png"), dpi=200)
+    plt.close()
+
+    # Selection
+    plt.figure()
+    plt.barh(range(len(vals_s)), vals_s)
+    plt.yticks(range(len(labels_s)), labels_s)
+    plt.xlabel("Selection Effect")
+    plt.title("Top |Selection| Effects")
+    plt.tight_layout()
+    _ensure_dir(save_path.replace(".png", "_sel.png"))
+    plt.savefig(save_path.replace(".png", "_sel.png"), dpi=200)
+    plt.close()
+
+# -------------------------------
+# Word document
+# -------------------------------
+
+def build_docx(records: List[Dict[str, Any]], portfolio_name: str, period: str, commentary_text: str, chart_paths: List[str], save_path: str):
+    if Document is None:
+        raise RuntimeError("python-docx is not available in this environment. Please install: pip install python-docx")
+
+    doc = Document()
+
+    # Title
+    title = doc.add_paragraph()
+    run = title.add_run(f"Portfolio Attribution Report — {portfolio_name}")
+    run.bold = True
+    run.font.size = Pt(16)
+    title.alignment = WD_ALIGN_PARAGRAPH.LEFT
+
+    subtitle = doc.add_paragraph()
+    run2 = subtitle.add_run(f"Time Period: {period}")
+    run2.italic = True
+    subtitle.alignment = WD_ALIGN_PARAGRAPH.LEFT
+
+    doc.add_paragraph("")
+
+    # Main table
+    headers = ["Country", "Benchmark Weight", "Portfolio Weight", "Allocation Effect", "Selection Effect", "Total Effect"]
+    table = doc.add_table(rows=1, cols=len(headers))
+    hdr_cells = table.rows[0].cells
+    for j, h in enumerate(headers):
+        hdr_cells[j].text = h
+
+    sum_alloc = 0.0
+    sum_sel = 0.0
+    sum_tot = 0.0
+
+    for r in sorted(records, key=lambda x: x["country"]):
+        row_cells = table.add_row().cells
+        row_cells[0].text = str(r["country"])
+        row_cells[1].text = f"{r['bench_avg_wt']:.4f}"
+        row_cells[2].text = f"{r['port_avg_wt']:.4f}"
+        row_cells[3].text = f"{r['allocation']:.4f}"
+        row_cells[4].text = f"{r['selection']:.4f}"
+        row_cells[5].text = f"{r['total']:.4f}"
+        sum_alloc += r["allocation"]
+        sum_sel += r["selection"]
+        sum_tot += r["total"]
+
+    # Totals row
+    total_cells = table.add_row().cells
+    total_cells[0].text = "Total"
+    total_cells[1].text = "—"
+    total_cells[2].text = "—"
+    total_cells[3].text = f"{sum_alloc:.4f}"
+    total_cells[4].text = f"{sum_sel:.4f}"
+    total_cells[5].text = f"{sum_tot:.4f}"
+
+    doc.add_paragraph("")
+    doc.add_paragraph("AI Commentary").runs[0].bold = True
+    doc.add_paragraph(commentary_text)
+
+    doc.add_paragraph("")
+    doc.add_paragraph(f"Charts — {portfolio_name}, {period}").runs[0].bold = True
+
+    for p in chart_paths:
+        if os.path.exists(p):
+            doc.add_paragraph(os.path.basename(p))
+            doc.add_picture(p, width=Inches(6.5))
+            # Caption-like paragraph
+            cap = doc.add_paragraph(f"AI Commentary — {portfolio_name}, {period}")
+            cap.italic = True
+            doc.add_paragraph("")
+
+    doc.save(save_path)
+
+# -------------------------------
+# Orchestrator
+# -------------------------------
+
+def build_attribution_report(
+    data: List[Dict[str, Any]], 
+    portfolio_name: str, 
+    period: str, 
+    output_prefix: str,
+    commentary_text: str = None,
+    max_prompt_items: int = 12,
+    thresholds: Dict[str, Any] = None
+) -> Dict[str, str]:
+    """
+    Returns paths of generated files.
+    If commentary_text is None, this function produces a prompt text that you can send to your LLM.
+    """
+        # Default thresholds if none supplied
+    if thresholds is None:
+        thresholds = {
+            "top_bottom_pct": 10,   # contributors/detractors
+            "strong_pct": 84,       # strong allocation/selection percentile
+            "weak_pct": 16,         # weak allocation/selection percentile
+            "efficiency_pct": 90,   # high efficiency selection
+            "interaction_pct": 80   # large interaction share percentile
+        }
+    records = compute_scores(data, thresholds)
+
+    # Build prompt if commentary not provided
+    if commentary_text is None:
+        prompt = build_commentary_prompt(records, portfolio_name, period, max_items=max_prompt_items)
+    else:
+        prompt = None
+
+    # Charts
+    charts_dir = f"./reports/{output_prefix}/charts"
+    json_dir = f"./reports/{output_prefix}"
+    os.makedirs(charts_dir, exist_ok=True)
+
+    p1 = os.path.join(charts_dir, "top_contributors_detractors.png")
+    chart_top_contributors_detractors(records, p1)
+
+    p2 = os.path.join(charts_dir, "excess_weight_vs_excess_return.png")
+    chart_excess_wt_vs_excess_ret(records, p2)
+
+    p3_base = os.path.join(charts_dir, "allocation_selection.png")
+    chart_allocation_selection_bars(records, p3_base)
+    p3_alloc = p3_base.replace(".png", "_alloc.png")
+    p3_sel = p3_base.replace(".png", "_sel.png")
+
+    chart_paths = [p1, p2, p3_alloc, p3_sel]
+
+    # JSON
+    os.makedirs(json_dir, exist_ok=True)
+    json_path = os.path.join(json_dir, f"{output_prefix}.json")
+    json_blob = {
+        "meta": {
+            "portfolio_name": portfolio_name,
+            "period": period,
+            "generated_on": None,  # fill with your runtime timestamp if needed
+            "source_file": None,
+            "formulas": FORMULAS
+        },
+        "data": records
+    }
+    with open(json_path, "w", encoding="utf-8") as f:
+        json.dump(json_blob, f, indent=2, ensure_ascii=False)
+
+    # Prompt text
+    prompt_path = os.path.join(json_dir, f"{output_prefix}_prompt.txt")
+    if prompt is not None:
+        with open(prompt_path, "w", encoding="utf-8") as f:
+            f.write(prompt)
+
+    # Word doc
+    docx_path = os.path.join(json_dir, f"{output_prefix}.docx")
+    # Use provided commentary, else leave placeholder message and include the prompt inline
+    doc_commentary = commentary_text if commentary_text is not None else (
+        "AI commentary to be inserted. Use the generated prompt in the accompanying TXT file to obtain "
+        "a neutral, descriptive portfolio manager–style paragraph."
+    )
+    try:
+        build_docx(records, portfolio_name, period, doc_commentary, chart_paths, docx_path)
+    except Exception as e:
+        # If python-docx missing, still provide the JSON and prompt
+        docx_path = f"{docx_path} (not created: {e})"
+
+    return {
+        "json": json_path,
+        "prompt": prompt_path if prompt is not None else "(not generated because commentary was provided)",
+        "docx": docx_path,
+        "charts_dir": charts_dir
+    }
+
+# -------------------------------
+# Example usage (commented out)
+# -------------------------------
+if __name__ == "__main__":
+    # Example minimal data (replace with your actual data object)
+    # Each dict should contain: country, port_avg_wt, port_total_ret, port_weighted_contrib,
+    # bench_avg_wt, bench_total_ret, bench_weighted_contrib, allocation, selection, total
+    example_data = [
+        {"country": "United States", "port_avg_wt": 0.35, "port_total_ret": 0.08, "port_weighted_contrib": 0.028,
+         "bench_avg_wt": 0.32, "bench_total_ret": 0.07, "bench_weighted_contrib": 0.0224,
+         "allocation": 0.006, "selection": 0.005, "total": 0.012},
+        {"country": "Japan", "port_avg_wt": 0.20, "port_total_ret": 0.06, "port_weighted_contrib": 0.012,
+         "bench_avg_wt": 0.25, "bench_total_ret": 0.08, "bench_weighted_contrib": 0.02,
+         "allocation": -0.004, "selection": -0.003, "total": -0.007},
+        {"country": "Germany", "port_avg_wt": 0.10, "port_total_ret": 0.05, "port_weighted_contrib": 0.005,
+         "bench_avg_wt": 0.09, "bench_total_ret": 0.045, "bench_weighted_contrib": 0.00405,
+         "allocation": 0.001, "selection": 0.0005, "total": 0.0017},
+        {"country": "Brazil", "port_avg_wt": 0.04, "port_total_ret": 0.03, "port_weighted_contrib": 0.0012,
+         "bench_avg_wt": 0.03, "bench_total_ret": 0.025, "bench_weighted_contrib": 0.00075,
+         "allocation": 0.0002, "selection": 0.0004, "total": 0.0007}
+    ]
+
+    outputs = build_attribution_report(
+        data=example_data,
+        portfolio_name="Global Equity Fund",
+        period="2025-07",
+        output_prefix="global_equity_2025_07"
+    )
+    print(json.dumps(outputs, indent=2))
