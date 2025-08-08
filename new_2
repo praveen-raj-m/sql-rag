@@ -1,201 +1,238 @@
-Got it — here’s a clean, PM-friendly catalog of every tag the script can assign, exactly how it’s calculated, and where Total Effect ( \text{Total} = \text{Allocation} + \text{Selection} ) fits in.
+Love it — let’s lock this in.
+
+Here’s exactly what we’ll do:
+
+What the opening line must include
+	•	Total alpha (in bps)
+	•	Breakdown: total Selection (bps) and Allocation (bps)
+	•	Total return: Portfolio RoR (%) and Benchmark RoR (%)
+	•	(Note: the sum of sector contributions equals total return; portfolio contributions sum to portfolio return, benchmark contributions sum to benchmark return.)
+
+Opening-line format (clean + professional):
+
+[Portfolio Name], [Period] — Alpha: {Alpha} bps (Selection: {Sel} bps, Allocation: {Alloc} bps). Total return: Portfolio {PortRet}% vs Benchmark {BenchRet}%.
+
+Then we describe sectors (top/bottom + any interesting ties, plus “offsetting” cases).
 
 ⸻
 
-Core definition (used throughout)
+Preprocessing + Prompt Generator (drop-in script)
 
-\textbf{Total}_i \;=\; \text{Allocation}_i \;+\; \text{Selection}_i
+import pandas as pd
+from textwrap import shorten
 
-This is the anchor for “moved-the-needle” tags, contribution share, sorting, and several global caps.
+# ==== CONFIG (you can tweak these) ====
+SIG_EFFECT_BPS = 2.0        # mention selection/allocation only if |effect| > 2 bps
+RET_DIFF_PCT = 0.10         # mention Port vs Bench return only if |Δ| > 0.10%
+WT_DIFF_PCTPT = 0.50        # mention overweight/underweight only if |Δ| > 0.5 pct-pts
+TOP_N = 4                   # top N positive contributors
+BOTTOM_N = 4                # top N detractors
+OFFSET_BPS = 10.0           # flag “offsetting” if both |sel| and |alloc| >= 10 bps and opposite signs
+MAX_WORDS = 300             # final commentary cap
+
+PORTFOLIO_NAME = "Global Equity Fund"
+PERIOD = "Q2 2025"
+
+# ==== INPUT ====
+# Expected columns:
+# Sector | Benchmark Return (%) | Benchmark Contribution (%) | Benchmark Weight (%)
+#        | Portfolio Return (%) | Portfolio Contribution (%) | Portfolio Weight (%)
+#        | Selection Effect (%) | Allocation Effect (%)
+df = pd.read_csv("brinson_data.csv")
+
+# ---- Clean numerics ----
+pct_cols = [
+    "Benchmark Return (%)","Benchmark Contribution (%)","Benchmark Weight (%)",
+    "Portfolio Return (%)","Portfolio Contribution (%)","Portfolio Weight (%)",
+    "Selection Effect (%)","Allocation Effect (%)"
+]
+df[pct_cols] = df[pct_cols].replace("%","",regex=True).astype(float)
+
+# ---- Compute effects in bps & totals ----
+df["Selection Effect (bps)"]  = df["Selection Effect (%)"] * 100.0
+df["Allocation Effect (bps)"] = df["Allocation Effect (%)"] * 100.0
+df["Total Effect (bps)"]      = (df["Selection Effect (%)"] + df["Allocation Effect (%)"]) * 100.0
+
+# Portfolio & Benchmark total returns (sums of contribs == total return)
+port_total_ret  = df["Portfolio Contribution (%)"].sum()
+bench_total_ret = df["Benchmark Contribution (%)"].sum()
+
+# Total selection/allocation/alpha (sums across sectors)
+total_sel_bps   = df["Selection Effect (bps)"].sum()
+total_alloc_bps = df["Allocation Effect (bps)"].sum()
+total_alpha_bps = df["Total Effect (bps)"].sum()  # should equal (port_total_ret - bench_total_ret)*100
+
+# ---- Rank sectors by total effect ----
+df_sorted = df.sort_values("Total Effect (bps)", ascending=False).reset_index(drop=True)
+
+# ---- Pick top/bottom contributors ----
+top_pos = df_sorted.head(TOP_N).copy()
+top_neg = df_sorted.tail(BOTTOM_N).copy().sort_values("Total Effect (bps)", ascending=True)
+
+# ---- Optional: capture interesting offsetting cases (not already in top/bottom) ----
+mask_offset = (
+    (df["Selection Effect (bps)"].abs() >= OFFSET_BPS) &
+    (df["Allocation Effect (bps)"].abs() >= OFFSET_BPS) &
+    (df["Selection Effect (bps)"] * df["Allocation Effect (bps)"] < 0) # opposite signs
+)
+offset_candidates = df.loc[mask_offset].copy()
+
+# Exclude those already in top/bottom sets
+already = set(top_pos["Sector"]).union(set(top_neg["Sector"]))
+offset_mentions = offset_candidates[~offset_candidates["Sector"].isin(already)].copy()
+
+# ---- Helper to build a single sector line (business tone, not number-dumpy) ----
+def sector_sentence(row):
+    sector = row["Sector"]
+    te   = row["Total Effect (bps)"]
+    sel  = row["Selection Effect (bps)"]
+    alloc= row["Allocation Effect (bps)"]
+    pr   = row["Portfolio Return (%)"]
+    br   = row["Benchmark Return (%)"]
+    pw   = row["Portfolio Weight (%)"]
+    bw   = row["Benchmark Weight (%)"]
+
+    drivers = []
+    if abs(sel) >= SIG_EFFECT_BPS and abs(alloc) >= SIG_EFFECT_BPS:
+        # Both matter
+        sel_dir = "added" if sel > 0 else "detracted"
+        alloc_dir = "added" if alloc > 0 else "detracted"
+        drivers.append(f"selection {sel_dir} and allocation {alloc_dir}")
+    elif abs(sel) >= SIG_EFFECT_BPS:
+        drivers.append("selection was the primary driver")
+    elif abs(alloc) >= SIG_EFFECT_BPS:
+        drivers.append("allocation was the primary driver")
+    else:
+        drivers.append("no single dominant driver")
+
+    # Optional contextual color if meaningful
+    context_bits = []
+    if abs(pr - br) >= RET_DIFF_PCT:
+        direction = "outperformed" if pr > br else "underperformed"
+        context_bits.append(f"portfolio holdings {direction} the benchmark")
+    if abs(pw - bw) >= WT_DIFF_PCTPT:
+        tilt = "overweight" if pw > bw else "underweight"
+        context_bits.append(f"a {tilt} stance")
+
+    # Assemble without flooding numbers; we keep explicit bps only for total
+    core = f"{sector} {('added' if te>0 else 'detracted' if te<0 else 'had no net impact')} "\
+           f"{abs(te):.0f} bps."
+    driver_txt = " ".join([
+        (" ".join(drivers) + ".").capitalize()
+    ])
+    ctx = (" " + " and ".join(context_bits) + ".") if context_bits else ""
+
+    return core + " " + driver_txt + ctx
+
+# ---- Build opening line (fixed format) ----
+opening = (
+    f"{PORTFOLIO_NAME}, {PERIOD} — Alpha: {total_alpha_bps:.0f} bps "
+    f"(Selection: {total_sel_bps:.0f} bps, Allocation: {total_alloc_bps:.0f} bps). "
+    f"Total return: Portfolio {port_total_ret:.2f}% vs Benchmark {bench_total_ret:.2f}%."
+)
+
+# ---- Make the overview line (names only) ----
+def list_names(s):
+    return ", ".join(s)
+
+overview = "Performance was supported by " \
+           + (", ".join(top_pos['Sector']) if len(top_pos)>0 else "—") \
+           + " and weighed on by " \
+           + (", ".join(top_neg['Sector']) if len(top_neg)>0 else "—") \
+           + "."
+
+# ---- Build body sentences ----
+body_lines = []
+for _, r in top_pos.iterrows():
+    body_lines.append(sector_sentence(r))
+for _, r in top_neg.iterrows():
+    body_lines.append(sector_sentence(r))
+
+# ---- Add 0-net “offsetting” cases sparingly (max 1–2) ----
+offset_added = 0
+for _, r in offset_mentions.iterrows():
+    if offset_added >= 2:
+        break
+    sel = r["Selection Effect (bps)"]; alloc = r["Allocation Effect (bps)"]
+    if abs(r["Total Effect (bps)"]) < SIG_EFFECT_BPS:  # basically flat total
+        sign_sel = "added" if sel>0 else "detracted"
+        sign_alloc = "added" if alloc>0 else "detracted"
+        body_lines.append(
+            f"{r['Sector']} saw robust selection that {sign_sel} {abs(sel):.0f} bps, "
+            f"fully offset by allocation that {sign_alloc} {abs(alloc):.0f} bps, resulting in no net effect."
+        )
+        offset_added += 1
+
+# ---- Assemble the prompt for Ollama ----
+instructions = f"""
+You are a professional performance attribution analyst.
+Write a concise, professional Brinson commentary (max {MAX_WORDS} words) in an elegant business tone.
+
+Rules:
+1) Start with the opening line exactly in this format:
+   "{PORTFOLIO_NAME}, {PERIOD} — Alpha: {{Alpha}} bps (Selection: {{Sel}} bps, Allocation: {{Alloc}} bps). Total return: Portfolio {{PortRet}}% vs Benchmark {{BenchRet}}%."
+   Use the values provided below; do not invent numbers.
+2) Follow with one overview sentence naming top positive and top negative contributors.
+3) Then write 1–2 sentences per sector, ordered from highest positive total effect to largest negative.
+   - State the key driver(s): selection, allocation, or both.
+   - Mention portfolio vs benchmark returns and/or weights only when differences are meaningful (return diff > {RET_DIFF_PCT:.2f}%, weight diff > {WT_DIFF_PCTPT:.2f} pct-pts).
+   - Avoid insignificant effects (|effect| < {SIG_EFFECT_BPS:.0f} bps).
+   - Keep numbers light; always include total effect in bps for each mentioned sector, but focus on drivers.
+4) If present, include at most two sectors where selection and allocation offset materially (each >= {OFFSET_BPS:.0f} bps with opposite signs), noting that the net effect was near zero.
+5) No recommendations, no criticism — describe facts only.
+
+Opening values (use these exactly):
+- Alpha (bps) = {total_alpha_bps:.0f}; Selection (bps) = {total_sel_bps:.0f}; Allocation (bps) = {total_alloc_bps:.0f}
+- Portfolio Total Return (%) = {port_total_ret:.2f}; Benchmark Total Return (%) = {bench_total_ret:.2f}
+
+Top/Bottom sectors to consider (already ranked):
+- Positives: {", ".join(top_pos['Sector']) if len(top_pos)>0 else "—"}
+- Negatives: {", ".join(top_neg['Sector']) if len(top_neg)>0 else "—"}
+
+Sector snippets (context for grounding; do not paste verbatim):
+"""
+
+# Short, grounded snippets per sector to reduce hallucination
+def sector_snippet(row):
+    return (
+        f"{row['Sector']}: Total {row['Total Effect (bps)']:.0f} bps; "
+        f"Sel {row['Selection Effect (bps)']:.0f} bps; Alloc {row['Allocation Effect (bps)']:.0f} bps; "
+        f"PortRet {row['Portfolio Return (%)']:.2f}%, BenchRet {row['Benchmark Return (%)']:.2f}%, "
+        f"PortW {row['Portfolio Weight (%)']:.2f}%, BenchW {row['Benchmark Weight (%)']:.2f}%."
+    )
+
+snippets = []
+for _, r in pd.concat([top_pos, top_neg], axis=0).iterrows():
+    snippets.append(sector_snippet(r))
+
+# Add up to 2 offsetting snippets
+for _, r in offset_mentions.head(2).iterrows():
+    snippets.append(sector_snippet(r))
+
+prompt = instructions.strip() + "\n" + "\n".join(snippets)
+
+# ---- Output files ----
+with open("ollama_prompt.txt", "w") as f:
+    f.write(prompt)
+
+# Also print opening + overview for quick inspection
+print(opening)
+print(overview)
+print("\n--- PROMPT (save: ollama_prompt.txt) ---\n")
+print(prompt[:2000])  # preview the first ~2k chars
+
+How you’ll use it:
+
+python brinson_prep.py
+ollama run gemma2:27b-instruct --prompt "$(cat ollama_prompt.txt)"
+
 
 ⸻
 
-A) Material outcome tags (directly tied to Total)
+Why this works
+	•	Opening line always present and standardized (alpha + selection/allocation + total returns).
+	•	Sector coverage: top/bottom by total effect; includes ties if interesting; optional offsetting callouts.
+	•	Tone control: grounded facts, minimal numbers, businesslike phrasing.
+	•	Hallucination guardrails: we only pass curated snippets and strict instructions; the model can’t invent totals.
 
-These answer “who drove overall alpha this period?”
-
-1) Top Contributor
-	•	Screen: country is in the top percentile bucket by Total (default: top 10% of rows; if <10 rows, we still pick at least one).
-	•	Global cap: keep 3 highest Total across all countries.
-	•	Support stored: total, total_rank_percentile.
-	•	Why Total matters: selection is by Total; ranking and the global cap also use Total.
-
-2) Top Detractor
-	•	Screen: country is in the bottom percentile bucket by Total (default: bottom 10%; min one when small N).
-	•	Global cap: keep 3 most negative Total.
-	•	Support: total, total_rank_percentile.
-	•	Why Total matters: same as above, but on the downside.
-
-⸻
-
-B) Positioning vs outcome tags (Total used for tie-breaking)
-
-These summarize the decision quadrant using excess weight and excess return; when too many qualify, we keep the ones with big impact (|Total|).
-
-Let:
-\text{Excess Wt} = W_p - W_b,\quad
-\text{Excess Ret} = R_p - R_b
-
-3) Overweight Outperformance (OW+beat)
-	•	Screen: \text{Excess Wt} > 0 and \text{Excess Ret} > 0.
-	•	Global cap: 3 max; if >3 qualify, keep the largest |Total|.
-	•	Support: excess_weight, excess_return.
-
-4) Underweight Underperformance (UW+lag)
-	•	Screen: \text{Excess Wt} < 0 and \text{Excess Ret} < 0.
-	•	Cap: 3 max; rank by |Total|.
-
-5) Overweight Underperformance (OW+lag)
-	•	Screen: \text{Excess Wt} > 0 and \text{Excess Ret} < 0.
-	•	Cap: 3 max; rank by |Total|.
-
-6) Underweight Outperformance (UW+beat)
-	•	Screen: \text{Excess Wt} < 0 and \text{Excess Ret} > 0.
-	•	Cap: 3 max; rank by |Total|.
-
-Why Total matters here: these tags aren’t selected by Total, but when too many fit the quadrant, we keep the ones with the largest impact (|Total|) to stay concise.
-
-⸻
-
-C) Component strength/weakness tags (Total not used for selection, only for display/context)
-
-These highlight where Allocation or Selection was unusually high/low relative to peers this period.
-
-We compute cross-sectional percentiles:
-\text{alloc\_pct}_i,\ \text{sel\_pct}_i
-and z-scores for explanation in JSON:
-z^\text{alloc}_i,\ z^\text{sel}_i
-
-Defaults:
-	•	Strong threshold = 84th percentile
-	•	Weak threshold = 16th percentile
-
-7) Strong Allocation
-	•	Screen: \text{alloc\_pct} \ge strong_pct (default 84).
-	•	Global cap: 3 max; tie-break on |Allocation|.
-	•	Support: allocation, allocation_percentile, allocation_z.
-
-8) Weak Allocation
-	•	Screen: \text{alloc\_pct} \le weak_pct (default 16).
-	•	Cap: 3 max; tie-break on |Allocation|.
-
-9) Strong Selection
-	•	Screen: \text{sel\_pct} \ge strong_pct.
-	•	Cap: 3 max; tie-break on |Selection|.
-	•	Support: selection, selection_percentile, selection_z.
-
-10) Weak Selection
-	•	Screen: \text{sel\_pct} \le weak_pct.
-	•	Cap: 3 max; tie-break on |Selection|.
-
-Where Total fits: not in the screen itself, but Total is what the PM sees first (and what our charts/ordering use). In prompts we still report Total alongside whichever component(s) are significant.
-
-⸻
-
-D) Efficiency & structure tags (Total only for secondary ranking)
-
-11) High Efficiency Selection
-	•	Metric: \text{selection\_efficiency} = \dfrac{\text{Selection}}{\max(W_p, 10^{-9})}.
-	•	Screen: efficiency percentile ≥ efficiency_pct (default 90th).
-	•	Global cap: 3 max; tie-break on Selection Efficiency magnitude.
-	•	Support: selection_efficiency, portfolio_weight, selection, efficiency_percentile.
-
-12) Divergent Effects
-	•	Screen: Allocation and Selection have opposite signs:
-\text{Allocation} \times \text{Selection} < 0
-	•	Global cap: 3 max; when >3 qualify, rank by |Total| (bigger overall impact kept).
-	•	Support: allocation, selection.
-
-⸻
-
-E) Caps & priorities (how we keep things readable)
-	•	Per-record cap: each country keeps max 3 tags, using a priority order:
-	1.	Top Contributor/Detractor
-	2.	Quadrant tags (OW+beat, UW+lag, OW+lag, UW+beat)
-	3.	Strong Selection / Strong Allocation
-	4.	High Efficiency Selection
-	5.	Divergent Effects
-	6.	Weak Selection / Weak Allocation
-	•	Global per-tag cap: each tag appears at most 3 times in the whole output.
-	•	For Top Contributor/Detractor, the ranking metric is Total.
-	•	For quadrant & divergent tags, if too many, we rank by |Total|.
-	•	For strong/weak component tags, we rank by |component| (not Total).
-	•	For efficiency, we rank by efficiency.
-
-⸻
-
-F) Significance in the prompt (how it’s written)
-
-For the commentary prompt we only mention a component if it’s material:
-	•	Show Allocation only if |\text{Allocation}| \ge 0.02 (default alloc_abs_min).
-	•	Show Selection only if |\text{Selection}| \ge 0.02 (default sel_abs_min).
-	•	Always show Total (rounded), plus Excess Wt/Ret when materially non-zero at 2dp.
-
-This keeps the narrative centered on the largest Total drivers, with component detail only when it matters.
-
-⸻
-
-If you want any tag to rank differently (e.g., make Strong Selection pick its global top-3 by selection percentile instead of magnitude), say the word and I’ll switch that rule.
-
-
-Right now, in the code we built, there’s no explicit numeric “weight” for tags — instead, we use a priority ranking system and global caps to decide:
-	1.	Which tags survive if a country qualifies for many.
-	2.	Which countries survive if too many qualify for the same tag.
-
-That priority system is effectively a weighting of importance for a portfolio manager’s commentary.
-
-⸻
-
-A) Priority order we use now
-
-This is the implicit “weight” — higher up means more important when there’s a clash.
-
-Priority	Tag Group	Why it’s weighted high
-1	Top Contributor / Top Detractor	These are the headline drivers — they directly answer “Who helped/hurt the most this period?” based on Total Effect.
-2	Quadrant Tags (Overweight Outperformance, UW+lag, OW+lag, UW+beat)	These tell the story of positioning vs outcome — a PM wants to know if our active bets lined up with performance.
-3	Strong Selection / Strong Allocation	Shows skill-based bets: selection skill (security picking) and allocation skill (weighting). High value to PMs as “decision quality” signals.
-4	High Efficiency Selection	Measures how well a weight was “used” to generate excess return. Niche but useful — important for small but impactful weights.
-5	Divergent Effects	Highlights conflicting drivers (e.g., good selection offset by bad allocation). Adds nuance to the commentary.
-6	Weak Selection / Weak Allocation	Negative signals — important but not as headline-worthy unless they are top detractors. Often mentioned to explain underperformance.
-
-
-⸻
-
-B) Effective “weight” meaning
-	•	This is not a mathematical weight in scoring.
-	•	But when a country qualifies for more than 3 tags, we keep the top 3 based on this order.
-	•	So in effect, Top Contributor/Detractor gets 100% survival rate if qualified, while Weak Allocation might get cut.
-
-⸻
-
-C) Why PMs value it in this order
-	1.	Performance outcome first — In attribution, the first question is always “Who moved the needle?” (Total Effect).
-	2.	Positioning logic — Did we win because we were right about the weight? Did we avoid something that hurt?
-	3.	Skill signal — High selection/allocation effects speak to skill rather than luck.
-	4.	Efficiency & nuance — Only after the above do we highlight small but efficient wins, or conflicting effects.
-	5.	Weakness — Weakness is reported to explain underperformance but is not the primary story.
-
-⸻
-
-D) If you wanted actual numeric scores
-
-We could convert the above priority into a “tag score” system for ranking inside each country, e.g.:
-
-Tag Group	Score
-Top Contributor / Detractor	100
-Quadrant Tags	80
-Strong Selection / Allocation	60
-High Efficiency Selection	40
-Divergent Effects	30
-Weak Selection / Allocation	20
-
-Then, inside a country:
-	•	Sum the scores for all qualifying tags.
-	•	Keep the tags with the highest scores (ties broken by magnitude of effect).
-
-⸻
-
-If you want, I can add a formal “weight score” system into the code, so it’s transparent in the JSON and you can later tweak it for different PM audiences.
-That would also make RAG explanations better because we could say “This was kept because it’s a Top Contributor (score 100) and OW+beat (score 80)”.
-
-Do you want me to build that scoring system in?
+If you want, I can tweak thresholds (e.g., TOP_N, SIG_EFFECT_BPS) or change the wording template to match your firm’s style guide.
