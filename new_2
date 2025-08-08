@@ -1,5 +1,39 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
+def build_attribution_report(
+    data: List[Dict[str, Any]], 
+    portfolio_name: str, 
+    period: str, 
+    output_prefix: str,
+    commentary_text: str = None,
+    max_prompt_items: int = 12,
+    thresholds: Dict[str, Any] = None
+) -> Dict[str, str]:
+    """
+    Returns paths of generated files.
+    If commentary_text is None, produces a prompt text to send to your LLM.
+    """
+    if thresholds is None:
+        thresholds = {
+            "top_bottom_pct": 10,   # contributors/detractors
+            "strong_pct": 84,       # strong allocation/selection percentile
+            "weak_pct": 16,         # weak allocation/selection percentile
+            "efficiency_pct": 90,   # high efficiency selection
+            "interaction_pct": 80   # large interaction share percentile
+        }
+
+    records = compute_scores(data, thresholds)
+
+    # Aggregates
+    aggregates = compute_aggregates(records)
+
+    # Build prompt if commentary not provided
+    if commentary_text is None:
+        prompt = build_commentary_prompt(records, portfolio_name, period, max_items=max_prompt_items, aggregates=aggregates)
+    else:
+        prompt = None
+
+
 
 """
 Attribution Report Builder (Single-Period, Country-Level Brinson Attribution)
