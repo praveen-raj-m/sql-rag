@@ -1,4 +1,4 @@
--*- coding: utf-8 -*-
+# -*- coding: utf-8 -*-
 
 """
 Attribution Report Builder (Single-Period, Country-Level Brinson Attribution)
@@ -6,6 +6,8 @@ Attribution Report Builder (Single-Period, Country-Level Brinson Attribution)
 Features:
 - Percentile-driven thresholds (configurable per run), no fixed cutoffs
 - Max 3 tags per country (priority-based)
+- Max 3 occurrences per tag across the entire dataset (global cap)
+- No interaction effect; Total = Allocation + Selection
 - Aggregates (sums/averages) added to the LLM prompt and JSON meta
 - DOCX report with table, commentary placeholder (or provided), and charts
 - JSON with formulas, aggregates, computed records, and tags (with numbers)
@@ -14,7 +16,7 @@ Inputs:
 - data: list[dict] rows with keys:
     country (or sector), port_avg_wt, port_total_ret, port_weighted_contrib,
     bench_avg_wt, bench_total_ret, bench_weighted_contrib,
-    allocation, selection, total
+    allocation, selection, total (ignored; recomputed as alloc+sel)
 - portfolio_name: str
 - period: str (e.g., "July 2025" or "2025-07")
 - output_prefix: str (e.g., "global_equity_q2_2025")
@@ -28,7 +30,6 @@ Outputs:
 """
 
 import json
-import math
 from statistics import mean, pstdev
 from typing import List, Dict, Tuple, Any
 import os
@@ -40,7 +41,6 @@ import matplotlib.pyplot as plt
 try:
     from docx import Document
     from docx.shared import Inches, Pt
-    from docx.enum.text import WD_ALIGN_PARAGRAPH
 except Exception as e:
     Document = None
 
@@ -110,7 +110,6 @@ FORMULAS = {
     "interaction": "0 (not used; total = allocation + selection)",
     "decision_flag": "OW+beat if excess_weight>0 & excess_return>0; UW+lag if <0 & <0; OW+lag if >0 & <0; UW+beat if <0 & >0",
     "divergence_flag": "Divergent if sign(allocation) != sign(selection)",
-    
     "top_contributor": "top percentile by total (or at least top 1 when rows<10)",
     "top_detractor": "bottom percentile by total (or at least bottom 1 when rows<10)",
     "strong_allocation": "allocation percentile >= strong_pct",
@@ -121,7 +120,6 @@ FORMULAS = {
 }
 
 def compute_scores(data: List[Dict[str, Any]], thresholds: Dict[str, Any]) -> List[Dict[str, Any]]:
-    # Prepare lists
     allocation_vals = []
     selection_vals = []
     total_vals = []
@@ -136,7 +134,7 @@ def compute_scores(data: List[Dict[str, Any]], thresholds: Dict[str, Any]) -> Li
         bench_r = _get_numeric(row, "bench_total_ret")
         alloc = _get_numeric(row, "allocation")
         sel = _get_numeric(row, "selection")
-        tot = alloc + sel
+        tot = alloc + sel  # total := allocation + selection
         interaction = 0.0
 
         prepared.append({
@@ -155,7 +153,6 @@ def compute_scores(data: List[Dict[str, Any]], thresholds: Dict[str, Any]) -> Li
         total_vals.append(tot)
         port_wts.append(port_w)
 
-    # Cross-sectional stats
     alloc_z = _z_scores(allocation_vals)
     sel_z = _z_scores(selection_vals)
     tot_z = _z_scores(total_vals)
@@ -163,18 +160,14 @@ def compute_scores(data: List[Dict[str, Any]], thresholds: Dict[str, Any]) -> Li
     eff_sel = [ (selection_vals[i] / (port_wts[i] if abs(port_wts[i]) > 1e-9 else 1e-9)) for i in range(len(prepared)) ]
     eff_sel_pct = _rank_percentiles(eff_sel)
 
-    # Percentiles
     alloc_pct = _rank_percentiles(allocation_vals)
     sel_pct = _rank_percentiles(selection_vals)
     tot_pct = _rank_percentiles(total_vals)
 
-    # Top/bottom sets by percentile
     top_set, bottom_set = _top_bottom_indices(total_vals, frac=float(thresholds.get("top_bottom_pct", 10))/100.0)
 
-    # Sum total for contribution share
     sum_total = sum(total_vals) if len(total_vals) > 0 else 0.0
 
-    # Build records with tags
     records = []
     for i, row in enumerate(prepared):
         excess_w = row["port_avg_wt"] - row["bench_avg_wt"]
@@ -195,7 +188,6 @@ def compute_scores(data: List[Dict[str, Any]], thresholds: Dict[str, Any]) -> Li
 
         tags = []
 
-        # Top Contributor/Detractor by percentile
         if i in top_set:
             tags.append({
                 "tag": "Top Contributor",
@@ -215,7 +207,6 @@ def compute_scores(data: List[Dict[str, Any]], thresholds: Dict[str, Any]) -> Li
                 }
             })
 
-        # Allocation/Selection strength by percentile
         if alloc_pct[i] >= float(thresholds.get("strong_pct", 84)):
             tags.append({
                 "tag": "Strong Allocation",
@@ -257,7 +248,6 @@ def compute_scores(data: List[Dict[str, Any]], thresholds: Dict[str, Any]) -> Li
                 }
             })
 
-        # Decision quadrant flags
         if decision_flag == "OW+beat":
             tags.append({
                 "tag": "Overweight Outperformance",
@@ -295,53 +285,7 @@ def compute_scores(data: List[Dict[str, Any]], thresholds: Dict[str, Any]) -> Li
                 }
             })
 
-        # High efficiency selection
-        eff_pct_threshold = float(thresholds.get("efficiency_pct", 90))
-        if _rank_percentiles([eff_sel[i]])[0] >= eff_pct_threshold:
-            # rank on single value would always be 100, so use precomputed list
-            if eff_sel_pct[i] >= eff_pct_threshold:
-                tags.append({
-                    "tag": "High Efficiency Selection",
-                    "reason": "Selection per unit of portfolio weight ranked above percentile threshold.",
-                    "supporting_numbers": {
-                        "selection_efficiency": eff_sel[i],
-                        "portfolio_weight": row["port_avg_wt"],
-                        "selection": row["selection"],
-                        "efficiency_percentile": eff_sel_pct[i]
-                    }
-                })
-
-        # Divergence & Interaction watch
-        if divergence_flag:
-            tags.append({
-                "tag": "Divergent Effects",
-                "reason": "Allocation and selection effects had opposite signs.",
-                "supporting_numbers": {
-                    "allocation": row["allocation"],
-                    "selection": row["selection"]
-                }
-            })
-
-        # Cap tags to max 3 based on priority
-        def _tag_priority(t):
-            order = {
-                "Top Contributor": 100,
-                "Top Detractor": 100,
-                "Overweight Outperformance": 90,
-                "Underweight Underperformance": 85,
-                "Overweight Underperformance": 80,
-                "Underweight Outperformance": 75,
-                "Strong Selection": 70,
-                "Strong Allocation": 65,
-                "High Efficiency Selection": 60,
-                "Large Interaction Share": 50,
-                "Divergent Effects": 40,
-                "Weak Selection": 30,
-                "Weak Allocation": 25
-            }
-            return order.get(t.get("tag"), 0)
-        tags = sorted(tags, key=_tag_priority, reverse=True)[:3]
-
+        # Cap per-record by priority later after global caps
         record = {
             "country": row["name"],
             "port_avg_wt": row["port_avg_wt"],
@@ -364,6 +308,66 @@ def compute_scores(data: List[Dict[str, Any]], thresholds: Dict[str, Any]) -> Li
         }
         records.append(record)
 
+    # Enforce per-tag global caps, then per-record cap with priority
+    records = enforce_tag_caps(records, max_per_tag=3)
+    return records
+
+# -------------------------------
+# Global tag caps helper
+# -------------------------------
+
+def _tag_priority_value(tag: str) -> int:
+    order = {
+        "Top Contributor": 100,
+        "Top Detractor": 100,
+        "Overweight Outperformance": 90,
+        "Underweight Underperformance": 85,
+        "Overweight Underperformance": 80,
+        "Underweight Outperformance": 75,
+        "Strong Selection": 70,
+        "Strong Allocation": 65,
+        "High Efficiency Selection": 60,
+        "Divergent Effects": 40,
+        "Weak Selection": 30,
+        "Weak Allocation": 25
+    }
+    return order.get(tag, 0)
+
+def _tag_score_for_record(record: dict, tag: str) -> float:
+    if tag == "Top Contributor":
+        return float(record.get("total", 0.0))
+    if tag == "Top Detractor":
+        return float(-record.get("total", 0.0))
+    if tag in ("Strong Selection", "Weak Selection"):
+        return abs(float(record.get("selection", 0.0)))
+    if tag in ("Strong Allocation", "Weak Allocation"):
+        return abs(float(record.get("allocation", 0.0)))
+    if tag == "High Efficiency Selection":
+        return float(record.get("selection_efficiency", 0.0))
+    if tag in ("Overweight Outperformance","Underweight Underperformance","Overweight Underperformance","Underweight Outperformance","Divergent Effects"):
+        return abs(float(record.get("total", 0.0)))
+    return abs(float(record.get("total", 0.0)))
+
+def enforce_tag_caps(records: list, max_per_tag: int = 3) -> list:
+    tag_map = {}
+    for idx, rec in enumerate(records):
+        for t in rec.get("tags", []):
+            tag_name = t.get("tag")
+            if not tag_name:
+                continue
+            tag_map.setdefault(tag_name, []).append((idx, _tag_score_for_record(rec, tag_name)))
+
+    allowed = set()
+    for tag_name, pairs in tag_map.items():
+        pairs_sorted = sorted(pairs, key=lambda x: x[1], reverse=True)
+        for idx, _ in pairs_sorted[:max_per_tag]:
+            allowed.add((idx, tag_name))
+
+    for idx, rec in enumerate(records):
+        pruned = [t for t in rec.get("tags", []) if (idx, t.get("tag")) in allowed]
+        pruned = sorted(pruned, key=lambda t: _tag_priority_value(t.get("tag")), reverse=True)[:3]
+        rec["tags"] = pruned
+
     return records
 
 # -------------------------------
@@ -371,7 +375,6 @@ def compute_scores(data: List[Dict[str, Any]], thresholds: Dict[str, Any]) -> Li
 # -------------------------------
 
 def compute_aggregates(data_rows: List[Dict[str, Any]]) -> Dict[str, Any]:
-    """Compute totals/summaries for key numeric columns to add to the prompt and JSON meta."""
     keys_sum = [
         "port_avg_wt", "bench_avg_wt",
         "port_weighted_contrib", "bench_weighted_contrib",
@@ -408,14 +411,6 @@ def compute_aggregates(data_rows: List[Dict[str, Any]]) -> Dict[str, Any]:
 # -------------------------------
 
 def build_commentary_prompt(records: List[Dict[str, Any]], portfolio_name: str, period: str, max_items: int = 12, aggregates: Dict[str, Any] = None) -> str:
-    """
-    Build a descriptive-only prompt for an LLM (e.g., Gemma via Ollama).
-    - Neutral tone
-    - Financial language
-    - Numbers-only statements
-    - Include only tagged sectors (limit to max_items)
-    - Add portfolio-level aggregates for context
-    """
     tagged = [r for r in records if r.get("tags")]
     tagged.sort(key=lambda r: abs(r.get("total", 0.0)), reverse=True)
     tagged = tagged[:max_items]
@@ -437,7 +432,7 @@ def build_commentary_prompt(records: List[Dict[str, Any]], portfolio_name: str, 
             ]
         })
 
-    summary_json = json.dumps(items, ensure_ascii=False)
+    # Round aggregates for display
     def _round_agg(a):
         if not a: return {}
         out = {"count": a.get("count", 0), "sums": {}, "avgs": {}}
@@ -448,28 +443,31 @@ def build_commentary_prompt(records: List[Dict[str, Any]], portfolio_name: str, 
             try: out["avgs"][k] = round(float(v), 2)
             except Exception: out["avgs"][k] = v
         return out
-    agg_json = json.dumps(_round_agg(aggregates), ensure_ascii=False)
 
+    import json as _json
+    agg_json = _json.dumps(_round_agg(aggregates or {}), ensure_ascii=False)
+
+    # Human-readable prompt with titles
     lines = []
-lines.append("TITLE: Country-level Brinson Attribution Summary")
-lines.append(f"PORTFOLIO: {portfolio_name}")
-lines.append(f"PERIOD: {period}")
-lines.append("")
-lines.append("SECTION 1 â PORTFOLIO & BENCHMARK TOTALS (context only)")
-lines.append(agg_json)
-lines.append("")
-lines.append("SECTION 2 â HIGHLIGHTS (facts only; use numbers as given)")
-for it in items:
-    tag_list = ", ".join([t.get("tag","") for t in it.get("tags", [])])
-    lines.append(f"- {it['country']}: Total={it['total']}, Allocation={it['allocation']}, Selection={it['selection']}, Excess Wt={it['excess_weight']}, Excess Ret={it['excess_return']} | Tags: {tag_list}")
-lines.append("")
-lines.append("WRITING RULES:")
-lines.append("- Write 3â6 sentences, neutral tone, no recommendations.")
-lines.append("- Use financial terms: allocation effect, selection effect, total effect, excess return, overweight/underweight.")
-lines.append("- Mention only countries listed in SECTION 2. Support each statement with the numbers shown.")
-prompt = "
-".join(lines)
-return prompt.strip()
+    lines.append("TITLE: Country-level Brinson Attribution Summary")
+    lines.append(f"PORTFOLIO: {portfolio_name}")
+    lines.append(f"PERIOD: {period}")
+    lines.append("")
+    lines.append("SECTION 1 â PORTFOLIO & BENCHMARK TOTALS (context only)")
+    lines.append(agg_json)
+    lines.append("")
+    lines.append("SECTION 2 â HIGHLIGHTS (facts only; use numbers as given)")
+    for it in items:
+        tag_list = ", ".join([t.get("tag","") for t in it.get("tags", [])])
+        lines.append(f"- {it['country']}: Total={it['total']}, Allocation={it['allocation']}, Selection={it['selection']}, Excess Wt={it['excess_weight']}, Excess Ret={it['excess_return']} | Tags: {tag_list}")
+    lines.append("")
+    lines.append("WRITING RULES:")
+    lines.append("- Write 3â6 sentences, neutral tone, no recommendations.")
+    lines.append("- Use financial terms: allocation effect, selection effect, total effect, excess return, overweight/underweight.")
+    lines.append("- Mention only countries listed in SECTION 2. Support each statement with the numbers shown.")
+
+    prompt = "\n".join(lines)
+    return prompt.strip()
 
 # -------------------------------
 # Charts
@@ -528,7 +526,6 @@ def chart_allocation_selection_bars(records: List[Dict[str, Any]], save_path: st
     labels_s = [r["country"] for r in sel]
     vals_s = [r["selection"] for r in sel]
 
-    # Allocation
     plt.figure()
     plt.barh(range(len(vals_a)), vals_a)
     plt.yticks(range(len(labels_a)), labels_a)
@@ -539,7 +536,6 @@ def chart_allocation_selection_bars(records: List[Dict[str, Any]], save_path: st
     plt.savefig(save_path.replace(".png", "_alloc.png"), dpi=200)
     plt.close()
 
-    # Selection
     plt.figure()
     plt.barh(range(len(vals_s)), vals_s)
     plt.yticks(range(len(labels_s)), labels_s)
@@ -560,7 +556,6 @@ def build_docx(records: List[Dict[str, Any]], portfolio_name: str, period: str, 
 
     doc = Document()
 
-    # Title
     title = doc.add_paragraph()
     run = title.add_run(f"Portfolio Attribution Report â {portfolio_name}")
     run.bold = True
@@ -572,7 +567,6 @@ def build_docx(records: List[Dict[str, Any]], portfolio_name: str, period: str, 
 
     doc.add_paragraph("")
 
-    # Main table
     headers = ["Country", "Benchmark Weight", "Portfolio Weight", "Allocation Effect", "Selection Effect", "Total Effect"]
     table = doc.add_table(rows=1, cols=len(headers))
     hdr_cells = table.rows[0].cells
@@ -595,7 +589,6 @@ def build_docx(records: List[Dict[str, Any]], portfolio_name: str, period: str, 
         sum_sel += r["selection"]
         sum_tot += r["total"]
 
-    # Totals row
     total_cells = table.add_row().cells
     total_cells[0].text = "Total"
     total_cells[1].text = "â"
@@ -634,31 +627,24 @@ def build_attribution_report(
     max_prompt_items: int = 12,
     thresholds: Dict[str, Any] = None
 ) -> Dict[str, str]:
-    """
-    Returns paths of generated files.
-    If commentary_text is None, produces a prompt text to send to your LLM.
-    """
     if thresholds is None:
         thresholds = {
-            "top_bottom_pct": 10,   # contributors/detractors
-            "strong_pct": 84,       # strong allocation/selection percentile
-            "weak_pct": 16,         # weak allocation/selection percentile
-            "efficiency_pct": 90,   # high efficiency selection
-            "interaction_pct": 80   # large interaction share percentile
+            "top_bottom_pct": 10,
+            "strong_pct": 84,
+            "weak_pct": 16,
+            "efficiency_pct": 90,
+            "interaction_pct": 80
         }
 
     records = compute_scores(data, thresholds)
 
-    # Aggregates
     aggregates = compute_aggregates(records)
 
-    # Build prompt if commentary not provided
     if commentary_text is None:
         prompt = build_commentary_prompt(records, portfolio_name, period, max_items=max_prompt_items, aggregates=aggregates)
     else:
         prompt = None
 
-    # Charts
     charts_dir = f"./reports/{output_prefix}/charts"
     json_dir = f"./reports/{output_prefix}"
     os.makedirs(charts_dir, exist_ok=True)
@@ -676,8 +662,6 @@ def build_attribution_report(
 
     chart_paths = [p1, p2, p3_alloc, p3_sel]
 
-    # JSON
-    os.makedirs(json_dir, exist_ok=True)
     json_path = os.path.join(json_dir, f"{output_prefix}.json")
     json_blob = {
         "meta": {
@@ -691,16 +675,15 @@ def build_attribution_report(
         },
         "data": records
     }
+    os.makedirs(json_dir, exist_ok=True)
     with open(json_path, "w", encoding="utf-8") as f:
         json.dump(json_blob, f, indent=2, ensure_ascii=False)
 
-    # Prompt text
     prompt_path = os.path.join(json_dir, f"{output_prefix}_prompt.txt")
     if prompt is not None:
         with open(prompt_path, "w", encoding="utf-8") as f:
             f.write(prompt)
 
-    # Word doc
     docx_path = os.path.join(json_dir, f"{output_prefix}.docx")
     doc_commentary = commentary_text if commentary_text is not None else (
         "AI commentary to be inserted. Use the generated prompt in the accompanying TXT file to obtain "
@@ -725,18 +708,17 @@ if __name__ == "__main__":
     example_data = [
         {"country": "United States", "port_avg_wt": 0.35, "port_total_ret": 0.08, "port_weighted_contrib": 0.028,
          "bench_avg_wt": 0.32, "bench_total_ret": 0.07, "bench_weighted_contrib": 0.0224,
-         "allocation": 0.006, "selection": 0.005, "total": 0.012},
+         "allocation": 0.006, "selection": 0.005, "total": 0.0},
         {"country": "Japan", "port_avg_wt": 0.20, "port_total_ret": 0.06, "port_weighted_contrib": 0.012,
          "bench_avg_wt": 0.25, "bench_total_ret": 0.08, "bench_weighted_contrib": 0.02,
-         "allocation": -0.004, "selection": -0.003, "total": -0.007},
+         "allocation": -0.004, "selection": -0.003, "total": 0.0},
         {"country": "Germany", "port_avg_wt": 0.10, "port_total_ret": 0.05, "port_weighted_contrib": 0.005,
          "bench_avg_wt": 0.09, "bench_total_ret": 0.045, "bench_weighted_contrib": 0.00405,
-         "allocation": 0.001, "selection": 0.0005, "total": 0.0017},
+         "allocation": 0.001, "selection": 0.0005, "total": 0.0},
         {"country": "Brazil", "port_avg_wt": 0.04, "port_total_ret": 0.03, "port_weighted_contrib": 0.0012,
          "bench_avg_wt": 0.03, "bench_total_ret": 0.025, "bench_weighted_contrib": 0.00075,
-         "allocation": 0.0002, "selection": 0.0004, "total": 0.0007}
+         "allocation": 0.0002, "selection": 0.0004, "total": 0.0}
     ]
-
     outputs = build_attribution_report(
         data=example_data,
         portfolio_name="Global Equity Fund",
