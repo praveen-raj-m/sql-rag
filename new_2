@@ -1,238 +1,33 @@
-Love it — let’s lock this in.
+SYSTEM:
+You are a financial attribution analyst.
+Write concise, neutral, CFA-style commentary using basis points (bps).
+Describe facts only: portfolio return, benchmark return, excess return, then top three and bottom three sector contributors with drivers.
+Drivers may reference allocation (over/under/neutral) and selection (positive/negative/mixed).
+Do not recommend or criticize. Do not invent numbers. Use only the provided data.
+Conventions:
+- 1% = 100 bps. Round to nearest 5 bps for contributions.
+- “Total effect” = sector’s contribution to excess return.
+- Allocation = impact from weight differences; Selection = impact from security performance vs sector.
+- If ties, include both sectors.
+Output: two brief paragraphs, no bullets.
 
-Here’s exactly what we’ll do:
+USER:
+Portfolio return: 7.50%
+Benchmark return: 4.15%
+Excess return: 3.35%
 
-What the opening line must include
-	•	Total alpha (in bps)
-	•	Breakdown: total Selection (bps) and Allocation (bps)
-	•	Total return: Portfolio RoR (%) and Benchmark RoR (%)
-	•	(Note: the sum of sector contributions equals total return; portfolio contributions sum to portfolio return, benchmark contributions sum to benchmark return.)
+Sectors (sorted by total effect):
+1. Materials: +1.67% total effect, allocation = +92 bps, selection = +75 bps, portfolio weight = 5%, benchmark weight = 15%
+2. Technology: +0.99% total effect, allocation = +59 bps, selection = +40 bps, portfolio weight = 30%, benchmark weight = 20%
+3. Consumer: +0.60% total effect, allocation = 0 bps, selection = +60 bps, portfolio weight = 15%, benchmark weight = 15%
+4. Energy: +0.09% total effect, allocation = -11 bps, selection = +20 bps, portfolio weight = 15%, benchmark weight = 10%
+5. Industrials: -0.06% total effect, allocation = +9 bps, selection = -15 bps, portfolio weight = 20%, benchmark weight = 15%
+6. Healthcare: -0.26% total effect, allocation = -6 bps, selection = -20 bps, portfolio weight = 25%, benchmark weight = 20%
 
-Opening-line format (clean + professional):
-
-[Portfolio Name], [Period] — Alpha: {Alpha} bps (Selection: {Sel} bps, Allocation: {Alloc} bps). Total return: Portfolio {PortRet}% vs Benchmark {BenchRet}%.
-
-Then we describe sectors (top/bottom + any interesting ties, plus “offsetting” cases).
-
-⸻
-
-Preprocessing + Prompt Generator (drop-in script)
-
-import pandas as pd
-from textwrap import shorten
-
-# ==== CONFIG (you can tweak these) ====
-SIG_EFFECT_BPS = 2.0        # mention selection/allocation only if |effect| > 2 bps
-RET_DIFF_PCT = 0.10         # mention Port vs Bench return only if |Δ| > 0.10%
-WT_DIFF_PCTPT = 0.50        # mention overweight/underweight only if |Δ| > 0.5 pct-pts
-TOP_N = 4                   # top N positive contributors
-BOTTOM_N = 4                # top N detractors
-OFFSET_BPS = 10.0           # flag “offsetting” if both |sel| and |alloc| >= 10 bps and opposite signs
-MAX_WORDS = 300             # final commentary cap
-
-PORTFOLIO_NAME = "Global Equity Fund"
-PERIOD = "Q2 2025"
-
-# ==== INPUT ====
-# Expected columns:
-# Sector | Benchmark Return (%) | Benchmark Contribution (%) | Benchmark Weight (%)
-#        | Portfolio Return (%) | Portfolio Contribution (%) | Portfolio Weight (%)
-#        | Selection Effect (%) | Allocation Effect (%)
-df = pd.read_csv("brinson_data.csv")
-
-# ---- Clean numerics ----
-pct_cols = [
-    "Benchmark Return (%)","Benchmark Contribution (%)","Benchmark Weight (%)",
-    "Portfolio Return (%)","Portfolio Contribution (%)","Portfolio Weight (%)",
-    "Selection Effect (%)","Allocation Effect (%)"
-]
-df[pct_cols] = df[pct_cols].replace("%","",regex=True).astype(float)
-
-# ---- Compute effects in bps & totals ----
-df["Selection Effect (bps)"]  = df["Selection Effect (%)"] * 100.0
-df["Allocation Effect (bps)"] = df["Allocation Effect (%)"] * 100.0
-df["Total Effect (bps)"]      = (df["Selection Effect (%)"] + df["Allocation Effect (%)"]) * 100.0
-
-# Portfolio & Benchmark total returns (sums of contribs == total return)
-port_total_ret  = df["Portfolio Contribution (%)"].sum()
-bench_total_ret = df["Benchmark Contribution (%)"].sum()
-
-# Total selection/allocation/alpha (sums across sectors)
-total_sel_bps   = df["Selection Effect (bps)"].sum()
-total_alloc_bps = df["Allocation Effect (bps)"].sum()
-total_alpha_bps = df["Total Effect (bps)"].sum()  # should equal (port_total_ret - bench_total_ret)*100
-
-# ---- Rank sectors by total effect ----
-df_sorted = df.sort_values("Total Effect (bps)", ascending=False).reset_index(drop=True)
-
-# ---- Pick top/bottom contributors ----
-top_pos = df_sorted.head(TOP_N).copy()
-top_neg = df_sorted.tail(BOTTOM_N).copy().sort_values("Total Effect (bps)", ascending=True)
-
-# ---- Optional: capture interesting offsetting cases (not already in top/bottom) ----
-mask_offset = (
-    (df["Selection Effect (bps)"].abs() >= OFFSET_BPS) &
-    (df["Allocation Effect (bps)"].abs() >= OFFSET_BPS) &
-    (df["Selection Effect (bps)"] * df["Allocation Effect (bps)"] < 0) # opposite signs
-)
-offset_candidates = df.loc[mask_offset].copy()
-
-# Exclude those already in top/bottom sets
-already = set(top_pos["Sector"]).union(set(top_neg["Sector"]))
-offset_mentions = offset_candidates[~offset_candidates["Sector"].isin(already)].copy()
-
-# ---- Helper to build a single sector line (business tone, not number-dumpy) ----
-def sector_sentence(row):
-    sector = row["Sector"]
-    te   = row["Total Effect (bps)"]
-    sel  = row["Selection Effect (bps)"]
-    alloc= row["Allocation Effect (bps)"]
-    pr   = row["Portfolio Return (%)"]
-    br   = row["Benchmark Return (%)"]
-    pw   = row["Portfolio Weight (%)"]
-    bw   = row["Benchmark Weight (%)"]
-
-    drivers = []
-    if abs(sel) >= SIG_EFFECT_BPS and abs(alloc) >= SIG_EFFECT_BPS:
-        # Both matter
-        sel_dir = "added" if sel > 0 else "detracted"
-        alloc_dir = "added" if alloc > 0 else "detracted"
-        drivers.append(f"selection {sel_dir} and allocation {alloc_dir}")
-    elif abs(sel) >= SIG_EFFECT_BPS:
-        drivers.append("selection was the primary driver")
-    elif abs(alloc) >= SIG_EFFECT_BPS:
-        drivers.append("allocation was the primary driver")
-    else:
-        drivers.append("no single dominant driver")
-
-    # Optional contextual color if meaningful
-    context_bits = []
-    if abs(pr - br) >= RET_DIFF_PCT:
-        direction = "outperformed" if pr > br else "underperformed"
-        context_bits.append(f"portfolio holdings {direction} the benchmark")
-    if abs(pw - bw) >= WT_DIFF_PCTPT:
-        tilt = "overweight" if pw > bw else "underweight"
-        context_bits.append(f"a {tilt} stance")
-
-    # Assemble without flooding numbers; we keep explicit bps only for total
-    core = f"{sector} {('added' if te>0 else 'detracted' if te<0 else 'had no net impact')} "\
-           f"{abs(te):.0f} bps."
-    driver_txt = " ".join([
-        (" ".join(drivers) + ".").capitalize()
-    ])
-    ctx = (" " + " and ".join(context_bits) + ".") if context_bits else ""
-
-    return core + " " + driver_txt + ctx
-
-# ---- Build opening line (fixed format) ----
-opening = (
-    f"{PORTFOLIO_NAME}, {PERIOD} — Alpha: {total_alpha_bps:.0f} bps "
-    f"(Selection: {total_sel_bps:.0f} bps, Allocation: {total_alloc_bps:.0f} bps). "
-    f"Total return: Portfolio {port_total_ret:.2f}% vs Benchmark {bench_total_ret:.2f}%."
-)
-
-# ---- Make the overview line (names only) ----
-def list_names(s):
-    return ", ".join(s)
-
-overview = "Performance was supported by " \
-           + (", ".join(top_pos['Sector']) if len(top_pos)>0 else "—") \
-           + " and weighed on by " \
-           + (", ".join(top_neg['Sector']) if len(top_neg)>0 else "—") \
-           + "."
-
-# ---- Build body sentences ----
-body_lines = []
-for _, r in top_pos.iterrows():
-    body_lines.append(sector_sentence(r))
-for _, r in top_neg.iterrows():
-    body_lines.append(sector_sentence(r))
-
-# ---- Add 0-net “offsetting” cases sparingly (max 1–2) ----
-offset_added = 0
-for _, r in offset_mentions.iterrows():
-    if offset_added >= 2:
-        break
-    sel = r["Selection Effect (bps)"]; alloc = r["Allocation Effect (bps)"]
-    if abs(r["Total Effect (bps)"]) < SIG_EFFECT_BPS:  # basically flat total
-        sign_sel = "added" if sel>0 else "detracted"
-        sign_alloc = "added" if alloc>0 else "detracted"
-        body_lines.append(
-            f"{r['Sector']} saw robust selection that {sign_sel} {abs(sel):.0f} bps, "
-            f"fully offset by allocation that {sign_alloc} {abs(alloc):.0f} bps, resulting in no net effect."
-        )
-        offset_added += 1
-
-# ---- Assemble the prompt for Ollama ----
-instructions = f"""
-You are a professional performance attribution analyst.
-Write a concise, professional Brinson commentary (max {MAX_WORDS} words) in an elegant business tone.
-
-Rules:
-1) Start with the opening line exactly in this format:
-   "{PORTFOLIO_NAME}, {PERIOD} — Alpha: {{Alpha}} bps (Selection: {{Sel}} bps, Allocation: {{Alloc}} bps). Total return: Portfolio {{PortRet}}% vs Benchmark {{BenchRet}}%."
-   Use the values provided below; do not invent numbers.
-2) Follow with one overview sentence naming top positive and top negative contributors.
-3) Then write 1–2 sentences per sector, ordered from highest positive total effect to largest negative.
-   - State the key driver(s): selection, allocation, or both.
-   - Mention portfolio vs benchmark returns and/or weights only when differences are meaningful (return diff > {RET_DIFF_PCT:.2f}%, weight diff > {WT_DIFF_PCTPT:.2f} pct-pts).
-   - Avoid insignificant effects (|effect| < {SIG_EFFECT_BPS:.0f} bps).
-   - Keep numbers light; always include total effect in bps for each mentioned sector, but focus on drivers.
-4) If present, include at most two sectors where selection and allocation offset materially (each >= {OFFSET_BPS:.0f} bps with opposite signs), noting that the net effect was near zero.
-5) No recommendations, no criticism — describe facts only.
-
-Opening values (use these exactly):
-- Alpha (bps) = {total_alpha_bps:.0f}; Selection (bps) = {total_sel_bps:.0f}; Allocation (bps) = {total_alloc_bps:.0f}
-- Portfolio Total Return (%) = {port_total_ret:.2f}; Benchmark Total Return (%) = {bench_total_ret:.2f}
-
-Top/Bottom sectors to consider (already ranked):
-- Positives: {", ".join(top_pos['Sector']) if len(top_pos)>0 else "—"}
-- Negatives: {", ".join(top_neg['Sector']) if len(top_neg)>0 else "—"}
-
-Sector snippets (context for grounding; do not paste verbatim):
-"""
-
-# Short, grounded snippets per sector to reduce hallucination
-def sector_snippet(row):
-    return (
-        f"{row['Sector']}: Total {row['Total Effect (bps)']:.0f} bps; "
-        f"Sel {row['Selection Effect (bps)']:.0f} bps; Alloc {row['Allocation Effect (bps)']:.0f} bps; "
-        f"PortRet {row['Portfolio Return (%)']:.2f}%, BenchRet {row['Benchmark Return (%)']:.2f}%, "
-        f"PortW {row['Portfolio Weight (%)']:.2f}%, BenchW {row['Benchmark Weight (%)']:.2f}%."
-    )
-
-snippets = []
-for _, r in pd.concat([top_pos, top_neg], axis=0).iterrows():
-    snippets.append(sector_snippet(r))
-
-# Add up to 2 offsetting snippets
-for _, r in offset_mentions.head(2).iterrows():
-    snippets.append(sector_snippet(r))
-
-prompt = instructions.strip() + "\n" + "\n".join(snippets)
-
-# ---- Output files ----
-with open("ollama_prompt.txt", "w") as f:
-    f.write(prompt)
-
-# Also print opening + overview for quick inspection
-print(opening)
-print(overview)
-print("\n--- PROMPT (save: ollama_prompt.txt) ---\n")
-print(prompt[:2000])  # preview the first ~2k chars
-
-How you’ll use it:
-
-python brinson_prep.py
-ollama run gemma2:27b-instruct --prompt "$(cat ollama_prompt.txt)"
-
-
-⸻
-
-Why this works
-	•	Opening line always present and standardized (alpha + selection/allocation + total returns).
-	•	Sector coverage: top/bottom by total effect; includes ties if interesting; optional offsetting callouts.
-	•	Tone control: grounded facts, minimal numbers, businesslike phrasing.
-	•	Hallucination guardrails: we only pass curated snippets and strict instructions; the model can’t invent totals.
-
-If you want, I can tweak thresholds (e.g., TOP_N, SIG_EFFECT_BPS) or change the wording template to match your firm’s style guide.
+Instructions:
+1) Convert returns to bps and state: portfolio, benchmark, excess.
+2) Identify top 3 and bottom 3 contributors by total effect.
+3) For each reported sector, state total effect in bps and the primary driver(s):
+   - If portfolio weight < benchmark weight say “underweight”; if > say “overweight”; if equal say “neutral weight”.
+   - If selection > 0 bps say “positive selection”; < 0 say “negative selection”; near 0 say “mixed selection”.
+4) Keep two compact paragraphs. No bullets. No recommendations.
