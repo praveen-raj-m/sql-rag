@@ -83,7 +83,7 @@ Detractors:
     return f"SYSTEM:\n{SYSTEM}\n\nUSER:\n{USER}"
 
 def generate_commentary(headline: dict, contributors: list, detractors: list,
-                        model: str = "llama3:latest"):
+                        model: str = "gemma3:12b"):
     prompt = build_prompt(headline, contributors, detractors)
     print(prompt)
     resp = ollama.generate(
@@ -122,7 +122,7 @@ Output Rules (STRICT)
    - Mention ALL countries provided by the user.
    - For each country, include Total Effect (bps) and driver(s) (selection, allocation, or both) using the given numbers.
 3) No headings or bullets in the OUTPUT (narrative only). No macro narratives. No recommendations or criticism or unwanted text.
-4) Do not calculate or invent numbers; use ONLY provided values.
+4) **Do not calculate or invent numbers; use ONLY provided values.**
 
 
 USER:
@@ -149,6 +149,7 @@ Detractors:
 - Colombia — Total -16 bps; Selection -15 bps; PR 5.21%, BR 8.52%
 - Cash — Total -9 bps; Allocation -9 bps;  PW 3.48%, BW 0.00%
 
+Now write the attribution report commentary based on the provided data.
 """
 
 def ollama_call(prompt: str = prompt,
