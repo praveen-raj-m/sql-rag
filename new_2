@@ -1,198 +1,48 @@
-# pip install ollama
-import ollama
+Perfect 👍 — let’s compare **GPT-4o mini** vs **GPT-4o** for a RAG chatbot, assuming the **same query workload**.
 
-def choose_opening_verb(excess_bps: int, nearline_thresh: int = 5) -> str:
-    if abs(excess_bps) <= nearline_thresh:
-        return "was broadly in line"
-    return "advanced" if excess_bps > 0 else "retreated"
+We’ll use the earlier assumptions:
 
-def format_country(c: dict) -> str:
-    # Accepts any subset of fields; includes only what you pass.
-    parts = [f"- {c['country']} — Total {c['total_bps']} bps"]
-    if 'selection_bps' in c: parts.append(f"Selection {c['selection_bps']} bps")
-    if 'allocation_bps' in c: parts.append(f"Allocation {c['allocation_bps']} bps")
-    if 'portfolio_return' in c and 'benchmark_return' in c:
-        parts.append(f"PR {c['portfolio_return']}, BR {c['benchmark_return']}")
-    if 'portfolio_weight' in c and 'benchmark_weight' in c:
-        parts.append(f"PW {c['portfolio_weight']}, BW {c['benchmark_weight']}")
-    return "; ".join(parts)
+* **Input tokens per query** ≈ 1,200
+* **Output tokens per query** ≈ 150
+* **Total tokens per query** ≈ 1,350
+* Input dominates cost.
 
-def build_prompt(headline: dict, contributors: list, detractors: list) -> str:
-    verb = choose_opening_verb(int(str(headline['excess_return_bps']).replace('%','').replace('bps','')))
-    opening_template = (
-        f'The portfolio {verb} {headline["portfolio_return"]} against the benchmark’s '
-        f'{headline["benchmark_return"]}, resulting in {headline["excess_return_bps"]} bps of excess return '
-        f'(Alpha {headline["alpha_bps"]} bps), led by {headline["selection_bps"]} bps from selection and '
-        f'{headline["allocation_bps"]} bps from allocation.'
-    )
+---
 
-    data_block = [
-        "HEADLINE",
-        f"Portfolio Return: {headline['portfolio_return']}",
-        f"Benchmark Return: {headline['benchmark_return']}",
-        f"Excess Return (bps): {headline['excess_return_bps']}",
-        f"Alpha (bps): {headline['alpha_bps']}",
-        f"Total Selection (bps): {headline['selection_bps']}",
-        f"Total Allocation (bps): {headline['allocation_bps']}",
-    ]
-    if 'benchmark_total_return' in headline:
-        data_block.append(f"Benchmark Total Return: {headline['benchmark_total_return']}")
+# 🔹 Azure OpenAI Pricing Recap
 
-    contrib_block = "\n".join([format_country(c) for c in contributors])
-    detract_block = "\n".join([format_country(c) for c in detractors])
+* **GPT-4o mini** → Input: **\$0.15 / 1M**, Output: **\$0.60 / 1M**
+* **GPT-4o** → Input: **\$5 / 1M**, Output: **\$15 / 1M**
 
-    SYSTEM = """You are an expert CFA charterholder and quantitative analyst performing attribution analysis.
-Produce a Brinson–Fachler attribution report in a clear, professional, analytical story style.
+---
 
-Definitions
-- Performance = total return of the portfolio and benchmark.
-- Excess return = portfolio return minus benchmark return (may be positive or negative).
-- Attribution = Allocation Effect + Selection Effect.
-Formulas
-- Allocation = (Portfolio Weight − Benchmark Weight) × (Benchmark Sector Return − Benchmark Total Return)
-- Selection = Portfolio Weight × (Portfolio Sector Return − Benchmark Sector Return)
-- Total Effect = Allocation + Selection
+# 🔹 Cost Estimates Table
 
-Output Rules (STRICT)
-1) Opening sentence: use the provided line EXACTLY as the opener (already computed in USER OPENING LINE).
-2) Then write **exactly 200 words** in **2–3 paragraphs** (contributors first, then detractors).
-   - Mention ALL countries provided by the user.
-   - For each country, include Total Effect (bps) and driver(s) (selection, allocation, or both) using the given numbers.
-   - Include ONE concise logic clause tied to the formulas, with numbers:
-     • Selection: positive if PR > BR; negative if PR < BR (reference PW if provided).
-     • Allocation: positive if overweight strong/underweight weak vs Benchmark Total Return; negative if overweight weak/underweight strong (reference PW/BW if provided).
-   - If PW/BW are not provided for a country, omit the weight clause.
-3) No headings or bullets in the OUTPUT (narrative only). No macro narratives. No recommendations or criticism.
-4) Do not calculate or invent numbers; use ONLY provided values.
-"""
+| Monthly Queries | Tokens / Month | **GPT-4o mini** Monthly | **GPT-4o mini** Yearly | **GPT-4o** Monthly | **GPT-4o** Yearly |
+| --------------- | -------------- | ----------------------- | ---------------------- | ------------------ | ----------------- |
+| **10,000**      | \~13.5M        | \~\$3.7                 | \~\$44                 | \~\$124            | \~\$1,490         |
+| **100,000**     | \~135M         | \~\$37                  | \~\$445                | \~\$1,240          | \~\$14,880        |
+| **1,000,000**   | \~1.35B        | \~\$370                 | \~\$4,440              | \~\$12,400         | \~\$148,800       |
+| **10,000,000**  | \~13.5B        | \~\$3,700               | \~\$44,400             | \~\$124,000        | \~\$1,488,000     |
 
-    USER = f"""OPENING LINE (use verbatim):
-{opening_template}
+---
 
-DATA (use only these numbers):
-{chr(10).join(data_block)}
+# 🔹 Key Takeaways
 
-Contributors:
-{contrib_block if contrib_block else '(none)'}
+* **GPT-4o mini is \~33× cheaper** than GPT-4o.
+* At **enterprise scale (1M queries/month)**:
 
-Detractors:
-{detract_block if detract_block else '(none)'}
-"""
+  * **Mini costs ≈ \$370/month**
+  * **Full GPT-4o costs ≈ \$12.4K/month**
+* Yearly difference is massive: \~\$4.4K (mini) vs \~\$148K (GPT-4o).
 
-    # Single concatenated prompt (works well with ollama.generate)
-    return f"SYSTEM:\n{SYSTEM}\n\nUSER:\n{USER}"
+---
 
-def generate_commentary(headline: dict, contributors: list, detractors: list,
-                        model: str = "gemma3:12b"):
-    prompt = build_prompt(headline, contributors, detractors)
-    print(prompt)
-    resp = ollama.generate(
-        model=model,
-        prompt=prompt,
-        options={
-            "temperature": 0.12,
-            "top_p": 0.9,
-            "top_k": 40,
-            "repeat_penalty": 1.12
-        },
-    )
-    return resp["response"]
+✅ **Recommendation:**
 
+* Use **GPT-4o mini for the majority of RAG queries** (cost-efficient).
+* Route only **high-stakes, complex queries** to **GPT-4o**, keeping costs controlled.
 
-prompt = """                                                                                        
-SYSTEM:
-You are an expert CFA charterholder and quantitative analyst performing attribution analysis.
-Produce a Brinson–Fachler attribution report in a clear, professional, analytical story style.
+---
 
-Definitions
-- Performance = total return of the portfolio and benchmark.
-- Excess return = portfolio return minus benchmark return (may be positive or negative).
-- Attribution = Allocation Effect + Selection Effect.
-Formulas
-- Allocation = (Portfolio Weight − Benchmark Weight) × (Benchmark Sector Return − Benchmark Total Return)
-- Selection = Portfolio Weight × (Portfolio Sector Return − Benchmark Sector Return)
-- Total Effect = Allocation + Selection
-- Selection: positive if PR > BR; negative if PR < BR (reference PW if provided).
-- Allocation: positive if overweight strong/underweight weak vs Benchmark Total Return; negative if overweight weak/underweight strong (reference PW/BW if provided).
-
-
-Output Rules (STRICT)
-1) Opening sentence: use the provided line EXACTLY as the opener (already computed in USER OPENING LINE).
-2) Then write **exactly 200 words** in **2–3 paragraphs** (contributors first, then detractors).
-   - Mention ALL countries provided by the user.
-   - For each country, include Total Effect (bps) and driver(s) (selection, allocation, or both) using the given numbers.
-3) No headings or bullets in the OUTPUT (narrative only). No macro narratives. No recommendations or criticism or unwanted text.
-4) **Do not calculate or invent numbers; use ONLY provided values.**
-
-
-USER:
-OPENING LINE (use verbatim):
-The portfolio advanced 8.47% against the benchmark’s 7.21%, resulting in 126 bps of return (Alpha 127 bps), 107 bps from selection and 20 bps from allocation.
-
-DATA (use only these numbers):
-HEADLINE
-Portfolio Return: 8.47%
-Benchmark Return: 7.21%
-Excess Return (bps): 126
-Alpha (bps): 127
-Total Selection (bps): 107
-Total Allocation (bps): 20
-Benchmark Total Return: 7.21%
-
-Contributors:
-- Mexico — Total 33 bps; Selection 34 bps; PR 11.24%, BR 5.93%;
-- Brazil — Total 28 bps; Selection 40 bps; Allocation -12 bps; PR 8.75%, BR 5.60%; PW 12.13%, BW 5.06%
-- Czech Republic — Total 20 bps; Selection 19 bps; PR 28.95%, BR 8.45%
-
-Detractors:
-- Argentina — Total -17 bps; Selection -23 bps; Allocation 6 bps; PR 7.38%, BR 11.99%; PW 4.02%, BW 1.94%
-- Colombia — Total -16 bps; Selection -15 bps; PR 5.21%, BR 8.52%
-- Cash — Total -9 bps; Allocation -9 bps;  PW 3.48%, BW 0.00%
-
-Now write the attribution report commentary based on the provided data.
-"""
-
-def ollama_call(prompt: str = prompt,
-                        model: str = "gemma"):
-    
-    print(prompt)
-    resp = ollama.generate(
-        model=model,
-        prompt=prompt,
-        options={
-            "temperature": 0.12,
-            "top_p": 0.9,
-            "top_k": 40,
-            "repeat_penalty": 1.12
-        },
-    )
-    return resp["response"]
-
-
-# --------- example usage ----------
-if __name__ == "__main__":
-    # headline = {
-    #     "portfolio_return": "8.47%",
-    #     "benchmark_return": "7.21%",
-    #     "excess_return_bps": "126",
-    #     "alpha_bps": "127",
-    #     "selection_bps": "107",
-    #     "allocation_bps": "20",
-    #     "benchmark_total_return": "7.21%",
-    # }
-
-    # contributors = [
-    #     {"country":"Mexico","total_bps":"33","selection_bps":"34","allocation_bps":"0","portfolio_return":"11.24%","benchmark_return":"5.93%","portfolio_weight":"6.12%","benchmark_weight":"4.28%"},
-    #     {"country":"Brazil","total_bps":"28","selection_bps":"40","allocation_bps":"-12","portfolio_return":"8.75%","benchmark_return":"5.60%","portfolio_weight":"12.13%","benchmark_weight":"5.06%"},
-    #     {"country":"Czech Republic","total_bps":"20","selection_bps":"19","allocation_bps":"1","portfolio_return":"28.95%","benchmark_return":"8.45%"},
-    # ]
-
-    # detractors = [
-    #     {"country":"Argentina","total_bps":"-17","selection_bps":"-23","allocation_bps":"6","portfolio_return":"7.38%","benchmark_return":"11.99%","portfolio_weight":"4.02%","benchmark_weight":"1.94%"},
-    #     {"country":"Colombia","total_bps":"-16","selection_bps":"-15","allocation_bps":"0","portfolio_return":"5.21%","benchmark_return":"8.52%"},
-    #     {"country":"Cash","total_bps":"-9","selection_bps":"0","allocation_bps":"-9","portfolio_return":"0.00%","benchmark_return":"0.00%","portfolio_weight":"3.48%","benchmark_weight":"0.00%"},
-    # ]
-
-    print(ollama_call(prompt=prompt, model="llama3:latest" ))
-
-  
+Do you want me to also **add a blended strategy table** (e.g., 90% queries on mini, 10% on full GPT-4o) so you can see the “hybrid” enterprise cost model?
