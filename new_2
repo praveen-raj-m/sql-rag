@@ -1,359 +1,103 @@
-Totally agree—the system design matters more than the model when you’re limited to small local LLMs (Llama-3-8B, Gemma-3-12B). Here’s a design that keeps precision high, latency/cost low, and uses the LLM only where it’s safest.
+Great setup idea. With a big-RAM, no-GPU box running Ollama in Docker, here’s a production-ready playbook that squeezes the most throughput per dollar while keeping ops simple.
 
-The blueprint (LLM-light, precision-first)
+1) Model + quant choices (CPU-only)
+	•	Prefer smaller/efficient quantizations (e.g., Q4_K_M for latency, Q5_K_M if you can spare RAM for a bit more quality). Keep one “general chat” model and a separate small reranker/embedding model for retrieval tasks to avoid loading a giant chat model for everything.
+	•	Warm your main model on boot and keep it resident to avoid cold starts. You can do this via API keep_alive or an env var (details below). The API supports keep_alive and keeping models in RAM after requests.  ￼
 
-0) Output contract (non-negotiable)
+2) Concurrency strategy
+	•	Vertical concurrency: Let each container handle N parallel requests and M threads per request. Use:
+	•	OLLAMA_NUM_PARALLEL to set how many requests run at once in one server process. (Default 1.)  ￼
+	•	Threads per request: set via options in the request or with OLLAMA_NUM_THREADS (supported by Ollama/llama.cpp; behavior can vary by version—benchmark on your host). Rule of thumb: start near physical cores for threads per request, and set NUM_PARALLEL so total runnable threads ≈ 1–1.5× total cores. (Example on a 32-core CPU: NUM_PARALLEL=4, threads/request ~8.)
+	•	Horizontal concurrency: Run multiple containers behind a reverse proxy. This is often more predictable than cranking NUM_PARALLEL very high in one process.
 
-Lock this up front so everything downstream is auditable.
+3) Memory mapping (mmap) vs full RAM
+	•	Default is mmap (fast to “load”, uses OS pagecache, great for large files). For some filesystems / IO patterns, disabling mmap can help, but usually leave mmap ON unless you’ve profiled I/O stalls.
+	•	If you do want to force “no mmap”, set OLLAMA_NO_MMAP=1 (global) or pass --no-mmap at runtime. (Environment variable added & discussed in the project.)  ￼
+	•	Use keep_alive and a long value if you want the model to remain resident (see §4).  ￼
 
-{
-  "document_id": "string",
-  "terms": [
-    {
-      "name": "Indemnified Party",
-      "aliases": ["Indemnified Parties", "Indemnified Person"],
-      "status": "found | missing | ambiguous | referenced_internal | referenced_external",
-      "value": "VERBATIM TEXT",
-      "evidence": {
-        "page": 12,
-        "section_header": "Definitions",
-        "char_start": 5342,
-        "char_end": 5678,
-        "snippet": "…'Indemnified Party' means …"
-      },
-      "confidence": 0.0,
-      "notes": ""
-    }
-  ]
-}
+4) Kill cold starts with keep-alive
+	•	Per request: {"keep_alive":"1h"} (or -1 to keep indefinitely).  ￼
+	•	Server-wide default: OLLAMA_KEEP_ALIVE=1h (or longer) so UI/tools that don’t pass keep_alive still benefit.  ￼
 
-Rules: value must be verbatim; include location evidence; allow abstaining.
+5) Queueing & overload protection
+	•	OLLAMA_MAX_QUEUE: increase if you expect bursts (default 512).
+	•	OLLAMA_MAX_LOADED_MODELS: keep this low (1–2) so RAM isn’t fragmented across many models.
+	•	OLLAMA_NUM_PARALLEL: tune for your CPU and latency targets. These are documented/used in the codebase and community guidance.  ￼
 
-⸻
+6) A solid Docker Compose (CPU-only, big-RAM)
 
-1) Candidate generation (deterministic, high recall)
+services:
+  ollama:
+    image: ollama/ollama:latest
+    container_name: ollama-cpu
+    restart: unless-stopped
+    ports:
+      - "11434:11434"
+    environment:
+      # Networking
+      OLLAMA_HOST: "0.0.0.0:11434"
+      # Keep models hot
+      OLLAMA_KEEP_ALIVE: "1h"
+      # Concurrency knobs
+      OLLAMA_NUM_PARALLEL: "4"        # start here; tune
+      OLLAMA_MAX_QUEUE: "2048"        # burst tolerance
+      OLLAMA_MAX_LOADED_MODELS: "1"   # avoid RAM thrash
+      # Optional: disable mmap only if IO stalls / FS quirks
+      # OLLAMA_NO_MMAP: "1"
+      # Optional: threads per request (verify on your version)
+      # OLLAMA_NUM_THREADS: "8"
+    volumes:
+      - ollama_models:/root/.ollama
+    # Give it CPU and RAM it needs; pin if you run many replicas
+    deploy:
+      resources:
+        limits:
+          cpus: "32.0"     # example
+          memory: "256g"   # example
+volumes:
+  ollama_models:
 
-No LLM here.
-	•	Aliases & morphology: Precompute plural/singular, hyphenation, quotes, capitalization. Use a trie (Aho-Corasick) to scan quickly.
-	•	Core patterns (regex):
-	•	(?i)\b"?(TERM|ALIAS)"?\s+(means|shall mean|is defined as)\b
-	•	(?i)\bhas the meaning (set forth|given) (in|under|at)\b
-	•	(?i)\bas used herein, "?(TERM|ALIAS)"?\b
-	•	Section bias: detect “Definitions”, “Interpretation”, “Certain Definitions” headers and list structures (a., b., i., ii., bullets, em-dashes).
-	•	Span capture: from match → extend to first terminating delimiter (.; or next bullet). Keep (page, header, char offsets, text, snippet).
+Notes
+	•	Use a local SSD for /root/.ollama for faster paging when mmap is on.
+	•	If you run several replicas, put NGINX/Traefik in front with simple least-connections and per-IP rate-limits.
 
-Output: for each of your 20 terms, 0-N candidates with rich metadata.
+7) Caching & warmup
+	•	Preload on start to avoid the first user paying the tax:
 
-⸻
+curl -s http://localhost:11434/api/generate -d '{"model":"llama3.2:Q4_K_M","prompt":"","keep_alive":"1h"}' >/dev/null
 
-2) Ranking (hybrid retrieval, still no LLM)
+(Empty prompt loads the model; keep_alive keeps it hot.)  ￼
 
-You want robustness without heavy compute:
-	•	Keyword/BM25: Score by query "TERM" + aliases + ("means" OR "shall mean") vs candidate text.
-	•	Definition cue bonus: +w if inside a Definitions section, contains means/shall mean, starts with quoted headword.
-	•	Cross-ref penalty: −w if has the meaning set forth and the referenced section isn’t resolved yet.
-	•	Light embeddings (optional): If you have a small local model (e.g., bge-small, all-MiniLM), compute cosine between a fixed query like Definition of "<TERM>" in a contract and candidate text. Keep it secondary to keywords/patterns.
+	•	Check which models are loaded with GET /api/ps.  ￼
 
-Score example
-final = 0.55*BM25 + 0.3*pattern_bonus + 0.15*cosine
+8) Request-level tuning from your service
+	•	In your service’s POSTs to /api/chat or /api/generate, set:
+	•	keep_alive (e.g., "30m"–"2h") for hot models.  ￼
+	•	options: include num_ctx appropriate to your prompts (larger context increases RAM/latency), and (if supported in your version) num_thread to override threads per request for specific endpoints. (Exact option names vary by version; benchmark.)
 
-Keep top 1–3 per term for the next step.
+9) Observability & SLOs
+	•	Capture tokens/sec, queue wait time, latency percentiles per model. The API returns load/generation durations—log them.  ￼
+	•	Alert on:
+	•	queue depth ~ MAX_QUEUE
+	•	ps output showing frequent unload/reload (tune keep-alive)  ￼
+	•	OOM kills (lower MAX_LOADED_MODELS, smaller quant, or scale out)
 
-⸻
+10) Security & multi-tenant hygiene
+	•	Bind to a private network and put reverse proxy auth (JWT/API key) in front.
+	•	Per-tenant limits at the proxy (rate limit, request size).
+	•	If multiple teams use different models, consider one replica group per model to avoid eviction churn.
 
-3) Cross-reference resolver (deterministic)
-
-If best candidate is “has the meaning set forth in Section X”:
-	•	Jump to Section X by your section index and re-run Step 2 within that section.
-	•	If it points to another document (e.g., UCC, “this Policy”), set status: referenced_external; store the citation; do not invent the text.
-
-⸻
-
-4) LLM only as a validator/normalizer (tiny prompt)
-
-With small local models, keep prompts micro and fully constrained:
-	•	Inputs to LLM (per term):
-	•	The term name + aliases.
-	•	Top K candidate snippets (K ≤ 3, each ≤ 500–800 chars).
-	•	Exact JSON schema (short) + hard rules.
-	•	LLM task:
-	•	Choose the best candidate or mark missing.
-	•	Return exact JSON. value must be a substring of evidence.snippet. No rewriting.
-	•	Prefer explicit means/shall mean over cross-refs. If only cross-ref is available and resolvable (Step 3), use resolved text; else referenced_external.
-	•	If two conflicting locals exist → ambiguous (put the longer/clearer in value; note the other in notes).
-
-Grammar-constrained decoding
-Use JSON enforcement (e.g., lm-format-enforcer/Outlines/Guidance) so the 8B/12B model cannot drift.
-
-Guardrail after LLM
-Programmatically verify value ∈ snippet. If not, downgrade to ambiguous or missing.
-
-⸻
-
-5) Confidence you can trust (no magic)
-
-Combine rules, not model vibes:
-	•	Base: +0.6 if in Definitions; +0.2 if contains means/shall mean; +0.1 if headword quoted; −0.3 if cross-ref unresolved; −0.2 if multiple conflicting locals.
-	•	Clamp to [0,1]. This number should be explainable.
+11) When (and whether) to disable mmap
+	•	Keep mmap enabled for most Linux + local-SSD deployments (fast “loads”, shared pagecache).
+	•	Consider OLLAMA_NO_MMAP=1 only if you’ve measured page-fault churn or odd FS interactions; it will trade faster steady-state RAM access for slower loads.  ￼
 
 ⸻
 
-6) Chunking & parsing choices (optimize for small models)
-	•	Parsing: pdfminer/pypdf. If scanned, OCR page-by-page (Tesseract). Always keep page boundaries + char offsets.
-	•	Index: sentences (or short spans) with (page, header). No need for a full vector DB—just arrays and BM25 over the sentence list.
-	•	Token budget: never send whole pages; send only the candidate spans. Aim for <1k tokens per term (often <300).
+Quick checklist to go live
+	1.	Pick a quant (Q4_K_M first), warm it, set KEEP_ALIVE=1h.  ￼
+	2.	Start with NUM_PARALLEL=2–4, threads/request ≈ physical cores / NUM_PARALLEL; load test and adjust.  ￼
+	3.	Raise MAX_QUEUE if you have bursts; keep MAX_LOADED_MODELS=1 unless you truly need more.  ￼
+	4.	Scale horizontally before pushing parallelism too high in one process.
+	5.	Instrument tokens/sec + queue wait; pre-warm on deploy.  ￼
 
-⸻
-
-7) Error classes you’ll actually see
-	•	Duplicate local definitions → ambiguous with both locations listed.
-	•	Forward references → resolve once, cache result.
-	•	Terms defined by incorporation (UCC/GDPR) → referenced_external with citation.
-	•	Capitalized but undefined terms → missing + note first occurrence page.
-
-⸻
-
-8) Evaluation loop (for legal-grade precision)
-	•	Create a gold set (5–10 contracts) with human-verified JSON.
-	•	Track precision@1 (exact match), recall (found vs expected), abstain rate (missing when present).
-	•	Add unit tests for each regex/pattern and cross-ref resolver.
-	•	Regression test on every rule tweak.
-
-⸻
-
-9) Prompts for small local models (copy/paste)
-
-System (once):
-
-You are a compliance extraction engine. Output ONLY valid JSON matching the provided schema. 
-Do not paraphrase legal text. If a definition cannot be copied verbatim from the provided snippet, mark status as "missing".
-
-Per-term user prompt (≤ 500–900 tokens total):
-
-Task: Pick the best definition of the target term OR return "missing". 
-Rules:
-- value MUST be a verbatim substring of evidence.snippet.
-- Prefer definitions with "means"/"shall mean" within a Definitions section.
-- If only a cross-reference exists and cannot be resolved from the provided candidates, use status "referenced_external".
-- If two distinct local definitions conflict, use status "ambiguous" and put the clearer/longer in value; note the other in notes.
-- Return only JSON matching this schema: { ...schema here, minimized ... }
-
-Target:
-- name: "<TERM>"
-- aliases: ["A1", "A2"]
-
-Candidates (top to bottom are strongest):
-1) meta: page=<p>, header="<h>", char=[s,e]
-snippet:
-<<<SNIPPET TEXT>>>
-2) ...
-
-(Keep schema minimal in the prompt; you verify/augment fields post-hoc.)
-
-⸻
-
-10) Implementation order (so you see wins early)
-	1.	Parser + page/offset tracking.
-	2.	Term config (terms.yaml with aliases & edge-case rules).
-	3.	Deterministic candidate finder (regex + Aho-Corasick).
-	4.	Ranker (BM25 + pattern bonuses; optional tiny embeddings).
-	5.	Cross-ref resolver (intra-doc only, then mark external).
-	6.	LLM validator with JSON enforcement (tiny prompts).
-	7.	Post-validator (substring check, evidence sanity).
-	8.	Confidence calculator (rule-based).
-	9.	Regression tests + gold set.
-
-⸻
-
-11) When to skip the LLM entirely
-
-If you get a candidate that is:
-	•	in a Definitions section,
-	•	contains means/shall mean,
-	•	headword matches the target (or alias) exactly, and
-	•	no cross-ref language,
-
-…you can auto-accept without calling the LLM. This saves tokens and is often the majority case.
-
-⸻
-
-12) Storage & ops
-	•	Keep a document cache: text, section map, and candidate list (so re-runs are cheap).
-	•	Version the output JSON with a hash of the source file.
-	•	Log a provenance trail (scores, rules fired) for auditor review.
-
-⸻
-
-TL;DR
-	•	Rules to find, BM25 (+tiny embeddings) to rank, small LLM only to validate into JSON with grammar constraints.
-	•	Always return verbatim text with evidence.
-	•	Prefer abstaining (missing) over guessing.
-	•	Build confidence from transparent, deterministic signals.
-
-If you’d like, share a redacted sample and your 20 terms/aliases—I’ll tailor the regex set, cross-ref resolver, and a minimal JSON-enforced prompt that fits in an 8B model’s comfort zone.
-
-
-
-
-Short answer: use a hybrid pipeline—deterministic rules to find candidates, embeddings to rank them, and an LLM only to normalize & validate the final text into your JSON schema (with evidence). Don’t rely on cosine similarity or an LLM alone for legal docs where precision matters.
-
-Here’s a battle-tested pattern that works well for “20 terms + definitions”:
-
-1) Define the contract for outputs (JSON schema)
-
-Give the model (and your evaluators) a single truth format. Include an “evidence” field with location so you can audit.
-
-{
-  "document_id": "string",
-  "terms": [
-    {
-      "name": "Indemnified Party",
-      "aliases": ["Indemnified Parties", "Indemnified Person"],
-      "status": "found | missing | ambiguous",
-      "value": "verbatim definition text",
-      "evidence": {
-        "page": 12,
-        "section_header": "Definitions",
-        "char_start": 5342,
-        "char_end": 5678,
-        "snippet": "…“Indemnified Party” means…"
-      },
-      "confidence": 0.0,
-      "notes": "if ambiguous or synthesized info about resolution"
-    }
-  ]
-}
-
-Key points:
-	•	Verbatim text only in value (no paraphrase).
-	•	Include aliases (synonyms/plurals) for recall.
-	•	status lets you safely “abstain”.
-	•	evidence offsets (or at least page/line) make it auditable.
-	•	A numeric confidence helps triage manual review.
-
-2) Candidate generation (deterministic & high-recall)
-
-Scan the doc for definition patterns and index them.
-	•	Heuristics/regex:
-	•	(?i)\b"?(TERM|ALIAS)"?\s+(means|shall mean|is defined as)\b
-	•	(?i)\bDefinitions?\b section parsing (bulleted/lettered lists).
-	•	Cross-reference captures: has the meaning set forth in Section ….
-	•	Structural signals:
-	•	Bold/SmallCaps/Quoted terms in PDFs/Word.
-	•	Colon/semicolon breaks commonly used in definition lists.
-	•	Lexical fallback:
-	•	Headword detection near means/shall mean.
-	•	Nearby sentence windows (e.g., 2–3 sentences).
-	•	Negative & cross-doc traps:
-	•	Watch has the meaning given in the UCC → mark as referenced not locally defined.
-	•	If a term is defined twice → mark ambiguous and keep both candidates for the resolver.
-
-Store each candidate with: term guess, text span, page, header, and a quick BM25 score against the target term + aliases.
-
-3) Rank candidates (scoring & retrieval)
-
-Use hybrid retrieval so you aren’t dependent on cosine alone:
-	•	BM25 / keyword score on: term + aliases + ("means" OR "shall mean").
-	•	Embedding similarity (e.g., sentence-transformers) between:
-	•	Query: a small, canonical “definition intent” prompt for that term (e.g., “Definition of ‘Indemnified Party’ in a contract”).
-	•	Candidate span text.
-	•	Optional pattern bonus if the span contains means/shall mean or is inside a “Definitions” section.
-
-Compute a final score like:
-
-final = 0.5 * BM25 + 0.4 * cosine + 0.1 * pattern_bonus
-
-Keep top N (often N=3) per term for the next step.
-
-4) LLM as a constrained validator/normalizer, not a discoverer
-
-Feed only the top N candidate spans for each term to an LLM with a strict system prompt:
-	•	Instruct:
-	•	“Return exactly one JSON object per the schema.”
-	•	“Choose the best candidate or return status: "missing".”
-	•	“value must be a verbatim substring from evidence.snippet; if not present, mark missing—do not paraphrase.”
-	•	“Prefer definitions that include ‘means/shall mean’ over cross-references.”
-	•	“If two distinct definitions exist, set status: "ambiguous" and include the longer/more explicit one in value, and add the other to notes with its location.”
-	•	Provide the target term, alias list, and the candidate snippets + metadata.
-	•	Ask the model to set confidence (e.g., 0–1) following rules (presence of “means”, within “Definitions” section, no cross-reference, etc.). You can also compute confidence deterministically on your side and have the LLM only decide status.
-
-This keeps hallucination risk low and makes outputs consistent.
-
-5) Handle cross-references
-
-If the candidate says “has the meaning set forth in Section 1.1”:
-	•	Resolve the referenced section with your index and re-run ranking on that section.
-	•	If it points to another document (e.g., “as defined in the UCC”), mark status: "referenced_external"; optionally store the citation.
-
-6) Chunking & windows (for PDFs)
-	•	Parse to text with page boundaries (pdfminer, Tesseract OCR if scanned).
-	•	Create an index of:
-	•	Sections/headers (TOC, headings).
-	•	Sentences with page numbers & character offsets.
-	•	Build windows of ~800–1500 chars around candidate hits for the LLM step to reduce token cost.
-
-7) Quality controls (legal-grade precision)
-	•	Abstain: Prefer missing over guessing.
-	•	Verbatim match: Validate value is a substring of the evidence before accepting the LLM output.
-	•	Dedup: If the exact same string shows up multiple times, choose the one in “Definitions”.
-	•	Normalization (non-destructive): Strip leading/trailing quotes and punctuation; never rewrite internal wording.
-	•	Unit tests: Maintain a gold set of 5–10 contracts with expected JSON to regression-test your pipeline.
-	•	Inter-annotator checks if you have human reviewers.
-
-8) Minimal tech stack (Python)
-	•	Parsing: pdfminer.six / pypdf (+ pytesseract for scans).
-	•	Sectioning: simple header regex or unstructured library.
-	•	Search: rank_bm25.
-	•	Embeddings: sentence-transformers (e.g., all-mpnet-base-v2) for local; or any hosted embedding.
-	•	Fuzzy term matching: rapidfuzz.
-	•	LLM (optional but recommended for validation): any provider that supports structured output (JSON schema) or function-calling. Keep prompts small by passing only top candidates.
-
-9) Example control flow (pseudo)
-
-terms = [
-  {"name": "Indemnified Party", "aliases": ["Indemnified Parties", "Indemnified Person"]},
-  # ... 19 more
-]
-
-doc = parse_pdf_with_pages("agreement.pdf")
-index = build_sentence_index(doc)  # sentences with page, offsets, section headers
-
-candidates = []
-for t in terms:
-    hits = rule_based_hits(index, t)          # regex around "means/shall mean"
-    hits += lexical_hits(index, t)            # header list bullets, quotes, capitalization
-    scored = score_candidates(hits, t)        # BM25 + cosine + pattern bonus
-    topk = top_k(scored, k=3)
-    candidates.append({"term": t, "topk": topk})
-
-# LLM validate/normalize per term
-outputs = []
-for item in candidates:
-    j = llm_validate_normalize(item["term"], item["topk"], schema=json_schema)
-    outputs.append(post_validate(j, doc_text))  # ensure value is verbatim substring, fix offsets
-
-final_json = {"document_id": "agreement-2025-09-22", "terms": outputs}
-
-10) Why this beats “LLM only” or “cosine only”
-	•	LLM only risks hallucination and inconsistent granularity (and can paraphrase legal language).
-	•	Cosine only can miss exact definitions, over-match recitals, and fail in edge phrasing.
-	•	Hybrid gives:
-	•	High recall from rules/aliases.
-	•	Robust ranking from BM25+embeddings.
-	•	High precision & consistent formatting from a constrained LLM that can also adjudicate ties and set statuses.
-
-11) Practical tips
-	•	Alias lists matter: pluralization, hyphenation, US/UK variants, internal shorthand (e.g., “Company”, “the Company”, “Corporation”).
-	•	Stop at “means”: If a definition runs multiple sentences, capture until the first hard delimiter (semicolon/period) unless bullets continue the same definition.
-	•	Two-pass run: Pass 1 on “Definitions” section; Pass 2 on the rest of the document for cross-references and missed items.
-	•	Confidence thresholds: e.g., auto-accept if (in Definitions section) + contains “means/shall mean” + no cross-reference; else flag for review.
-	•	Versioning: Save the exact source pages for traceability.
-
-⸻
-
-If you want, I can draft a small Python starter that:
-	•	parses a PDF,
-	•	finds “TERM … means …” patterns for your 20 terms + aliases,
-	•	ranks with BM25+embeddings,
-	•	and emits the JSON in the schema above (LLM step optional/toggle).
-
+If you want, I can spit out a ready-to-run docker-compose.yml tailored to your server’s core count, RAM, and target QPS/latency—just tell me those numbers.
