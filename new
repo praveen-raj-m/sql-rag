@@ -1,131 +1,152 @@
-Here’s a structured way you can present Copilot Analyst Agent to a firm-wide audience of ~800 people, covering HR, Legal, Finance, Research, IT, and Investment teams. This format works both for a live talk and slides.
+Here’s a detailed outline you can use for a firm-wide presentation (800 people from HR, Legal, IT, Finance, Research, Investment etc) on Microsoft 365 Copilot, and specifically its new features Copilot Pages and Copilot Notebooks. I’ll include what they are, what they can do, and then how each department can use them. You can adapt this into a slide deck, but this gives you the content and talking points.
 
 ⸻
 
-1. What is Copilot Analyst Agent?
-	•	A digital AI assistant built into Microsoft Copilot that helps employees analyze, summarize, and present information.
-	•	Works across emails, documents, spreadsheets, Teams chats, PDFs, and external data sources.
-	•	Think of it as a research analyst + assistant that works across departments — turning raw data into actionable insights.
+1. What is Microsoft 365 Copilot?
+
+Definition & context:
+	•	Microsoft 365 Copilot is Microsoft’s AI-powered assistant embedded in the Microsoft 365 ecosystem (Word, Excel, PowerPoint, Outlook, Teams etc).  ￼
+	•	It uses context (your documents, email, calendar, chats) and generative AI to help you create, summarise, analyse, automate, collaborate.  ￼
+	•	It is part of the broader move to embed AI into everyday business productivity.  ￼
+
+Key capabilities (high-level):
+	•	Generate content: e.g., draft reports, emails, presentations.
+	•	Summarise large volumes of information: e.g., meeting transcripts, document libraries.
+	•	Analyse data: e.g., in Excel — trends, insights, formatting suggestions.
+	•	Collaborate and iterate: helping you refine ideas, giving suggestions, working in real-time.
+	•	Context-aware: works with content you already have (files, chats, links). The newer Notebook/Pages features build on this.
+
+Why it matters for a firm of this size:
+	•	With ~800 people across multiple functions, productivity, standardisation, knowledge sharing and reducing manual tedious tasks are big wins.
+	•	The AI assistant allows staff to spend less time on repetitive tasks (formatting, summarising) and more time on value-added work (analysis, decision-making, strategy).
+	•	It supports better collaboration across functions — reducing siloes and enabling more consistent insights.
 
 ⸻
 
-2. What Can It Do? (General Capabilities)
-	•	Data Analysis & Insights: Analyze financial models, survey results, contracts, or HR data in seconds.
-	•	Summarization: Turn 200-page legal docs, research papers, or compliance reports into 2-page summaries.
-	•	Scenario Testing: “What if” analysis on budgets, headcount, or investment returns.
-	•	Presentation Support: Auto-generate charts, talking points, or Q&A prep for executives.
-	•	Knowledge Search: Pull answers from across SharePoint, Teams, and OneDrive — no manual digging.
-	•	Custom Prompts: Departments can tailor prompts for recurring needs (e.g., HR attrition reports, Legal compliance briefs).
+2. What are Copilot Pages and Notebooks?
+
+Copilot Pages
+	•	Copilot Pages is described as “an interactive canvas within Microsoft 365 Copilot that lets you turn Copilot responses into editable, shareable pages.”  ￼
+	•	The idea: you prompt Copilot, get a response, then click the Pages icon to convert that response into a page you can edit – add text, tables, links, images, etc.  ￼
+	•	It is collaborative: you can share those pages with your team via Teams/Outlook etc, and multiple people can work on them together.  ￼
+	•	It is persistent: these pages are saved in your Microsoft 365 storage (SharePoint / OneDrive).  ￼
+
+What makes Pages distinct:
+	•	It acts like a document, but AI-enabled and collaborative from inception (AI + human).
+	•	Instead of just chat with Copilot and getting a one-off answer, you can build a structured document around it, refine, share, iterate.
+	•	Good for projects, group work, presenting results, shared deliverables.
+
+Copilot Notebooks
+	•	Notebooks are described as “your AI-powered workspace for focused tasks. Gather chats, files, links, and more ­and get tailored answers grounded in your content.”  ￼
+	•	They allow you to pull together a wide range of content (notes, docs, meeting recordings, websites) and the Notebook (and Copilot) continually scan/ingest the content so the AI is grounded in your context.  ￼
+	•	One interesting feature: Notebooks can even create an audio overview of content with two hosts that walk you through key points.  ￼
+
+What makes Notebooks distinct:
+	•	It’s more like a “workspace” for a project or domain: you collect many source artifacts and then ask Copilot to analyse, synthesise, assist.
+	•	It supports ongoing, evolving content rather than a single output.
+	•	Very useful for complex tasks (e.g., research, compliance, knowledge management) where you have many documents and you need AI-help to make sense of them.
 
 ⸻
 
-3. Department-Specific Use Cases
+3. What can Copilot Pages & Notebooks more broadly do – practical capabilities
+
+Here are some specific capabilities (you can show screenshots in your slides) and their significance:
+	•	Turn a prompt like “Create a table with 4 columns labelled Name, Assignment, Status, Estimated Completion Date. Add 6 rows of data” and Copilot generates it; then convert into a Page and refine.  ￼
+	•	In Notebooks: ingest meeting recordings, documents, link websites and then ask “What are the key risks mentioned in this set of documents?” and get a grounded answer.  ￼
+	•	Share Pages with the team, collaborate in real time — reducing email attachment chaos and versioning issues.
+	•	Store your Pages/Notebooks in your organisation’s storage (SharePoint/OneDrive) with governance and lifecycle.  ￼
+	•	Use the AI to create audio summaries (Notebooks) which can help busy executives consume content faster.
+	•	Use the AI to generate drafts (reports/meeting minutes), perform data transformations (Excel) and support decision-making: offering insights, highlighting trends, summarising. (This general Copilot capability applies).
+
+Key benefits for the organisation:
+	•	Efficiency gains: Less time spent on the “grunt work” of summarising, formatting, gathering info.
+	•	Better collaboration: Shared canvases reduce siloes.
+	•	Knowledge capture: With Notebooks you can centralise project knowledge, past work, meeting recordings — making future reuse easier.
+	•	Consistency & scaling: The same tool across HR, Legal, IT, Finance etc helps scale AI-augmented productivity firm-wide.
+	•	Competitive advantage: Firms that use AI-enabled tools effectively will be able to respond faster, make better decisions, and free staff for higher-value work.
+
+Limitations / considerations (good to mention for realistic expectations):
+	•	The AI is only as good as the input/context. For Notebooks, you need quality source content.
+	•	Privacy/permissions/governance: content is stored in user containers and has limits (storage quota, lifecycle).  ￼
+	•	Training and adoption required — people will need to learn how best to prompt, how to structure Notebooks/Pages, how to collaborate.
+	•	Manage expectations: Not a magic replacement for domain expertise; rather an assistant.
+	•	Usage/licensing: Some features may require the paid Copilot license, or specific enterprise plan. (Check internal Microsoft licensing).
+
+⸻
+
+4. Department-wise use cases
+
+Here’s how each department (HR, Legal, IT, Finance, Research, Investment) can leverage Copilot Pages/Notebooks + Copilot in general. You can adapt these for your firm’s specific workflows.
 
 HR
-	•	Draft job descriptions and policy updates faster.
-	•	Analyze attrition, engagement, and survey data to find trends.
-	•	Build DEI (Diversity, Equity, Inclusion) reports with visuals for leadership.
-	•	Prepare summaries of training feedback for HR leadership meetings.
+	•	Create Pages for onboarding workflows: e.g., Copilot generates first draft of the onboarding checklist, responsibilities, schedule. Then HR team refines in a shared Page.
+	•	Use Notebooks to gather all hiring documentation, candidate assessments, interview notes, training materials — then ask the Notebook: “What skills gaps did we identify across candidates for this role?”
+	•	Use Copilot to summarise employee feedback surveys or exit interview transcripts (ingest into Notebook) and produce insights.
+	•	Use Pages for policy updates: draft new policy wording, share with stakeholders for review, collaborate.
+	•	Use audio overviews for leadership teams to catch up quickly on HR project status.
 
-Legal
-	•	Summarize 100+ page contracts into key risk highlights.
-	•	Compare new regulations with existing company policies.
-	•	Generate Q&A prep for compliance reviews.
-	•	Spot clauses missing from vendor contracts using comparison mode.
+Legal / Compliance
+	•	Use Notebooks to collect all documents related to a regulation (e.g., new data protection law), case files, internal policies, memos. Then ask: “What sections of our policy are impacted, what actions must we take by date X?”
+	•	Use Pages to draft standard contract templates; let Copilot generate baseline language, then legal team reviews/refines in the shared Page.
+	•	Use Copilot in Word to summarise long contracts, highlight clauses that deviate from standard terms.
+	•	Use collaborative Pages across legal and business teams to track risk-register items, actions, status columns (table).
+	•	Use audio summary for busy executives or board members of legal updates.
+
+IT / Operations
+	•	Use Notebooks to capture project docs, infrastructure diagrams, run‐books, incident reports. Then ask: “What recurring incidents are emerging from these logs?”
+	•	Use Pages to draft rollout plans for new systems, including timeline, milestones, resources; share with stakeholders.
+	•	Use Copilot to generate initial drafts of technical documentation or user guides.
+	•	Use Pages/Notebooks to centralise knowledge (FAQs, troubleshooting steps) for team onboarding and reference.
+	•	Use automation prompts: ask Copilot to summarise tickets, identify patterns, suggest next‐steps.
 
 Finance
-	•	Automate variance analysis of quarterly results.
-	•	Run “what if” budget forecasts (e.g., hiring freeze vs expansion).
-	•	Extract trends from spreadsheets (cashflow, risk exposure).
-	•	Prepare board-ready summaries with visuals.
+	•	Use Notebooks to ingest financial reports, Excel models, email threads on budgets. Then ask: “What are the top three cost drivers this quarter vs last quarter?”
+	•	Use Pages to generate board-level summary decks: Copilot drafts the narrative, key charts from Excel, then finance team refines.
+	•	Use Copilot in Excel to generate pivot tables, perform what-if analyses: e.g., “Show me budget variance for each department and highlight >10% deviations.” (General Copilot capability)
+	•	Use Pages for annual planning: table of assumptions, milestones, financial forecasts — share with business partners.
+	•	Use audio summaries of financial highlights for non-finance stakeholders.
 
-Research & Investment
-	•	Summarize market intelligence, analyst reports, or academic papers.
-	•	Compare investment strategies (allocation effects, risk-return tradeoffs).
-	•	Quickly pull competitor updates from filings and market data.
-	•	Generate scenario models (interest rate hikes, currency risk).
+Research / Analytics
+	•	Use Notebooks to gather research papers, internal studies, market-data, competitor analysis, meeting notes. Then ask: “What are emerging themes/trends across these sources? Provide summary and implications.”
+	•	Use Pages to collaborate on research reports: initial draft from Copilot, then analysts refine, add charts, cite sources.
+	•	Use Copilot to generate visualizations in Excel or suggest data transformations.
+	•	Use Notebooks for knowledge management: all past studies, insights, annotated by the team — enabling future reuse and avoiding reinventing the wheel.
 
-IT & Operations
-	•	Draft documentation for system changes.
-	•	Analyze security logs for anomalies.
-	•	Summarize service tickets and highlight recurring pain points.
-	•	Assist in vendor evaluations with comparison summaries.
-
-⸻
-
-4. Why It Matters
-	•	Scales productivity: Saves hours of manual reading, analysis, and reporting.
-	•	Improves accuracy: Reduces human oversight in data-heavy tasks.
-	•	Levels the playing field: Every employee gets a “junior analyst” to support them.
-	•	Future-ready: Positions the firm to adapt faster in finance, legal, and tech landscapes.
+Investment / Portfolio Management
+	•	Use Notebooks to pull together investment memos, due diligence docs, market outlooks, meeting transcripts with management teams. Ask: “Summarise key risks/opportunities for Investment X based on these documents.”
+	•	Use Pages to build the investment committee deck: narrative, charts, table of assumptions, next-steps — AI drafts then team refines.
+	•	Use Copilot in Excel for scenario modelling: e.g., “Show impact on IRR if growth is 5% less each year for 3 years.”
+	•	Use collaborative Pages for tracking portfolio performance: table of assets, status, commentary; shared with investment and finance teams.
+	•	Use audio overview to quickly brief senior executives pre-meeting.
 
 ⸻
 
-5. Example Scenarios (Show Live if Possible)
-	•	HR Prompt: “Summarize last quarter’s attrition report and suggest top 3 talking points for the executive meeting.”
-	•	Finance Prompt: “Compare Q2 and Q3 expenses, highlight unusual variances, and generate a chart for my slides.”
-	•	Legal Prompt: “Summarize this 80-page compliance regulation and list key risks for our firm.”
-	•	Investment Prompt: “Generate a risk-return profile comparison between our portfolio and the S&P500 over the last 12 months.”
+5. Suggested structure for your presentation (slide outline)
+	1.	Title slide: “Introducing Microsoft 365 Copilot – Pages & Notebooks”
+	2.	Why this matters for our firm (800 people, multiple functions)
+	3.	What is Microsoft 365 Copilot? (Definition + key capabilities)
+	4.	Introducing Copilot Pages: what it is + demo screenshot + key benefits
+	5.	Introducing Copilot Notebooks: what it is + demo screenshot + key benefits
+	6.	How the technology works (brief: context, files, collaboration) + governance/storage considerations
+	7.	Department-wise use case summary (HR, Legal, IT, Finance, Research, Investment) — ideally one slide per dept with 2-3 bullets
+	8.	Adoption plan & next steps (how we roll this out at the firm)
+	•	Pilot programme (which dept first)
+	•	Training & best practices
+	•	Governance, permissions, data security
+	•	Change management: how staff will integrate into workflow
+	9.	Risks & mitigation (limitations, governance, training)
+	10.	Q&A slide
 
 ⸻
 
-6. Best Practices for All Employees
-	•	Be Specific in Prompts: Tell Copilot the format you want (table, chart, bullet points).
-	•	Use Context: Reference the dataset, doc, or chat thread you want analyzed.
-	•	Validate Outputs: Treat Copilot as an analyst — always review before finalizing.
-	•	Collaborate with It: Use it to brainstorm, draft, and polish — not as a black box.
+6. Some additional tips for the firm-wide presentation
+	•	Use real-life examples or tailored-to-our-firm scenarios (e.g., for your Investment team, use one of your actual assets as the example) to make it concrete.
+	•	Include a live demo or short video snippet of Pages/Notebooks (if feasible) to show “this is how easy it is.”
+	•	Encourage participation: ask “Which department would you like us to pilot next?” or “What tasks do you spend the most time on that could be assisted by AI?”
+	•	Emphasise governance and data security to reassure senior management and staff (since AI raises questions).
+	•	Make sure to cover the licensing/pricing (or at least that we are evaluating it) and where the tool fits in our existing Microsoft 365 footprint.
+	•	After the session, provide a “cheat sheet” for each department with 3-5 suggested tasks to try in the next 30 days.
 
 ⸻
 
-✅ By the end of the presentation, everyone should see Copilot Analyst Agent as a firm-wide multiplier: faster reporting for Finance, better compliance checks for Legal, smarter hiring insights for HR, sharper investment decisions for Research, and smoother operations for IT.
-
-⸻
-
-Would you like me to draft a slide-by-slide outline (with titles + 3–4 bullet points each) so you can directly use it for your 800-person firm presentation?
-
-
-Got it 👍 — you want ready-to-use, detailed prompts that show how Copilot Analyst Agent can pull insights from the internet (not just local files). These prompts are designed for different departments, so you can demonstrate how each team can use Copilot as a “junior analyst + researcher.”
-
-⸻
-
-🌐 Example Prompts for Internet Data Analysis
-
-Finance & Investment
-	•	“Search the internet for the latest Q3 earnings reports of JPMorgan, Goldman Sachs, and Morgan Stanley. Compare revenue growth, net income, and forward guidance. Present findings in a table, and write a 200-word executive summary highlighting key differences.”
-	•	“Pull the latest market sentiment analysis on US Treasury yields from reputable financial sites. Summarize in 5 bullet points and include links to sources.”
-
-⸻
-
-HR
-	•	“Search for recent workplace trends (2024–2025) in employee retention and hybrid work adoption across Fortune 500 firms. Summarize top 3 trends, with supporting statistics and a one-page briefing I can present to leadership.”
-	•	“Find case studies of companies that improved employee engagement through AI tools. Summarize 3 strategies and provide links.”
-
-⸻
-
-Legal & Compliance
-	•	“Search recent news on SEC regulatory updates impacting investment firms (past 6 months). Extract key compliance requirements and summarize risks for our organization in bullet points.”
-	•	“Look for the latest global data privacy regulations (EU, US, Asia). Create a comparison table showing how requirements differ across regions.”
-
-⸻
-
-Research & Strategy
-	•	“Search for 2025 industry outlook reports on renewable energy investments. Summarize growth projections, risks, and opportunities in 5 key points.”
-	•	“Find recent M&A activity in the pharmaceutical sector (last 12 months). List top 5 deals, with buyer, target, value, and strategic rationale.”
-
-⸻
-
-IT & Security
-	•	“Search for recent cybersecurity breaches in the financial sector (past 6 months). Summarize what happened, root causes, and lessons learned.”
-	•	“Pull recent reports on adoption of generative AI in enterprise IT. Summarize adoption trends, risks, and top vendor platforms.”
-
-⸻
-
-🔑 Best Practices for Internet Data Prompts
-	1.	Timeframe → Always specify (“last 6 months,” “2025 outlook”).
-	2.	Format → Tables, bullet points, summaries, charts.
-	3.	Depth → Add a word/character limit for concise outputs.
-	4.	Sources → Ask for source links to verify.
-
-⸻
-
-Would you like me to make a ready slide showing these prompts grouped by department (so you can show employees exactly how they can copy-paste and use them), or do you prefer a one-pager cheat sheet style?
+If you like, I can build you a full slide deck (PowerPoint) with this content, including speaker notes and departmental breakdowns tailored for your firm. Would you like me to do that?
