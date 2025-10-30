@@ -1,90 +1,289 @@
-Here’s a detailed breakdown of the **Learning Coach Agent** in the context of Microsoft 365 Copilot (sometimes simply “Copilot agents”), based on what I found — and how it could relate to your work (since you’re building document-/learning-oriented workflows).
+Awesome—here’s a presentation-ready cheat sheet of prompting methods with crisp definitions and **detailed, work-grade examples** for six business domains: **Finance, Sales, IT, Risk & Compliance, HR, Legal.**
+Copy/paste into slides as needed.
 
 ---
 
-### ✅ What it is
+# 1) Zero-Shot Prompting
 
-* The Learning Coach Agent is one of several “agent” templates provided by Microsoft for Copilot. ([TECHCOMMUNITY.MICROSOFT.COM][1])
-* Specifically: it’s a declarative agent template built in the “Copilot Studio” (or the “Agent Builder” capability of Microsoft 365 Copilot) that helps users **learn** topics — by breaking them down, creating structured plans, giving interactive practice, etc. ([Microsoft Learn][2])
-* From the Microsoft Learn page: “Learning Coach agents empower users to achieve their learning goals through structured guidance and support.” ([Microsoft Learn][2])
-* Use cases: comprehension of complex topics, knowledge reinforcement, tailored learning plans, exam/test preparation, language education. ([Microsoft Learn][2])
+**Definition:** Ask for an outcome with no examples; rely on clear instructions, scope, and constraints.
 
----
+**Finance:**
+“Analyze the impact of a **+1% interest-rate increase** on our fixed-income portfolio (duration ~5.2, convexity ~0.18). If issuer-level data is missing, assume investment-grade, average spread +10 bps. Provide: (1) price impact estimate, (2) sectors most exposed, (3) 3 mitigation options.”
 
-### 🔍 Key Capabilities & Features
+**Sales:**
+“Draft a **2-paragraph value proposition** for our cloud analytics platform for mid-market retailers. Assume $50–$200M revenue, 10–15 store locations, legacy POS. Include 2 quantified benefits and 1 short customer quote (fabricated but realistic).”
 
-Here are the main capabilities that Microsoft describes:
+**IT:**
+“Propose a **rolling 30-day patch window** for Windows servers in prod/dev. Include risk tiers, CAB touchpoints, rollback steps, and KPI targets (patch latency, failure rate).”
 
-* **Tailored learning plans**: The agent can assess a learner’s current state (knowledge gaps, preferences) and generate a plan. ([Microsoft Learn][2])
-* **Multiple levels of explanation**: It can break topics into “simple / intermediate / detailed” layers, making complex ideas more digestible. ([Microsoft Learn][2])
-* **Practice / interaction**: It can propose exercises, interactive language practice, help reinforce learning. ([Microsoft Learn][2])
-* **Resource & guidance suggestions**: Suggest educational resources, help prepare for assessments, give study-techniques. ([Microsoft Learn][2])
+**Risk & Compliance:**
+“Prepare a **KRI dashboard outline** for third-party risk: define 5 KRIs, thresholds (green/amber/red), data sources, and escalation workflow.”
 
----
+**HR:**
+“Write a **2-page new-manager onboarding plan** for a 200-person engineering org covering week 1–4 goals, key stakeholders, and success metrics.”
 
-### 🧭 How It’s Built / How It Works
-
-* These agents are built using the Copilot Studio / Agent Builder environment inside Microsoft 365 Copilot. ([Microsoft Learn][3])
-* It’s declarative in the sense that you provide instructions, guidelines, knowledge-sources, and the agent behaves according to those. (You don’t necessarily code a full LLM pipeline; you configure instructions and resources.) ([cte.ku.edu][4])
-* You can choose to add knowledge sources (e.g., internal document libraries, SharePoint, etc.) so that the agent’s advice is context-aware and relevant to your organization. ([Microsoft Learn][2])
-* Limitations: For example, the template is designed “to answer one question at a time” — users shouldn’t ask multi-part or compound prompts in one go. ([Microsoft Learn][2])
+**Legal:**
+“Summarize **key clauses to negotiate** in a SaaS MSA (liability cap, data security, uptime SLA, IP ownership, audit rights). Give default positions and preferred alternatives.”
 
 ---
 
-### 📋 Why It Might Be Useful To You
+# 2) One-Shot Prompting
 
-Given your background (working on legal document comparison, learning workflows, and building frontend/backends for tasks), the Learning Coach agent could offer value in a number of ways:
+**Definition:** Provide **one example** to set format/style, then request the new output.
 
-* You could **embed a Learning Coach style agent** into your app to help users understand how to interpret legal documents, compare contracts, or learn the process of legal review.
+**Finance (Example → New Task):**
+Example format: “**Finding:** X. **Evidence:** Y. **Impact:** Z. **Action:** A.”
+“Using the format above, assess **currency risk** for our euro-denominated revenues (€40M; natural hedge 30%).”
 
-  * E.g., you could provide “Explain this clause in simple/intermediate/advanced terms.”
-  * Or “Here’s a learning plan to go from beginner in contract law → intermediate → advanced via examples.”
-* It could serve as **a scaffolded tutor or companion** for users who are not experts (e.g., non-lawyers) but need to get up to speed on legal docs or financial reporting.
-* If you’re building internal training (e.g., for a firm) around your comparison tool, this agent could help deliver that training: “What is a merger clause? What are typical red flags? Let’s practice identifying them.”
-* Because your app deals with long documents and helping users understand/compare them — the capability of “breaking down complex topics” aligns nicely.
+**Sales:**
+Example cold email (3 sentences, CTA link).
+“Using that tone/length, write to a **VP of Ops in logistics** about our route-optimization tool; include a calendar CTA.”
 
----
+**IT:**
+Example change record (Title/Scope/Risk/Backout).
+“Create a change record for **firewall rule cleanup** across DMZ; include validation tests.”
 
-### ⚠️ Some Considerations / Limitations
+**Risk & Compliance:**
+Example control statement (Objective/Control/Owner/Frequency/Evidence).
+“Author a control for **joiner-mover-leaver** access revocation in <24h.”
 
-* The agent is still a generative-AI tool: it may make mistakes, so certain domains (legal / financial) where errors have legal or compliance impact need extra caution. Microsoft’s documentation reminds users to verify outputs. ([Microsoft Learn][2])
-* The template says it is designed for one question at a time — users might “compound” questions and get less optimal results. ([Microsoft Learn][2])
-* Data privacy / context: If you connect internal knowledge (e.g., your own contract templates, proprietary documents), you’ll need to ensure permissions, data handling, and that the agent is instructed correctly to use those sources.
-* Customization may still require iteration: While no heavy code may be needed to get started, setting up the right instructions, knowledge-sources, testing prompts, and refining behaviour may take time. The article from University of Kansas highlights this. ([cte.ku.edu][4])
+**HR:**
+Example job summary (Role/Impact/Outcomes/Skills).
+“Write a summary for **Senior Data Engineer (Marketing Analytics)**.”
 
----
-
-### 🛠 How to Get Started (Technical Steps)
-
-Here’s a rough flow how you could incorporate something like Microsoft’s Learning Coach agent (or adapt its template) into your environment:
-
-1. In Microsoft 365 Copilot / Agent Builder (Copilot Studio), select the **Learning Coach template**. ([Microsoft Learn][2])
-2. Configure the agent:
-
-   * Set a name & description.
-   * Provide the “instructions” section: define the agent’s role, expected tone, tasks, how it should breakdown topics (simple → intermediate → detailed).
-   * Provide “steps” or “skills” the agent should follow (e.g., assess user knowledge, generate plan, give practice questions, check answers).
-   * Connect knowledge sources: e.g., if you want it to reference your legal document library or your company’s training repo.
-3. Test the agent: ask sample prompts, adjust the instructions and behavior based on results. The University of Kansas article emphasises experimentation. ([cte.ku.edu][4])
-4. Deploy & share: inside your tenant, share the agent URL or make it available to users. ([Microsoft Support][5])
-5. If needed: Customize further by integrating with other Microsoft connectors (Power Platform, LMS, SharePoint) so that the agent can track user progress or access deeper domain-specific data. ([Microsoft Learn][2])
+**Legal:**
+Example issue log entry (Clause/Risk/Ask/Counterproposal/Status).
+“Log issues for **limitation of liability** and **data processing** in the attached vendor MSA (assume standard terms).”
 
 ---
 
-### 🔧 Fit With Your Project (Document Comparison / Legal / Learning)
+# 3) Few-Shot Prompting
 
-* Since you’re building a system for legal document comparison, you could use the Learning Coach agent to help users **learn about typical clauses**, **differences in contract types**, or **how to assess risk**.
-* For example: A user uploads a template and an agreement → the system detects missing/altered clauses → the Learning Coach agent could then guide the user: “Here’s what this clause means, why it matters, how to interpret the change, and here’s a short practice question.”
-* You might integrate the agent into your Angular/Flask app as a “Learning Mode” tab: enable users to switch from “Compare” to “Learn” — the agent becomes a tutor.
-* Since you’re already handling long docs, chunking, retrieval, etc., the Learning Coach agent could access those chunks (or your vector DB results) as knowledge source/context to explain in-situ (“Here’s the chunk you changed; here’s what it means”).
-* Potential efficiency: Instead of building the tutorial/training logic from scratch, leveraging the template saves a lot of groundwork.
+**Definition:** Give **multiple examples** to teach a pattern, then ask for the new output.
+
+**Finance:**
+Examples: two short **attribution** blurbs (Allocation vs Selection).
+“Following the examples, write attribution for **Q3 small-cap underperformance**: underweight healthcare, stock selection in software.”
+
+**Sales:**
+Examples: two **discovery call** question sets.
+“Create 10 discovery questions for **B2B manufacturing CIO** evaluating MES replacement.”
+
+**IT:**
+Examples: two **runbooks** (Title/Triggers/Steps/KPIs/Contacts).
+“Draft a runbook for **Kafka consumer lag** incidents.”
+
+**Risk & Compliance:**
+Examples: two **policy exceptions** (Scope/Risk/Compensating Controls/Expiry).
+“Write an exception for **temporary SFTP without MFA** for 30 days.”
+
+**HR:**
+Examples: two **career ladder** snippets (L4→L5).
+“Create L5→L6 criteria for **Product Manager** (scope, skills, impact).”
+
+**Legal:**
+Examples: two **clause comparisons** (Standard vs Redlined → Risk notes).
+“Compare **Auto-renewal** standard vs vendor redline (12→36 months, 90-day notice).”
 
 ---
 
-If you like, I can **pull together a sample “Learning Coach” agent definition** (instructions + steps + knowledge-source config) that you could adapt for your legal document comparison app — would that be helpful?
+# 4) Chain-of-Thought (Reasoning) Prompting
 
-[1]: https://techcommunity.microsoft.com/blog/microsoft365copilotblog/new-copilot-agents-supercharge-microsoft-365-copilot/4266995?utm_source=chatgpt.com "New Copilot agents: Supercharge Microsoft 365 Copilot"
-[2]: https://learn.microsoft.com/en-us/microsoft-365-copilot/extensibility/agent-builder-template-learning-coach?utm_source=chatgpt.com "Create a Learning Coach agent from a template | Microsoft Learn"
-[3]: https://learn.microsoft.com/en-us/microsoft-365-copilot/extensibility/copilot-studio-agent-builder?utm_source=chatgpt.com "Use Copilot Studio Agent Builder to Build Agents | Microsoft Learn"
-[4]: https://cte.ku.edu/how-create-copilot-agent?utm_source=chatgpt.com "How to create a Copilot agent | Center for Teaching Excellence"
-[5]: https://support.microsoft.com/en-us/topic/introducing-copilot-agents-943e563d-602d-40fa-bdd1-dbc83f582466?utm_source=chatgpt.com "Get started with agents in Microsoft 365 Copilot"
+**Definition:** Ask the model to **reason step-by-step** before concluding.
+
+**Finance:**
+“Estimate the **P&L impact** of a 1% rate rise on a $200M bond book (avg duration 5, convexity 0.2). **Think step-by-step**, show duration/convexity math, then summarize.”
+
+**Sales:**
+“Design a **territory plan** for 5 AEs in the Northeast. **Think step-by-step**: segment ICP, allocate accounts, set quarterly targets.”
+
+**IT:**
+“Choose between **self-hosted Postgres vs managed cloud** for a new analytics workload. **Reason step-by-step** across cost, SLOs, scaling, security.”
+
+**Risk & Compliance:**
+“Map **SOX control gaps** for revenue recognition after a new billing system. **Walk through** process changes, control owners, evidence.”
+
+**HR:**
+“Plan a **skills-based upskilling** program for support reps → L1 analysts. **Lay out** competencies, assessments, and timelines.”
+
+**Legal:**
+“Assess if a vendor’s **data-sharing** clause triggers **cross-border transfer** obligations. **Reason step-by-step** and state assumptions.”
+
+---
+
+# 5) Role-Based Prompting
+
+**Definition:** Assign a **persona/expert role** and constraints.
+
+**Finance (as CFA PM):**
+“As a **CFA-charterholder PM**, write a 1-page **risk memo** on overweighting utilities during tightening. Include macro view, valuation comps, downside.”
+
+**Sales (as VP Sales Ops):**
+“As **VP Sales Ops**, create a **QBR template** (pipeline, win/loss, enablement, top 5 risks).”
+
+**IT (as SRE):**
+“As an **SRE**, propose **error budget policies** for a 99.9% SLA API.”
+
+**Risk & Compliance (as CISO):**
+“As **CISO**, draft a **third-party breach response** playbook (72-hour notice, regulators, customers).”
+
+**HR (as Comp & Ben Lead):**
+“As **Comp Lead**, design a **bonus plan** for SDRs (quota credit, accelerators, caps).”
+
+**Legal (as Privacy Counsel):**
+“As **Privacy Counsel**, write a **DPIA outline** for a new biometric login feature.”
+
+---
+
+# 6) Iterative (Refinement) Prompting
+
+**Definition:** Produce a draft, then **tighten** via targeted follow-ups.
+
+**Finance:**
+
+1. “Draft a **macro note** on a soft-landing scenario.”
+2. “Now **add charts** we should include and write captions.”
+3. “Condense into a **200-word client note** with 3 bullets.”
+
+**Sales:**
+
+1. “Write a **case study** for a 15% churn reduction.”
+2. “Refine with **ROI calc** and timeline.”
+3. “Create a **1-slide summary**.”
+
+**IT:**
+
+1. “Propose a **zero-trust** rollout.”
+2. “Refine with **Okta/Entra** specifics.”
+3. “Add a **90-day roadmap**.”
+
+**Risk & Compliance:**
+
+1. “Draft **KYB/KYC** SOP.”
+2. “Tighten with **PEP/sanctions** specifics.”
+3. “Add **audit evidence** list.”
+
+**HR:**
+
+1. “Create a **performance review rubric**.”
+2. “Refine with **behavioral examples**.”
+3. “Add **bias-mitigation** guidance.”
+
+**Legal:**
+
+1. “Write a **standard DPA** summary.”
+2. “Tailor to **sub-processors** in US/EU.”
+3. “Add a **negotiation fallback**.”
+
+---
+
+# 7) Instruction-Based Prompting
+
+**Definition:** Give **crisp constraints** on format, length, criteria, and tone.
+
+**Finance:**
+“Provide a **5-bullet** portfolio **risk summary** (max 12 words/bullet). Use **measurable** language; include **1 action** and **1 caveat**.”
+
+**Sales:**
+“Write a **4-step email sequence** (subject + 2 sentences + CTA). Keep **<60 chars** subjects; avoid buzzwords.”
+
+**IT:**
+“Output a **YAML** with 3 envs (dev/stage/prod) for **rate limits**. Include **burst**, **sustained**, **429 policy**.”
+
+**Risk & Compliance:**
+“Create a **RACI table** (markdown) for **annual policy review**. Roles: Legal, Risk, IT, HR, Business.”
+
+**HR:**
+“Write a **competency matrix** (table) for **Data Analyst** L1-L3; columns: Skills, Behaviors, Measurement.”
+
+**Legal:**
+“Summarize **indemnity clause** risks in **3 bullets**, then give **2 alternative wordings**.”
+
+---
+
+# 8) Self-Consistency Prompting
+
+**Definition:** Generate **multiple options/paths**, then **select** the most reliable.
+
+**Finance:**
+“Propose **3 hedging strategies** for rate risk (swaps, futures, barbell). Evaluate each; **pick one** with rationale.”
+
+**Sales:**
+“List **3 ICP definitions** for our AI copilot. Score TAM, urgency, competition; **recommend one**.”
+
+**IT:**
+“Offer **3 migration plans** (big bang, phased, strangler). Compare risk/cost; **choose best**.”
+
+**Risk & Compliance:**
+“Suggest **3 monitoring KRIs** for model risk. Rate detectability and false positives; **select primary**.”
+
+**HR:**
+“Design **3 interview loops** for Staff Engineer. Compare signal quality/time; **recommend**.”
+
+**Legal:**
+“Draft **3 fallback positions** on **liability cap** (fees-based variants). **Select** the most defensible.”
+
+---
+
+# 9) Decomposition (Break-Down) Prompting
+
+**Definition:** Ask the model to **split a complex task** into sub-tasks, then solve.
+
+**Finance:**
+“Break down the **rate-shock analysis** into steps (data, math, sensitivities, report). Execute each step briefly; consolidate the findings.”
+
+**Sales:**
+“Decompose **pipeline quality review** into inputs (coverage, aging, stage conversion). Produce a checklist and next actions.”
+
+**IT:**
+“Break down **DR strategy** for a 3-tier app (RPO/RTO, backups, failover tests). Deliver a 90-day plan.”
+
+**Risk & Compliance:**
+“Decompose **AI compliance** (data lineage, bias testing, human-in-the-loop, logging). Produce a minimal controls set.”
+
+**HR:**
+“Break down **attrition analysis** (cohorts, tenure, role, manager effects). Provide a storyline for ELT.”
+
+**Legal:**
+“Decompose **cross-border data transfer** compliance (lawful basis, SCCs, DTI, TOMs). Output a checklist.”
+
+---
+
+# 10) Retrieval/Context-Grounded Prompting
+
+**Definition:** Provide **context** (docs/data) and ask the model to **only** use it, stating assumptions if gaps remain.
+
+**Finance:**
+“Using the attached **portfolio summary** (durations, weights), estimate the **+1% rate shock** impact. If issuer details are missing, assume IG, spread +10 bps. Show calc table and a 3-point mitigation plan.”
+
+**Sales:**
+“Using the **Q2 win/loss report**, synthesize **top 5 reasons** for losses and craft **2 counter-plays** per reason.”
+
+**IT:**
+“From the **runbook PDFs**, generate a **‘first 15 minutes’** incident checklist for **API 5xx spikes**.”
+
+**Risk & Compliance:**
+“Using our **policy library**, map controls to **NIST CSF** categories; output a **gap list**.”
+
+**HR:**
+“Based on the **employee survey**, create a **3-theme action plan** with owners and 60-day milestones.”
+
+**Legal:**
+“From the **vendor contract** provided, extract **termination** and **data security** obligations into a 2-column table (Clause → Obligation).”
+
+---
+
+## Bonus: Structured Output & Guardrails (use with any method)
+
+* **Ask for JSON, tables, bullets, or templates.**
+* **Force caveats/assumptions.**
+* **Constrain tone and length.**
+
+**Universal Template (fill per domain):**
+“Task: ___. **Assumptions:** list if data missing. **Output format:** 5 bullets + 1 table. **Constraints:** <150 words, avoid jargon. **Decision:** end with 1 recommended action + risk caveat.”
+
+---
+
+### Want this as a one-pager or slide deck?
+
+I can turn this into a **clean, single-slide cheat sheet** or a **12–15 slide deck** (one method per slide with your logo/colors).
