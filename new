@@ -287,3 +287,98 @@ Examples: two **clause comparisons** (Standard vs Redlined → Risk notes).
 ### Want this as a one-pager or slide deck?
 
 I can turn this into a **clean, single-slide cheat sheet** or a **12–15 slide deck** (one method per slide with your logo/colors).
+
+
+
+
+Great question 👍 — knowing *when* to use each prompting method is just as important as knowing *what* they are. Below is a **practical guide** you can share in your presentation, framed around real-world work scenarios.
+
+---
+
+# **When to Use Which Prompting Method**
+
+### 1. **Zero-Shot Prompting**
+
+* **When:** You need a quick, straightforward answer or draft with minimal setup.
+* **Example Use:** HR leader asks Copilot: *“Summarize employee feedback from the last survey in 3 points.”*
+
+---
+
+### 2. **One-Shot Prompting**
+
+* **When:** You want the model to follow a specific **style or format**.
+* **Example Use:** Finance manager provides one example of risk memo, then asks: *“Write one for interest rate risk using the same format.”*
+
+---
+
+### 3. **Few-Shot Prompting**
+
+* **When:** You need **consistency** across outputs, e.g., drafting multiple reports or case summaries.
+* **Example Use:** Legal team feeds 2 clause summaries and asks Copilot to generate the third in the same structure.
+
+---
+
+### 4. **Chain-of-Thought Prompting**
+
+* **When:** The task involves **reasoning, calculations, or multi-step analysis**.
+* **Example Use:** Risk officer: *“Walk through step by step how a cyber breach in our vendor system would affect compliance reporting timelines.”*
+
+---
+
+### 5. **Role-Based Prompting**
+
+* **When:** You need the answer framed as if coming from a **domain expert**.
+* **Example Use:** IT director: *“As a security architect, recommend a cloud migration plan with focus on least privilege access.”*
+
+---
+
+### 6. **Iterative (Refinement) Prompting**
+
+* **When:** You want to **evolve an idea** — from draft → refined → polished.
+* **Example Use:** Sales lead: *“Draft a client pitch deck → now make it 5 slides shorter → now rewrite for C-suite audience.”*
+
+---
+
+### 7. **Instruction-Based Prompting**
+
+* **When:** You want **control** over format, word count, or structure.
+* **Example Use:** Compliance: *“Summarize GDPR obligations in exactly 5 bullets, each <12 words.”*
+
+---
+
+### 8. **Self-Consistency Prompting**
+
+* **When:** There are **multiple possible solutions** and you want the best one.
+* **Example Use:** HR: *“Suggest 3 hybrid work policies, compare pros/cons, and recommend one.”*
+
+---
+
+### 9. **Decomposition Prompting**
+
+* **When:** The problem is **too big/complex** and needs to be broken into parts first.
+* **Example Use:** Finance analyst: *“Break down ESG integration in investment analysis into sub-steps, then solve each.”*
+
+---
+
+### 10. **Retrieval / Context-Grounded Prompting**
+
+* **When:** You have **reference material** (docs, contracts, datasets) and want answers **grounded only in that content**.
+* **Example Use:** Legal: *“From this vendor contract, extract only data security clauses and list obligations.”*
+
+---
+
+✅ **Rule of Thumb:**
+
+* **Simple → Zero/One-Shot**
+* **Patterned → Few-Shot**
+* **Complex Reasoning → Chain-of-Thought / Decomposition**
+* **Specialist View → Role-Based**
+* **Refinement Needed → Iterative**
+* **Options Needed → Self-Consistency**
+* **Strict Output → Instruction-Based**
+* **Grounded in Docs → Retrieval**
+
+---
+
+Would you like me to turn this into a **decision flowchart (visual)** so in your presentation people can quickly see *“If task = X, then use Y prompt method”*? That works really well with large audiences.
+
