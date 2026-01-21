@@ -1,168 +1,127 @@
-Perfect — we’ll turn this into a **story-driven demo** that feels natural, relatable, and inspiring for your firm-wide presentation.
-No jargon, no model training talk — just a realistic **team project story** showing how *Copilot Pages* quietly helps a small team plan, align, and move faster.
+from typing_extensions import TypedDict, Annotated
+import operator
 
----
+from langchain_core.messages import AnyMessage, HumanMessage
+from langchain_core.prompts import ChatPromptTemplate
 
-## 🎬 **Story Title: “The Financial Insights Dashboard – A Team Story Powered by Copilot”**
+from langchain.agents import create_tool_calling_agent, AgentExecutor
 
----
+from langgraph.graph import StateGraph, START, END
+from langgraph.prebuilt import ToolNode
+from langgraph.checkpoint.memory import MemorySaver  # simple built-in checkpointer
 
-### 🕘 **Scene 1 – Monday Morning: The Idea**
+# -----------------------
+# 1) Shared graph state
+# -----------------------
+class GraphState(TypedDict):
+    # Shared “memory”: conversation messages that both agents can read and append to
+    messages: Annotated[list[AnyMessage], operator.add]
 
-It’s Monday morning.
-A small analytics team — four members — meets in their **Teams channel** to kick off a new project:
-**“Financial Insights Dashboard 2026.”**
+    # Optional: structured shared memory (facts/artifacts)
+    shared_facts: dict
 
-> **You (Team Lead):**
-> “Alright team, we’ve been asked to build a dashboard that helps managers see key financial KPIs at a glance — revenue, expenses, and savings trends. Let’s use Copilot to get our plan rolling.”
+    # Who should act next? ("A", "B", "END")
+    next: str
 
-You open **Copilot Chat** inside Teams and type:
 
-> “Create a Copilot Page for our project *Financial Insights Dashboard 2026*. Include project goals, milestones, roles, progress tracker, and pending tasks.”
+# -----------------------
+# 2) Build Agent A and B
+# -----------------------
+def build_agent(llm, tools, system_text: str):
+    prompt = ChatPromptTemplate.from_messages([
+        ("system", system_text),
+        ("placeholder", "{messages}"),
+    ])
+    agent = create_tool_calling_agent(llm, tools, prompt)
+    return AgentExecutor(agent=agent, tools=tools, verbose=True)
 
-Within seconds, Copilot replies:
 
-> “Here’s your new Page. I’ve added sections for Objective, Goals, Milestones, Roles, and a Progress Tracker.”
+# Example: provide your real tools here
+shared_tools = []   # tools both agents can use
+tools_a = []        # mostly-A tools
+tools_b = []        # mostly-B tools
 
-You smile — the skeleton of your plan is ready before the first coffee sip.
+# IMPORTANT: each agent gets its own tools + shared tools
+agent_a_exec = build_agent(
+    llm,
+    tools=tools_a + shared_tools,
+    system_text=(
+        "You are Agent A (planner/router). "
+        "If a task needs specialist help, set next='B'. "
+        "Otherwise solve it and set next='END'. "
+        "When you make a decision, include it clearly."
+    )
+)
 
----
+agent_b_exec = build_agent(
+    llm,
+    tools=tools_b + shared_tools,
+    system_text=(
+        "You are Agent B (specialist/executor). "
+        "If you need Agent A to re-plan or ask user a clarifying question, set next='A'. "
+        "Otherwise finish and set next='END'. "
+        "When you make a decision, include it clearly."
+    )
+)
 
-### 🧭 **Scene 2 – The Kickoff Page Comes Alive**
+# Tool execution nodes (each can be different)
+toolnode_a = ToolNode(tools_a + shared_tools)
+toolnode_b = ToolNode(tools_b + shared_tools)
 
-You open the Page. It’s clean and structured.
 
-**Project Objective:**
+# -----------------------
+# 3) Node functions
+# -----------------------
+def run_agent_a(state: GraphState) -> GraphState:
+    result = agent_a_exec.invoke({"messages": state["messages"]})
+    # AgentExecutor returns an "output" string; wrap it back into messages
+    out_msg = result["output"]
+    # Decide routing (simple heuristic: look for next='B' / next='END' in text)
+    nxt = "B" if "next='B'" in out_msg or 'next="B"' in out_msg else "END"
+    return {"messages": [HumanMessage(content=out_msg)], "next": nxt}
 
-> “Deliver a simple, automated dashboard showing revenue and cost trends for leadership review meetings.”
+def run_agent_b(state: GraphState) -> GraphState:
+    result = agent_b_exec.invoke({"messages": state["messages"]})
+    out_msg = result["output"]
+    nxt = "A" if "next='A'" in out_msg or 'next="A"' in out_msg else "END"
+    return {"messages": [HumanMessage(content=out_msg)], "next": nxt}
 
-**Goals:**
 
-* Automate weekly financial reports
-* Visualize spending trends across departments
-* Save manual reporting time
+def route(state: GraphState) -> str:
+    return state["next"]
 
-**Milestones:**
 
-| Milestone               | Owner | Due    | Status      |
-| ----------------------- | ----- | ------ | ----------- |
-| Define key KPIs         | Aisha | Nov 10 | ✅ Complete  |
-| Collect sample data     | Ravi  | Nov 12 | In Progress |
-| Create dashboard layout | Neha  | Nov 17 | Pending     |
-| Review with leadership  | You   | Nov 22 | Pending     |
+# -----------------------
+# 4) Build the graph
+# -----------------------
+g = StateGraph(GraphState)
 
-The team adds updates in real time.
+g.add_node("agent_a", run_agent_a)
+g.add_node("agent_b", run_agent_b)
 
-* **Aisha** finishes defining KPIs.
-* **Ravi** notes that he’s cleaning up sample data.
-* **Neha** drops in a quick note: “Will use Power BI for the first layout.”
+# If you want tools to run as separate steps, add tool nodes + conditional edges
+# (Optional: only if your agents emit tool calls that you want the graph to execute)
+g.add_node("tools_a", toolnode_a)
+g.add_node("tools_b", toolnode_b)
 
-The Page starts to feel like a **shared whiteboard that never loses context.**
+g.add_edge(START, "agent_a")
 
----
+# Route after each agent turn
+g.add_conditional_edges("agent_a", route, {"B": "agent_b", "END": END})
+g.add_conditional_edges("agent_b", route, {"A": "agent_a", "END": END})
 
-### 💬 **Scene 3 – Copilot Steps In**
+# Shared memory persistence (thread-scoped)
+checkpointer = MemorySaver()
+app = g.compile(checkpointer=checkpointer)
 
-By mid-week, the team has made some progress — but a few tasks are lagging.
-
-You type to Copilot inside the Page:
-
-> “Copilot, summarize what’s holding us back right now.”
-
-Copilot instantly responds:
-
-> “Two items are delayed:
->
-> * Data cleaning is taking longer than expected due to missing files.
-> * Layout review depends on final KPI confirmation.
->
-> Suggested next steps:
->
-> * Aisha to confirm KPI list by EOD.
-> * Ravi to request missing data from Finance.
-> * Neha to prepare wireframe placeholders.”
-
-The team nods — no long email threads, no guessing.
-Copilot just did the **status meeting** for you.
-
----
-
-### 📈 **Scene 4 – Midweek Check-In**
-
-You add a **Progress Tracker** right inside the Page:
-**Project Progress: 60% complete.**
-
-The team starts using the Page like a mini project hub:
-
-* Ravi checks off “Data Cleaning – Done.”
-* Neha uploads a screenshot of the first dashboard layout.
-* You add a small note: “Schedule stakeholder review Friday.”
-
-Later, you ask:
-
-> “Copilot, summarize our week’s achievements in 3 bullet points for the Friday meeting.”
-
-Copilot replies:
-
-> “✔ KPI list finalized
-> ✔ Data imported and cleaned
-> ✔ Initial dashboard design ready for review”
-
-In 5 seconds, you’ve got your **weekly update** — polished, concise, and ready to share.
-
----
-
-### 💡 **Scene 5 – Friday Review**
-
-On Friday, the team gathers on a quick call.
-Everyone opens the same Copilot Page.
-
-The milestones are nearly all green.
-Progress shows **85% complete**.
-
-> **You:**
-> “Alright, we’re in great shape. Let’s mark this week as complete.”
-
-Then you say:
-
-> “Copilot, summarize this entire Page into a short executive summary.”
-
-**Copilot’s Summary:**
-
-> “The Financial Insights Dashboard project is nearing completion.
-> All key KPIs identified and data integrated. Dashboard prototype ready for leadership review next week.
-> Next steps: finalize visualization layout and prepare user feedback survey.”
-
-It’s exactly what you needed — something you can copy into an email or PowerPoint update.
-
----
-
-### 🎉 **Scene 6 – The Wrap-Up**
-
-The team smiles.
-What started as a chat turned into a full, living workspace — built and managed with AI.
-
-No separate docs.
-No endless spreadsheets.
-No forgotten notes.
-
-Just one **Copilot Page** where the team:
-
-* Planned together,
-* Updated together,
-* and stayed on track — with Copilot gently nudging when needed.
-
----
-
-### 🏁 **Closing Narration (for your presentation)**
-
-> “This is how Copilot transforms the way teams work.
-> It doesn’t replace our effort — it amplifies it.
-> We simply start with a goal, and Copilot helps us structure it, track it, and summarize it.
->
-> Whether it’s a dashboard, a client project, or an internal initiative — we can go from *idea* to *execution* in one place, together.”
-
----
-
-Would you like me to turn this story into a **scripted narration (1–2 min)** that you can *read or voice-over during your demo slides or video* — with cues like *“Copilot generates…”*, *“Team reacts…”* etc.?
-It would sound cinematic and professional, perfect for a live presentation or internal showcase.
+# -----------------------
+# 5) Run with a thread_id (shared memory)
+# -----------------------
+thread_id = "praveen-thread-1"
+initial_state = {
+    "messages": [HumanMessage(content="User request here...")],
+    "shared_facts": {},
+    "next": "A",
+}
+final = app.invoke(initial_state, config={"configurable": {"thread_id": thread_id}})
+print(final["messages"][-1].content)
