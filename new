@@ -1,127 +1,149 @@
-from typing_extensions import TypedDict, Annotated
-import operator
+Yep — LangGraph is exactly where this pattern shines: one shared conversation state (memory) + routing to different Ollama models based on len(messages).
 
-from langchain_core.messages import AnyMessage, HumanMessage
-from langchain_core.prompts import ChatPromptTemplate
+Below is a complete, runnable LangGraph use case:
+	•	Uses ChatOllama (local)
+	•	Uses MessagesState (built-in message memory state)  ￼
+	•	Uses conditional routing based on number of messages
+	•	Uses InMemorySaver checkpointer + thread_id so the same conversation persists across turns  ￼
 
-from langchain.agents import create_tool_calling_agent, AgentExecutor
+⸻
 
-from langgraph.graph import StateGraph, START, END
-from langgraph.prebuilt import ToolNode
-from langgraph.checkpoint.memory import MemorySaver  # simple built-in checkpointer
+0) Install
 
-# -----------------------
-# 1) Shared graph state
-# -----------------------
-class GraphState(TypedDict):
-    # Shared “memory”: conversation messages that both agents can read and append to
-    messages: Annotated[list[AnyMessage], operator.add]
+pip install -U langgraph langchain langchain-ollama
 
-    # Optional: structured shared memory (facts/artifacts)
-    shared_facts: dict
+Ollama chat model in LangChain is ChatOllama from langchain-ollama.  ￼
 
-    # Who should act next? ("A", "B", "END")
-    next: str
+⸻
 
+1) Complete LangGraph app: route by message count
 
-# -----------------------
-# 2) Build Agent A and B
-# -----------------------
-def build_agent(llm, tools, system_text: str):
-    prompt = ChatPromptTemplate.from_messages([
-        ("system", system_text),
-        ("placeholder", "{messages}"),
-    ])
-    agent = create_tool_calling_agent(llm, tools, prompt)
-    return AgentExecutor(agent=agent, tools=tools, verbose=True)
+Save as app.py and run it.
+
+from __future__ import annotations
+
+from langchain_ollama import ChatOllama
+from langchain_core.messages import AIMessage
+
+from langgraph.graph import StateGraph, START, END, MessagesState
+from langgraph.checkpoint.memory import InMemorySaver
 
 
-# Example: provide your real tools here
-shared_tools = []   # tools both agents can use
-tools_a = []        # mostly-A tools
-tools_b = []        # mostly-B tools
+# ----------------------------
+# Models (small + large)
+# ----------------------------
+small_llm = ChatOllama(model="llama3.2:3b", temperature=0.2)
+large_llm = ChatOllama(model="gpt-oss:20b", temperature=0.2)
 
-# IMPORTANT: each agent gets its own tools + shared tools
-agent_a_exec = build_agent(
-    llm,
-    tools=tools_a + shared_tools,
-    system_text=(
-        "You are Agent A (planner/router). "
-        "If a task needs specialist help, set next='B'. "
-        "Otherwise solve it and set next='END'. "
-        "When you make a decision, include it clearly."
-    )
+
+# ----------------------------
+# Routing rule
+# ----------------------------
+MESSAGE_THRESHOLD = 8  # tune this
+
+def route_by_message_count(state: MessagesState) -> str:
+    """
+    Decide which node to run next based on number of messages in the thread.
+    """
+    n = len(state["messages"])
+    return "small" if n <= MESSAGE_THRESHOLD else "large"
+
+
+# ----------------------------
+# Nodes
+# ----------------------------
+def chat_small(state: MessagesState) -> dict:
+    # state["messages"] is a list of LangChain Message objects
+    ai = small_llm.invoke(state["messages"])
+    return {"messages": [ai]}
+
+def chat_large(state: MessagesState) -> dict:
+    ai = large_llm.invoke(state["messages"])
+    return {"messages": [ai]}
+
+
+# ----------------------------
+# Build graph
+# ----------------------------
+builder = StateGraph(MessagesState)
+
+builder.add_node("chat_small", chat_small)
+builder.add_node("chat_large", chat_large)
+
+# Conditional edge from START -> whichever node the router returns
+builder.add_conditional_edges(
+    START,
+    route_by_message_count,
+    {
+        "small": "chat_small",
+        "large": "chat_large",
+    },
 )
 
-agent_b_exec = build_agent(
-    llm,
-    tools=tools_b + shared_tools,
-    system_text=(
-        "You are Agent B (specialist/executor). "
-        "If you need Agent A to re-plan or ask user a clarifying question, set next='A'. "
-        "Otherwise finish and set next='END'. "
-        "When you make a decision, include it clearly."
-    )
-)
+# Finish after one model response per turn
+builder.add_edge("chat_small", END)
+builder.add_edge("chat_large", END)
 
-# Tool execution nodes (each can be different)
-toolnode_a = ToolNode(tools_a + shared_tools)
-toolnode_b = ToolNode(tools_b + shared_tools)
+# ----------------------------
+# Memory (checkpointer)
+# ----------------------------
+checkpointer = InMemorySaver()
+graph = builder.compile(checkpointer=checkpointer)
 
 
-# -----------------------
-# 3) Node functions
-# -----------------------
-def run_agent_a(state: GraphState) -> GraphState:
-    result = agent_a_exec.invoke({"messages": state["messages"]})
-    # AgentExecutor returns an "output" string; wrap it back into messages
-    out_msg = result["output"]
-    # Decide routing (simple heuristic: look for next='B' / next='END' in text)
-    nxt = "B" if "next='B'" in out_msg or 'next="B"' in out_msg else "END"
-    return {"messages": [HumanMessage(content=out_msg)], "next": nxt}
+# ----------------------------
+# “Complete use case” chat loop
+# ----------------------------
+def main():
+    thread_id = "praveen-demo-1"  # one conversation id
+    config = {"configurable": {"thread_id": thread_id}}
 
-def run_agent_b(state: GraphState) -> GraphState:
-    result = agent_b_exec.invoke({"messages": state["messages"]})
-    out_msg = result["output"]
-    nxt = "A" if "next='A'" in out_msg or 'next="A"' in out_msg else "END"
-    return {"messages": [HumanMessage(content=out_msg)], "next": nxt}
+    print("Type 'exit' to quit.\n")
+
+    while True:
+        user_text = input("You: ").strip()
+        if user_text.lower() in {"exit", "quit"}:
+            break
+
+        # You can pass messages as dicts; LangGraph will deserialize them into Message objects
+        # when using MessagesState/add_messages.  [oai_citation:3‡LangChain Docs](https://docs.langchain.com/oss/python/langgraph/graph-api)
+        result = graph.invoke(
+            {"messages": [{"role": "user", "content": user_text}]},
+            config,
+        )
+
+        # The latest message should be the assistant
+        last = result["messages"][-1]
+        print(f"Assistant ({last.response_metadata.get('model', 'unknown')}): {last.content}\n")
 
 
-def route(state: GraphState) -> str:
-    return state["next"]
+if __name__ == "__main__":
+    main()
 
+Why this counts as “single agent with memory”
+	•	Memory is the graph state (MessagesState)  ￼
+	•	Persistence happens via a checkpointer; thread_id identifies the conversation thread  ￼
+	•	Each user turn: you call graph.invoke(...) with the same thread_id, and the state (messages) is automatically carried forward.
 
-# -----------------------
-# 4) Build the graph
-# -----------------------
-g = StateGraph(GraphState)
+⸻
 
-g.add_node("agent_a", run_agent_a)
-g.add_node("agent_b", run_agent_b)
+2) Tuning tips (what you’ll actually tweak)
+	•	MESSAGE_THRESHOLD = 8 is just a starting point.
+	•	Many people also route on:
+	•	last user message length
+	•	total chars across messages
+	•	tool-use required vs not (if you add tools later)
 
-# If you want tools to run as separate steps, add tool nodes + conditional edges
-# (Optional: only if your agents emit tool calls that you want the graph to execute)
-g.add_node("tools_a", toolnode_a)
-g.add_node("tools_b", toolnode_b)
+But for exactly what you asked: len(messages) routing is already solid.
 
-g.add_edge(START, "agent_a")
+⸻
 
-# Route after each agent turn
-g.add_conditional_edges("agent_a", route, {"B": "agent_b", "END": END})
-g.add_conditional_edges("agent_b", route, {"A": "agent_a", "END": END})
+3) Want tools too (ReAct / tool-calling)?
 
-# Shared memory persistence (thread-scoped)
-checkpointer = MemorySaver()
-app = g.compile(checkpointer=checkpointer)
+If you tell me:
+	1.	which Ollama models you’re using (exact names), and
+	2.	whether you want tools in the loop (yes/no),
 
-# -----------------------
-# 5) Run with a thread_id (shared memory)
-# -----------------------
-thread_id = "praveen-thread-1"
-initial_state = {
-    "messages": [HumanMessage(content="User request here...")],
-    "shared_facts": {},
-    "next": "A",
-}
-final = app.invoke(initial_state, config={"configurable": {"thread_id": thread_id}})
-print(final["messages"][-1].content)
+…I’ll extend the same graph into:
+	•	router → (small ReAct agent) or (large ReAct agent),
+still with one shared thread memory via the same thread_id.
