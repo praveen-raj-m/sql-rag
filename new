@@ -1,106 +1,12 @@
-Perfect — this is exactly how a CFA would want it structured.
+Teams notifications from SharePoint
+When a new item is added or modified in a SharePoint list (e.g. a new project, support ticket, or sales lead), post a formatted message to a specific Teams channel so the team sees it instantly.
 
-Below is a clean, professional list tied to:
-	•	Volume
-	•	Reading Title
-	•	Module Name
-	•	Approx. Page Reference
-	•	Specific conceptual doubts (in brackets)
+Email attachment archival
+Save attachments from specific senders (e.g. vendors, clients) into a designated SharePoint or OneDrive folder, with file names auto-tagged by sender and date. Save all attachments from specific senders to a OneDrive folder.
 
-You can send this directly.
 
-⸻
+Scheduled reports / digests
+Every Monday morning, query a SharePoint list or Excel file, build a summary, and email it to leadership — pending approvals, overdue tasks, weekly KPIs, etc. Removes manual report compilation.
 
-Hi [Name],
-
-For our discussion, I’d like to focus on the more conceptually nuanced areas from the CIPM Level I curriculum — primarily interpretation and intuition rather than calculations. I’ve listed them below by Volume, Reading, Module, and specific areas where I’d appreciate clarification:
-
-⸻
-
-1. Volume 2 – Performance Attribution
-Reading: Overview of Performance Attribution
-Module: Arithmetic vs. Geometric Attribution
-Approx. pp. 20–35
-(Understanding the intuition behind additive vs. multiplicative frameworks; why arithmetic attribution creates residuals over multiple periods; when geometric attribution is preferred conceptually.)
-
-⸻
-
-2. Volume 2 – Performance Attribution
-Reading: Multi-Period Performance Attribution
-Module: Linking Methods (Carino, Menchero, Frongello)
-Approx. pp. 60–85
-(Why single-period attribution effects cannot simply be summed; economic reasoning behind linking coefficients; what problem linking is solving conceptually.)
-
-⸻
-
-3. Volume 2 – Performance Attribution
-Reading: Brinson-Based Attribution
-Module: Allocation, Selection, and Interaction Effects
-Approx. pp. 35–60
-(Interpreting positive/negative allocation and selection effects; when negative allocation may still reflect good decision-making; economic meaning of interaction effect.)
-
-⸻
-
-4. Volume 2 – Performance Attribution
-Reading: Brinson Attribution Models
-Module: Brinson-Hood-Beebower vs. Brinson-Fachler
-Approx. pp. 40–50
-(Differences in allocation effect definitions; benchmark-relative vs. portfolio-relative interpretation; practical implications for evaluating active managers.)
-
-⸻
-
-5. Volume 1 – Performance Measurement
-Reading: Time-Weighted and Money-Weighted Returns
-Module: Return Calculation Methods
-Approx. pp. 25–45
-(Why TWR isolates manager skill; why MWR reflects investor experience; conceptual impact of external cash flows on performance evaluation.)
-
-⸻
-
-6. Volume 2 – Risk Measurement and Attribution
-Reading: Risk Measurement Concepts
-Module: Ex-Ante vs. Ex-Post Risk
-Approx. pp. 110–125
-(Forward-looking vs. realized risk; how ex-ante risk ties into risk budgeting; why realized tracking error may differ materially from forecast risk.)
-
-⸻
-
-7. Volume 2 – Risk Attribution
-Reading: Active Risk and Tracking Error
-Module: Risk Decomposition
-Approx. pp. 125–145
-(Systematic vs. idiosyncratic active risk; how active weights generate tracking error; conceptual understanding of factor vs. residual risk.)
-
-⸻
-
-8. Volume 1 – Risk-Adjusted Performance
-Reading: Risk-Adjusted Performance Measures
-Module: Sharpe Ratio vs. Information Ratio
-Approx. pp. 80–95
-(Why Information Ratio is more appropriate for evaluating active managers; relationship between tracking error and consistency of alpha.)
-
-⸻
-
-9. Volume 2 – Performance Attribution
-Reading: Attribution Framework Basics
-Module: Contribution vs. Attribution
-Approx. pp. 15–25
-(Difference between contribution to return and value-added attribution; how a sector can have positive contribution but negative attribution.)
-
-⸻
-
-10. Volume 1 – Performance Evaluation Framework
-Reading: The Performance Evaluation Process
-Module: Measurement vs. Attribution vs. Appraisal
-Approx. pp. 5–20
-(Distinction between measurement, attribution, and appraisal; how each fits into the broader investment decision feedback loop.)
-
-⸻
-
-My main goal is to deepen intuition and economic interpretation around these areas, particularly where sign interpretation and framework differences can become confusing.
-
-Looking forward to discussing these.
-
-⸻
-
-If you’d like, I can also tighten this into a shorter executive-style version.
+Task creation from flagged emails
+When you flag an email in Outlook, automatically create a task in Planner or To Do with the email subject, body, and link — keeps your inbox clean and your  list complete.
