@@ -708,3 +708,420 @@ premium-connector-based ones) are intentionally out of scope.
 All output must be reviewed by a human; do not use Copilot for final regulated content,
 sensitive financial calculations without verification, or decisions where the cost of error
 is 
+
+
+
+file2
+Microsoft 365 Copilot
+Cross-Department Playbook
+Use cases, prompts, and techniques for daily work across the firm
+
+
+
+A practical reference for every team
+
+How to use this playbook
+This document is organised in three parts. Part 1 covers the Copilot apps and surfaces themselves — what each one is good for and how to use it well. Part 2 walks through every major department in the firm with concrete day-to-day use cases and ready-to-paste prompts. Part 3 covers prompting techniques, governance reminders, and a suggested rollout approach.
+Skim it once front-to-back, then come back to your department section as a daily reference. Every prompt below is a starting point — change names, dates, file references, and tone to match your situation.
+
+Part 1 — Copilot across the M365 surfaces
+Copilot in Word
+Strongest for first drafts, rewrites, summarisation, comparison of document versions, and structured generation from existing source files. Always reference your own files (use the / shortcut) so output matches your firm's voice and policies rather than generic Copilot defaults.
+Universal use cases
+	•	First drafts of policies, memos, proposals, briefs, reports, and standard operating procedures
+	•	Rewriting for tone, audience, or reading level (executive summary vs. plain English vs. legal)
+	•	Summarising long documents into 1-page briefs or executive summaries
+	•	Comparing two document versions and listing every substantive change
+	•	Generating tables of contents, glossaries, FAQs, and appendices from existing content
+	•	Translating documents while preserving formatting and tone
+Prompts that work well
+	•	Summarise this 30-page document into a one-page brief for senior leadership. Lead with the recommendation, then 3 supporting points, then risks.
+	•	Rewrite this section in plain English at an 8th-grade reading level. Keep all technical and legal requirements intact.
+	•	Compare /Policy_v1.docx and /Policy_v2.docx and list every substantive change in a table with columns: Section, Old Wording, New Wording, Likely Reason.
+	•	Draft a 2-page client memo on [topic] using the structure of /Standard_Memo_Template.docx and the data in /Q3_Analysis.xlsx.
+Tip: Word now offers a Claude model option alongside the OpenAI models. For long-form drafting and nuanced rewrites, Claude often produces noticeably better prose; switch via the model picker in the Copilot pane.
+Copilot in Excel
+Best for analysis, formula generation, data cleaning, chart creation, and Q&A over structured data. Excel Copilot dramatically improves when your data is in a proper Table (Ctrl+T) with clean headers and no merged cells.
+Universal use cases
+	•	Cleaning messy exports — deduplication, date format standardisation, fixing inconsistent text
+	•	Building formulas in plain English ("calculate annualised growth between 2022 and 2025")
+	•	Generating PivotTables, charts, and conditional formatting on demand
+	•	Variance analysis, trend detection, outlier flagging
+	•	Categorising open-text fields (survey responses, ticket descriptions, exit interviews) into themes
+	•	Forecasting and scenario modelling using historical data
+Prompts that work well
+	•	Add a column showing month-over-month growth as a percentage, and conditionally format negatives in red.
+	•	Categorise the comments in column C into 5–7 themes and add a column with the assigned theme.
+	•	Build a PivotTable showing total revenue by region and product line, then create a bar chart from it.
+	•	Find any rows where the date in column B is more than 60 days after the date in column A and highlight them.
+	•	Forecast next quarter's values for column D using the last 24 months of data, and show the 80% confidence interval.
+Copilot in PowerPoint
+Best when you give it structured input — a Word document, a brief, or even a webpage URL — rather than a blank canvas. Copilot in PowerPoint can now also use public webpages as source material when building decks.
+Universal use cases
+	•	Turning a Word document or report into a 10–15 slide presentation with speaker notes
+	•	Creating internal training decks, onboarding decks, and process explainers
+	•	Restyling an existing deck to match the firm template
+	•	Generating speaker notes for slides that don't have them
+	•	Translating decks to other languages while keeping layouts intact
+	•	Summarising a long deck into an executive 5-slider
+Prompts that work well
+	•	Create a 12-slide deck from /ProjectReport.docx. Audience: executive leadership. Include a title slide, agenda, 3 highlights, 3 risks, recommended next steps, and an appendix slide for detailed numbers.
+	•	Reformat this deck using our company template and modernise the visual style. Keep all content unchanged.
+	•	Add concise speaker notes (3–5 bullets per slide) for the entire presentation.
+	•	Build a deck explaining [topic] using https://[reference-url] as source material.
+Copilot in Outlook
+Among the highest-frequency, highest-ROI surfaces — most professionals lose hours a day to email triage. Use it for catching up, drafting, and tone-checking.
+Universal use cases
+	•	"Catch me up" on a long email thread or after time away
+	•	Drafting replies in your typical voice, then refining tone (more direct, more diplomatic, shorter)
+	•	Suggesting follow-ups based on outstanding requests in your inbox
+	•	Drafting status updates by pulling from recent emails and meetings
+	•	Generating audio overviews of long attached files for listening on commutes
+Prompts that work well
+	•	Summarise this thread in 5 bullets. Highlight any open questions or commitments I made.
+	•	Draft a polite reply declining this request. Suggest [alternative] and offer to help next quarter.
+	•	Catch me up on everything from [client name] over the last 2 weeks across email and Teams.
+	•	Draft an email asking for a 1-week extension on the [project] deliverable. Professional, brief, no excuses.
+Copilot in Teams (chats and meetings)
+Two distinct experiences — meeting Copilot during/after calls, and chat Copilot for ongoing conversations and channels.
+Universal use cases
+	•	Real-time recap during a meeting ("what did I miss in the last 10 minutes")
+	•	Post-meeting: action items, decisions, unresolved questions, sentiment of attendees
+	•	Catch up on a busy channel after vacation or a focus block
+	•	Drafting follow-up emails or status updates from meeting transcripts
+	•	Comparing what was said in two different meetings on the same topic
+Prompts that work well
+	•	From this meeting, list every action item with the owner, due date if mentioned, and which agenda item it relates to.
+	•	Summarise the discussion on [topic]. Note any disagreements between participants and how they were resolved.
+	•	Catch me up on this channel for the last 7 days. Group by topic and flag anything where my name was mentioned.
+	•	Draft a follow-up email to the attendees summarising what we agreed and what we still need to decide.
+Copilot in SharePoint
+Two big capabilities here, both underused. First, page authoring — Copilot can draft entire intranet pages, news posts, or knowledge base articles. Second, custom agents grounded on a specific site or library, which let employees ask questions and get answers cited back to source documents.
+Note: your admin has restricted agent creation, so the agent capability won't apply for your firm — but the page authoring features remain fully available.
+Universal use cases
+	•	Drafting intranet pages, news posts, and announcements directly from a brief
+	•	Generating FAQ sections, project landing pages, and team site content
+	•	Restructuring messy SharePoint sites — Copilot can suggest navigation, taxonomies, and content groupings
+	•	Translating SharePoint content for multilingual audiences
+Prompts that work well
+	•	Create a SharePoint page announcing our new [policy/benefit/initiative]. Include a 1-paragraph overview, 3 key changes, an FAQ with 5 questions, and a contact section.
+	•	Draft a project landing page for [project]. Include purpose, team members, key milestones, link section for documents, and a status block.
+Copilot Notebooks
+A persistent workspace where you pin a curated set of files, links, and notes as a knowledge base, then chat with Copilot grounded only on those sources. Notebooks support long prompts (around 18,000 characters versus 2,000 in standard chat) and can generate Word docs, PowerPoint decks, mind maps, and audio overviews from their contents.
+When to choose Notebook over standard Chat
+	•	Long-running projects (proposals, tenders, board prep, audits, investigations)
+	•	Tasks that span many source files and need consistent grounding across sessions
+	•	Cross-document analysis — "what's inconsistent across these 12 policies?"
+	•	Onboarding workspaces — pin all the materials a new joiner needs
+	•	Knowledge synthesis — research notes, interview transcripts, market scans
+Audio Overviews (the "podcast" feature)
+Notebooks can generate a podcast-style audio discussion between two AI hosts based on your pinned content. You can choose one or two speakers, adjust tone (concise to playful), and pick length (short, medium, long). Use cases:
+	•	Turn a 50-page benefits guide into a 12-minute podcast for new hires
+	•	Make policy updates digestible — leaders listen on their commute
+	•	Create a "this month at the firm" audio recap from a notebook of internal updates
+	•	Project retrospective podcast for teams to listen to at the end of an engagement
+	•	Audio briefings for board members ahead of meetings
+Prompts that work well in a Notebook
+	•	Across all the documents in this notebook, identify any inconsistencies, contradictions, or gaps. Group findings by severity.
+	•	Generate a Word document summarising the key arguments in these 8 research papers, with a comparison table of methodologies and conclusions.
+	•	Create a PowerPoint deck pitching the recommendation in [pinned brief], using supporting evidence from the other files in this notebook.
+	•	Generate an audio overview, conversational tone, two hosts, around 10 minutes, focused on the practical implications for managers.
+Important: Notebook sharing currently works only inside your own M365 tenant — you cannot share notebooks externally. Plan accordingly when working with external collaborators.
+Researcher (deep reasoning agent)
+Researcher is Copilot's deep reasoning capability — it performs multi-step research combining your work data with the public web, taking longer but producing far more thorough analysis than a single chat turn. Use it when the question genuinely needs synthesis across many sources.
+Good fits for Researcher
+	•	Competitive analysis combining internal documents and external research
+	•	Market entry studies, vendor evaluations, build-vs-buy analyses
+	•	Regulatory landscape reviews — what's changing, who's affected, what to do about it
+	•	Strategic option papers requiring evidence from many angles
+	•	Best-practice benchmarking against the firm's own current state
+Prompts that work well
+	•	Research the current state of [market/topic]. Synthesise the 3 most credible perspectives, then assess how our internal approach (per /InternalStrategy.docx) compares. End with 5 specific recommendations.
+	•	Build a vendor comparison for [category] covering the top 5 providers. For each: pricing model, integration profile, security posture, customer reviews, recent product changes. Recommend a shortlist of 2.
+	•	Analyse our last 4 quarters of [data type] and compare patterns to industry benchmarks. Identify the top 3 areas where we're underperforming and propose responses.
+Copilot Create (images, video, posters, surveys)
+A standalone surface for generating designed content from prompts, templates, or your brand kit — images, videos, podcasts, posters, surveys, and short multimedia explainers. PowerPoint also now offers a model picker for image generation (GPT-Image, Flux, or Auto).
+Universal use cases
+	•	Short explainer videos (60–120 seconds) for internal launches, training, comms
+	•	Onboarding welcome videos personalised by department or role
+	•	Visual aids and infographics for policy rollouts and town halls
+	•	Recruitment marketing — "day in the life" content
+	•	Internal surveys with built-in analysis afterwards
+	•	Posters and visual campaigns for wellness, DEI, or operational initiatives
+Prompts that work well
+	•	Create a 90-second explainer video on our new [policy/tool/process]. Friendly tone. Include text overlays for the key takeaways.
+	•	Design a poster for our wellness week, professional but warm tone, 4 themes per day.
+	•	Build a 6-question pulse survey on team workload and stress, with a balance of scale and open-text questions.
+Work vs. Web — using both modes well
+Copilot Chat has two grounding modes that fundamentally change what it can answer.
+Work mode
+Grounds responses in your tenant — your emails, Teams, SharePoint, OneDrive, calendar. Use for any question that depends on internal context.
+	•	"Catch me up on what I missed last week"
+	•	"What did we decide in the [project] meetings last quarter?"
+	•	"Find every document related to [topic] and summarise its current status"
+	•	"Who are the experts in the firm on [subject], based on documents and meetings?"
+Web mode
+Grounds responses in the public internet. Use for benchmarks, trends, regulations, vendor research, current events.
+	•	"What's the current state of [regulation] in [jurisdiction]?"
+	•	"Compare the top 5 [products] in [category] for an enterprise of our size"
+	•	"Recent best practices for [process]"
+Combined power prompts
+	•	Compare our [policy/process] (per /OurPolicy.docx) to current industry standards in [region]. Highlight every gap.
+	•	Based on our [internal data] and recent market data, is our pricing for [product] competitive? Recommend adjustments.
+
+Part 2 — Department-by-department use cases
+Each section below covers daily, weekly, and project-based scenarios with prompts you can adapt directly. Where helpful, we note which app or surface works best.
+Executive / Leadership
+Daily and weekly
+	•	Catching up after travel or vacation across email, Teams, and meetings
+	•	Pre-reading prep for back-to-back meetings using calendar and attached files
+	•	Drafting all-hands updates, board comms, and internal announcements
+	•	Reviewing reports for blind spots, missing data, or weak arguments
+Project and strategic
+	•	Synthesising input from many leaders into a single position paper
+	•	Building board pre-reads from underlying data and prior minutes
+	•	Generating audio briefings for committee members ahead of decisions
+	•	Stress-testing strategic plans ("what assumptions am I making that might be wrong?")
+High-leverage prompts
+	•	Catch me up on the last 5 business days. Group by topic, flag urgent items, and highlight anything where I owe someone a response.
+	•	From this set of board materials [pin in Notebook], generate a 2-page executive summary, a list of likely director questions, and suggested answers.
+	•	Review this strategic plan and act as a skeptical board member. What are the 5 weakest arguments? What evidence is missing?
+	•	Draft an all-hands update on [topic]. Empathetic but candid. 400 words max. Match the tone of /PriorAllHands.docx.
+Human Resources
+Recruiting and talent acquisition
+	•	Drafting and tailoring job descriptions for inclusivity, clarity, and SEO
+	•	Generating interview question banks tied to specific competencies
+	•	Summarising candidate feedback from panel interviews into a recommendation
+	•	Drafting offer letters, regret letters, and reference request emails
+	•	Analysing recruitment funnel data in Excel
+Employee lifecycle and operations
+	•	Onboarding plans, welcome packs, and 30/60/90-day check-in templates
+	•	Drafting policies, handbooks, FAQs, and updates to existing documents
+	•	Comparing policy versions to track changes for legal review
+	•	PIPs, performance review templates, and termination documentation
+	•	Exit interview synthesis and theme analysis
+People analytics
+	•	Attrition analysis, pay equity reviews, headcount forecasting
+	•	Engagement survey theme extraction and manager-level reporting
+	•	Time-off pattern analysis
+High-leverage prompts
+	•	Draft a job description for [role]. Inclusive language, structured as: about us, role summary, responsibilities, must-haves, nice-to-haves, what we offer, EEO statement. Tone: warm and engaging.
+	•	From these 6 panel feedback forms, summarise consensus strengths, consensus concerns, divergent views, and a recommended hire/no-hire with reasoning.
+	•	Compare /Handbook_v3.docx and /Handbook_v4.docx and summarise every substantive policy change for legal review.
+	•	Categorise these 220 exit interview comments into 5–7 themes. For each theme: a count, 2 representative quotes, and a recommended HR action.
+	•	Analyse this attrition data by tenure, department, and manager. Flag teams with attrition above company average and suggest the 3 most actionable interventions.
+Finance and Accounting
+Daily and monthly
+	•	Variance analysis, P&L commentary, month-end close narrative
+	•	AP/AR aging analysis with collection priority lists
+	•	Drafting management commentary for monthly reports
+	•	Reconciling exports from multiple systems and flagging discrepancies
+FP&A and planning
+	•	Budget vs. actual analysis with root cause hypotheses
+	•	Scenario modelling — best/base/worst case forecasts
+	•	Driver-based forecasting using historical patterns
+	•	Building investor or board financial decks from underlying spreadsheets
+Treasury, audit, controls
+	•	Summarising audit findings and drafting management responses
+	•	Vendor risk analysis and consolidation opportunities
+	•	Drafting policy documents for new financial controls
+High-leverage prompts
+	•	Summarise the P&L variances for this month vs. last month by business line. Identify the top 3 drivers and distinguish seasonality from one-off events.
+	•	Add columns for ROI, payback period, and risk-adjusted return for each project in this table. Then sort by risk-adjusted return descending.
+	•	Build a 3-scenario forecast (conservative, base, aggressive) for the next 4 quarters using the trends in columns B–F. Show assumptions clearly.
+	•	From these 18 vendor invoices [in folder], identify any duplicates, unusual variances from typical amounts, or vendors with unusually high payment frequency.
+	•	Draft management commentary for our quarterly report. Focus on the variance drivers in /VarianceAnalysis.xlsx. Tone: confident but not defensive. 400 words.
+Sales
+Daily prospecting and outreach
+	•	Personalised outreach emails based on prospect's company news and LinkedIn profile
+	•	Follow-up cadences after demos, proposals, and silence
+	•	Pre-call research summaries combining web + CRM data
+	•	Objection-handling playbooks tailored to specific personas
+Pipeline and deals
+	•	Drafting proposals from a brief plus prior winning proposals
+	•	Summarising long client emails and meeting transcripts into account next steps
+	•	Building account plans from CRM data and meeting history
+	•	Forecasting calls — analysing pipeline health, slippage risk, and best-case/worst-case scenarios
+Reporting and enablement
+	•	Win/loss analysis from CRM notes
+	•	QBR decks built from internal performance data
+	•	Battle cards comparing the firm's offerings to specific competitors
+High-leverage prompts
+	•	Draft a personalised outreach email to [name] at [company] referencing their recent [news item]. Connect their challenge to our [offering]. Conversational tone, under 120 words.
+	•	Catch me up on [client account] across email, Teams, and meetings for the last 30 days. List open items, expressed concerns, and next-step opportunities.
+	•	Build a 12-slide proposal deck for [client] using the structure of /BestProposal_2024.pptx and the discovery notes in /ClientNotes.docx.
+	•	From these 30 lost-deal CRM notes, identify the top 5 reasons for losses and recommend product, pricing, or sales process changes.
+	•	Build a battle card comparing us to [competitor]. Use our /Differentiators.docx and recent web research on the competitor. Output as a 1-page table.
+Marketing
+Content production
+	•	Blog posts, LinkedIn content, newsletter copy, landing page drafts
+	•	Repurposing one long-form asset into 8+ social/email/video derivatives
+	•	Email nurture sequences segmented by persona
+	•	Translating campaigns across markets while preserving brand voice
+Strategy and analysis
+	•	Competitor monitoring — what they launched, what they're saying, how to respond
+	•	Campaign performance analysis with recommended next-test ideas
+	•	Persona research and segmentation refresh
+	•	ICP analysis from CRM data
+Events and brand
+	•	Event run-of-show docs, briefing books for executives, social copy schedules
+	•	Internal launch comms for new products or services
+	•	Media briefing packs and FAQ documents
+High-leverage prompts
+	•	Repurpose /WhitepaperQ3.docx into: 1 LinkedIn post (200 words), 5 LinkedIn carousel slide ideas, 1 blog post (800 words), 3 email teasers, and 5 short-form video scripts.
+	•	Develop a 4-email nurture sequence introducing [product] to [persona]. Each email under 150 words, with a clear single CTA.
+	•	Analyse this campaign performance data. Identify the top 3 winning segments, the 2 weakest, and recommend a follow-up test plan.
+	•	Build a competitive landscape one-pager for [market] using web research. Include positioning map, key messages, and our differentiation.
+IT and Operations
+Service desk and end-user support
+	•	Drafting clear, friendly responses to support tickets
+	•	Generating knowledge base articles from resolved tickets
+	•	Building FAQs from clusters of similar tickets
+	•	Communicating outages, maintenance windows, and changes in plain language
+Project and infrastructure
+	•	Drafting RFPs, RFIs, and vendor evaluation matrices
+	•	Writing change management plans, runbooks, and rollback procedures
+	•	Translating technical documentation for non-technical audiences
+	•	Generating user training materials for new tools
+Security and compliance
+	•	Summarising security advisories and translating impact to business stakeholders
+	•	Drafting incident communications during/after events
+	•	Audit prep — pulling evidence from logs and documenting controls
+	•	Analysing access reviews and flagging anomalies
+High-leverage prompts
+	•	From these 50 recent service desk tickets, identify the top 5 root causes and propose self-service KB articles or process changes for each.
+	•	Draft a clear, calm comms message about today's outage. Audience: all employees. Include what happened (in plain language), impact, current status, and what to do if affected.
+	•	Build a vendor evaluation matrix for [tool category]. Columns: features, pricing, security, integration, support, references. Pre-populate from web research on the top 5 vendors.
+	•	Translate this technical incident report into a 1-page executive summary. No jargon. Focus on business impact and remediation.
+Legal
+Contract and document work
+	•	First-pass review of contracts — flagging unusual clauses, missing terms, deviation from playbook
+	•	Comparing two contract versions and surfacing every change
+	•	Drafting standard agreements (NDAs, SOWs, vendor agreements) from briefs
+	•	Summarising long agreements into business-friendly briefs
+Research and analysis
+	•	Synthesising regulatory developments across jurisdictions
+	•	Building briefs from collections of cases or filings
+	•	Translating legal opinions into plain-language guidance for the business
+Operations
+	•	Drafting policies, codes of conduct, and training materials
+	•	Generating litigation hold notices and document preservation comms
+	•	Building compliance checklists from regulations
+High-leverage prompts
+	•	Review this contract against /OurPlaybook.docx. List every clause that deviates from our standard, its risk level, and a suggested negotiation position.
+	•	Compare /Contract_v3.docx and /Contract_v4.docx in tracked-changes style and summarise the substantive shifts in negotiation position.
+	•	Translate this 30-page agreement into a 1-page business brief covering: term, payment, termination rights, key risks, and points worth pushing back on.
+	•	Summarise [regulation] and identify the 5 most material implications for our business based on /OurOperations.docx.
+Caution: Always have a qualified lawyer review Copilot's legal output before reliance. Treat it as a strong first draft, never as final advice.
+Operations and PMO
+Project management
+	•	Drafting project charters, scope documents, RAID logs
+	•	Status reports built from meeting notes, emails, and Planner/Project data
+	•	Stakeholder comms tailored to different audiences
+	•	Lessons-learned summaries from project artifacts
+Process improvement
+	•	Documenting current-state processes from interview notes
+	•	Drafting SOPs and work instructions
+	•	Identifying automation candidates from process documentation
+	•	Building training materials for new processes
+Vendor and supply chain
+	•	Vendor performance reviews from contract data and feedback
+	•	PO and invoice variance analysis
+	•	Supplier risk summaries combining internal data and external news
+High-leverage prompts
+	•	Draft a project status report for [project] for the steering committee. Use my Teams meetings and emails for the last 2 weeks. Sections: progress, risks, decisions needed, next milestones.
+	•	From these 8 process interview transcripts, document the current-state process step by step. Flag inconsistencies between interviewees.
+	•	Build a vendor performance scorecard for [vendor]. Columns: SLA performance, invoice accuracy, responsiveness, escalations. Use /VendorData.xlsx.
+	•	Generate a lessons-learned report for [project] using the documents in this notebook. Cover: what worked, what didn't, what we'd do differently, recommended changes to playbook.
+Customer Service / Support
+Daily handling
+	•	Drafting empathetic responses to complaints and escalations
+	•	Building macro/template responses for common issues
+	•	Translating responses into customer languages
+	•	Tone calibration — making responses warmer, firmer, more concise
+Analysis and improvement
+	•	Theme extraction from customer feedback
+	•	Identifying pre-churn signals from support history
+	•	Building VoC reports for product and leadership teams
+	•	Generating training scenarios from real (anonymised) tickets
+High-leverage prompts
+	•	Draft a response to this escalated complaint. Empathetic, takes ownership, offers [resolution]. Avoid corporate jargon. Under 150 words.
+	•	Categorise these 300 customer feedback responses into 5–8 themes. For each: count, sentiment, 2 representative quotes, recommended owner team.
+	•	From this customer's full support history, summarise their journey, current sentiment, and risk of churn. Recommend a retention play.
+	•	Build a training scenario from this anonymised ticket: customer profile, the issue, the wrong way to respond, the right way to respond, key learning point.
+Learning and Development
+	•	Designing course outlines, learning objectives, and assessment questions
+	•	Building manager toolkits and discussion guides
+	•	Generating role-play scenarios for soft skills training
+	•	Creating short explainer videos via Copilot Create
+	•	Audio overviews of dense training material so learners can listen on commutes
+	•	Personalising development plans based on competency frameworks
+High-leverage prompts
+	•	Design a 4-module course on [topic] for [audience]. Per module: learning objectives, key content, an activity, assessment questions, and recommended duration.
+	•	Generate 8 realistic role-play scenarios for [skill] training. Each scenario: situation, character motivations, success criteria, common mistakes.
+	•	From this dense compliance training material, generate a 10-minute audio podcast summary, conversational tone, two hosts.
+R&D / Product / Engineering
+	•	Drafting PRDs, technical specs, and one-pagers from rough briefs
+	•	Summarising customer research and synthesising themes across interviews
+	•	Code documentation, README generation, and changelog drafting (note: code generation in Copilot for M365 is limited; use GitHub Copilot for heavy coding)
+	•	Reviewing tickets and flagging duplicates, missing info, or scope creep
+	•	Stand-up summaries and sprint review prep
+High-leverage prompts
+	•	From these 20 customer interview transcripts in this notebook, extract the top 5 unmet needs, with frequency, supporting quotes, and implications for our roadmap.
+	•	Draft a PRD for [feature]. Include problem statement, target user, success metrics, scope (in/out), open questions, and rollout plan.
+	•	Summarise this sprint's completed work, in-flight work, and blockers. Audience: product leadership. 1 page.
+
+Part 3 — Prompting techniques and adoption
+Prompting frameworks that consistently outperform
+The single biggest predictor of how much value someone gets from Copilot is prompt quality. Two simple frameworks cover most cases.
+The GCSE framework — Goal, Context, Source, Expectation
+	•	Goal: what are you trying to produce or decide?
+	•	Context: who is it for, what's the situation, what's the constraint?
+	•	Source: which files, emails, meetings, or web sources should Copilot use?
+	•	Expectation: format, length, tone, and quality criteria
+Example: "Draft a termination letter (Goal). Performance-based, employee on PIP for 90 days, in California (Context). Use /TerminationTemplate.docx and /CompanyTone.docx (Source). One page, legally compliant, empathetic, with appeal rights section (Expectation)."
+The RISE framework — Role, Intent, Scope, Expectations
+	•	Role: what perspective should Copilot adopt? ("Act as a CFO reviewing this proposal")
+	•	Intent: exactly what you want produced
+	•	Scope: boundaries — sources, timeframe, audience, format
+	•	Expectations: quality criteria, length, tone, what to avoid
+Techniques that meaningfully improve output
+	•	Reference your files. Type / in the Copilot pane to attach specific documents, emails, meetings, or people. Grounded prompts beat generic ones every time.
+	•	Iterate, don't restart. Refine with follow-ups: "shorter," "more empathetic," "add a section on X," "match the tone of /OtherDoc.docx."
+	•	Persona prompting. "Act as a senior employment lawyer reviewing this for risk" or "Act as a CFO sceptical of this business case." Personas dramatically change the lens.
+	•	Show, don't tell. Paste an example of the style or format you want, then say "match this style."
+	•	Ask for structure. "Give me this as a table with columns for Issue, Risk, Recommendation, Owner." Structured outputs are easier to act on.
+	•	Red-team prompts. "What's missing? What's the weakest argument? How might this be misinterpreted? What edge cases haven't I addressed?"
+	•	Prompt chaining. Break complex requests into steps. Ask Copilot to summarise highlights first, then build the deck from the summary, then refine speaker notes — better than one big request.
+	•	Positive direction. "Write in a conversational tone" works better than "don't be too formal." Tell Copilot what you want, not what to avoid.
+	•	Specify the audience. "For executives who skim" vs. "for technical reviewers who want detail" produces dramatically different outputs.
+Common mistakes to avoid
+	•	Vague prompts ("summarise this") — always specify length, structure, and audience
+	•	Asking Copilot to do too much in one prompt — chain instead
+	•	Not referencing files — generic prompts produce generic output
+	•	Trusting numbers without verification — always sanity-check financial or factual claims
+	•	Pasting confidential data into web mode — always use Work mode for internal content
+	•	Forgetting that Copilot inherits your permissions — it can only see what you can see
+Governance and safe use
+Copilot inherits the user's existing M365 permissions, sensitivity labels, and retention policies — it cannot grant access to anything you can't already see. That said, a few practical reminders for the firm:
+	•	Sensitivity labels matter — DLP policies for Copilot will block summarisation of highly confidential files. Don't try to work around this.
+	•	Always verify factual outputs — Copilot can hallucinate dates, numbers, and citations
+	•	For client-facing or legal-bearing output, treat Copilot drafts as first drafts requiring human review
+	•	When in doubt about whether a prompt is appropriate, ask whether you'd be comfortable with the output appearing in a discovery request
+Suggested rollout sequence for any team
+Rather than dumping everything on people at once, sequence adoption by complexity and time-to-value:
+	•	Week 1: Outlook (catch-up, drafting) and Word (rewrites, summarisation). Highest immediate relief, lowest learning curve.
+	•	Week 2: Teams (meeting recaps, action items) and Excel (formula help, basic analysis on Tables).
+	•	Week 3: Notebooks for ongoing projects, and SharePoint page authoring.
+	•	Week 4 and beyond: Researcher for deeper analyses, Create for visual content, advanced Excel scenarios.
+Pair each stage with 5–10 starter prompts specific to that team's actual work. Generic training lands far worse than role-specific examples. Designate "Copilot champions" per department who collect prompts that work and share them in a central library — your firm's prompt library will be more valuable than any external resource within a few months.
+Building a firm-wide prompt library
+As people develop prompts that work, capture them in a shared SharePoint library or OneNote notebook. Organise by:
+	•	Application (Word, Excel, PowerPoint, Outlook, Teams, Notebooks)
+	•	Department (HR, Finance, Sales, Legal, etc.)
+	•	Use case (drafting, summarising, analysis, comparison, brainstorming)
+For each prompt, record: the prompt itself, the typical input, what good output looks like, and any tweaks that improve results. Within a quarter, this becomes one of the most valuable internal assets the firm has.
+
+Final thoughts
+Copilot's value compounds. The first week feels marginal, the first month is noticeably faster, and by the third month most users would push back hard if you took the licenses away. The teams that get there fastest do three things: they reference files in every prompt, they iterate rather than restart, and they share what works.
+Treat this playbook as a starting point. The most valuable prompts in your firm three months from now will be ones nobody has written yet — discovered by your own people doing their own work.
