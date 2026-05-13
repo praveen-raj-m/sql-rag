@@ -1,12 +1,118 @@
-Teams notifications from SharePoint
-When a new item is added or modified in a SharePoint list (e.g. a new project, support ticket, or sales lead), post a formatted message to a specific Teams channel so the team sees it instantly.
+Create a SharePoint page titled "Virtus This Week — [Date]." Pull from the affiliate sites I have access to and summarize: (1) new commentaries or white papers published this week, with author, title, and 2-sentence summary, (2) any new marketing collateral added to affiliate libraries, (3) upcoming events or webinars on affiliate calendars in the next 14 days, (4) any policy updates posted to the compliance site. Format as a scannable page with clear section headers and direct links to source documents. Include nothing older than 7 days. If a section has no items, write "Nothing new this week."
 
-Email attachment archival
-Save attachments from specific senders (e.g. vendors, clients) into a designated SharePoint or OneDrive folder, with file names auto-tagged by sender and date. Save all attachments from specific senders to a OneDrive folder.
+The SEC has asked for our written supervisory procedures around the Marketing Rule. List every document in this site that is responsive, with a 1-sentence description of why each is relevant. Flag any topic in the request where we appear to have no responsive document.
+Draft a cover memo summarizing how our personal trading surveillance program operates, citing only documents in this site. Keep it to one page. Do not characterize the program's effectiveness — only describe what the documents say we do.
+The auditor asked when each of our affiliates last reviewed their best execution policy. Pull the review dates and version history from the documents here and put it in a table.
+
+Build a row per Virtus affiliate with columns for: asset class focus, sub-strategies, founding year, headquarters, lead PMs, products offered (MF/ETF/CEF/SMA/CIT), and AUM if publicly disclosed. Have Copilot Chat populate the rows from corporate.virtus.com pages, then move to Excel.
+Add three derived columns: (1) "Primary Asset Class" categorizing each affiliate as Equity / Fixed Income / Multi-Asset / Alternatives, (2) "Style Tilt" categorizing as Growth / Value / Core / Quantitative / Event-Driven where applicable, (3) "Coverage Gap Score" — for each affiliate, count how many of the 6 product wrappers (MF, ETF, CEF, VIT, SMA, CIT) they're available in. Then build a pivot summarizing affiliate count by Primary Asset Class and Style Tilt, and a second pivot showing which wrappers are under-represented across the lineup. Write a 3-sentence summary highlighting the biggest capability concentration and the largest white spac
+
+Pull the last 8-12 quarters of VRTS earnings data from the IR site into Excel: revenue, operating income, AUM end-of-period, gross sales, net flows, fee rate, comp ratio, EPS.
+Prompt:
+Add columns for QoQ and YoY change for every metric. Highlight any quarter where net flows turned negative in red. Compute a 4-quarter trailing average for fee rate and flag any quarter where the actual fee rate deviates by more than 2 basis points from that average. Build a chart showing AUM as bars with net flows as a line overlay on a secondary axis. Then write a 5-bullet analyst-style summary of what the trend lines show — describing only what's in the data, no recommendations.
+
+Scrape press release titles and dates from the Press Center for the last 24 months.
+Prompt:
+
+Add a column classifying each press release into one of: Earnings, M&A / Affiliate, Product Launch, Leadership, Distribution / Partnership, Awards & Recognition, Corporate Responsibility, Other. Pivot to show count by quarter and by category. Add a column showing days since previous release in the same category. Identify any category that has gone more than 180 days without a release. Build a heatmap of release volume by month over the 24-month window. Write a one-paragraph summary describing the firm's communication cadence and which themes have been most frequent.
 
 
-Scheduled reports / digests
-Every Monday morning, query a SharePoint list or Excel file, build a summary, and email it to leadership — pending approvals, overdue tasks, weekly KPIs, etc. Removes manual report compilation.
+Pull from EDGAR / the IR SEC filings page: every filing by VRTS and the fund family entities, with type, period covered, filing date, statutory deadline.
+Prompt:
 
-Task creation from flagged emails
-When you flag an email in Outlook, automatically create a task in Planner or To Do with the email subject, body, and link — keeps your inbox clean and your  list complete.
+For each filing, compute "Days vs Deadline" — positive if filed before deadline, negative if late. Group by filing type and compute average lead time, median lead time, and any filings within 3 days of the deadline. Build a forward-looking calendar showing every periodic filing due in the next 180 days, with the entity, filing type, period, and deadline. Conditional-format the upcoming filings: green if more than 60 days out, yellow 30-60 days, red under 30 days. Write a 3-sentence summary describing filing patterns — which filings consistently file early and which consistently file close to deadline.
+
+
+
+These policy docs are the highest-volume, lowest-engagement documents in the firm — every employee technically "knows" them but nobody reads them. That's exactly why they're great Copilot material: the docs are dense, the audience is huge, and the value of making them accessible compounds across thousands of employee hours. Your benefits-doc-to-Excel move is a perfect example of the pattern. Here are 9 more directions, organized by what you're trying to accomplish.
+
+**1. Plain-language FAQ page from a dense policy (Pages or Word)**
+
+Take the Code of Ethics — typically 40+ pages of legal prose — and generate an employee-friendly FAQ that lives next to it on the intranet. The PDF stays as the authoritative document, the FAQ becomes the way people actually use it.
+
+Prompt for Copilot in Word with the policy attached:
+> Read the attached Code of Ethics. Create an FAQ document structured as 15-20 questions an employee would actually ask, written in plain English. Examples: "Can I buy a stock I just heard about on a podcast?" "My spouse got hired at a public company — what do I need to do?" "I'm getting a wedding gift from a vendor — is that allowed?" For each answer: keep it under 100 words, cite the section of the policy it's based on, and end with "When in doubt, contact Compliance." If a question doesn't have a clear answer in the policy, write "This is a judgment call — contact Compliance" rather than inventing one. Do not paraphrase in a way that materially changes meaning from the source.
+
+The "do not paraphrase in a way that changes meaning" instruction is the legal-safety lever. The source PDF remains controlling.
+
+**2. Role-based "what this means for me" guides (Word)**
+
+Same policy, different employees experience it differently. A PM has different Code of Ethics obligations than a marketing associate. Create 4-5 role-specific guides from one master policy.
+
+Prompt:
+> From the attached Code of Ethics, generate four 1-page summaries titled: "Code of Ethics for Investment Professionals," "Code of Ethics for Marketing & Sales," "Code of Ethics for Operations & Corporate Functions," and "Code of Ethics for New Joiners in their First 90 Days." For each summary, pull only the obligations and scenarios most relevant to that role. Use plain language, bullet format, and never longer than one page. At the bottom of each, include a "What's different for me vs. other roles" callout. Every claim must be traceable to a section number in the source.
+
+This makes a 40-page policy feel like a 1-page job aid. Compliance keeps the master; employees use the role view.
+
+**3. Decision flowcharts from hard-to-parse rules (Word or PowerPoint)**
+
+Some policies are decision trees written in paragraph form — Gifts & Entertainment is the classic. Turn them into actual flowcharts.
+
+Prompt for Copilot in PowerPoint with policy attached:
+> Read the attached Gifts & Entertainment Policy. Create a single-slide decision flowchart that an employee can follow when they're offered or want to give a gift or entertainment. Start with "Is the other party a client, prospect, vendor, government official, or other?" and branch from there based on the policy's actual rules. Include the dollar thresholds, the pre-clearance triggers, and the approval owner at each terminal node. Use only shapes and text, no clip art. Add a footer citing the policy version and date. Below the flowchart, list the 3 most common scenarios with the path they should take.
+
+Similar treatment works well for: Personal Trading pre-clearance, Outside Business Activities approval, Political Contribution pre-clearance, Whistleblower reporting paths.
+
+**4. Annual "What Changed" version diff (Word)**
+
+Every policy gets refreshed annually. The hard part is telling employees what actually changed in a way that's faster to read than the redline.
+
+Prompt for Copilot in Word with both versions attached:
+> Compare the attached Code of Conduct (2025 version) with the Code of Conduct (2026 version). Produce a "What Changed" memo with three sections: (1) New requirements — anything that adds an obligation, threshold, or restriction, (2) Loosened requirements — anything that removes or relaxes an obligation, (3) Clarifications and wording-only updates — changes that don't alter substantive obligations. For each item: cite the section, give a 1-sentence description of the change, and give a 1-sentence description of what it means for employees in practical terms. Do not flag stylistic edits as substantive. End with a "Read These Sections If You Are…" callout for roles most affected by the changes.
+
+This is what compliance distributes to all-staff when a policy refreshes. Hours of legal review converted to a usable change log.
+
+**5. Training deck auto-generation (PowerPoint)**
+
+Annual policy training is mandatory and universally hated. Copilot in PowerPoint can produce a usable first draft of the deck from the source.
+
+Prompt:
+> Generate a 12-slide annual training deck from the attached Insider Trading Policy. Structure: (1) title slide, (2) why this matters in 1 slide, (3-4) what MNPI is with examples, (5-6) what to do if you receive MNPI, (7-8) restricted lists and watch lists, (9-10) personal trading obligations, (11) common mistakes and case studies — use anonymized hypotheticals not real cases, (12) who to call and key resources. Each slide: a clear title, 3-5 bullets max, speaker notes that expand on the bullets in plain language. End with a "Knowledge Check — 5 Questions" slide.
+
+Compliance and L&D edit it down rather than building from scratch.
+
+**6. Scenario-based knowledge check / quiz (Word)**
+
+Pair the training deck with a quiz that actually tests judgment, not memorization.
+
+Prompt:
+> From the attached Social Media Policy, generate 12 scenario-based questions. Each question describes a realistic situation an employee might face on LinkedIn, X, Reddit, or internal channels, and gives four multiple-choice responses. Three should be wrong in instructive ways (over-cautious, under-cautious, ignores a key step) and one should be right. Below each question, include the answer, a 2-sentence explanation, and the specific section of the policy the answer comes from. Cover at least: posting about portfolio holdings, sharing firm research, engaging with negative posts about the firm, identifying yourself as a firm employee in personal posts, reposting market commentary, and AI-generated content.
+
+The scenarios reveal whether people understand the policy, not whether they memorized it.
+
+**7. Cross-policy consistency audit (Notebook + Word)**
+
+Asset managers have 20+ employee policies. They get updated by different owners at different times. Contradictions creep in.
+
+Prompt for Notebook with all employee policies loaded:
+> Across all the policies in this notebook, identify potential consistency issues. Specifically look for: (1) the same term defined differently in different policies, (2) the same obligation with different dollar thresholds in different policies, (3) approval processes for similar actions routed to different owners in different policies, (4) overlapping scope without clear delineation (e.g., what does the Insider Trading Policy cover that's also in the Code of Ethics), (5) any cross-reference in one policy that points to a section that no longer exists in the referenced policy. For each issue: cite both policies, quote the relevant text from each, and describe the inconsistency in one sentence. Do not recommend which version should prevail — surface the issue for the policy owners to reconcile.
+
+This is something that's normally only discovered when an employee asks a hard question or a regulator points it out. Surfacing it proactively is high-value compliance work.
+
+**8. Peer benchmarking against public policies (Researcher + Word)**
+
+Many firms publish their Code of Ethics, Whistleblower Policy, Privacy Policy, and Anti-Bribery Policy publicly. Compare Virtus against them.
+
+Prompt for Researcher:
+> Locate publicly available Code of Ethics documents from these asset managers: [list]. For each, identify how they handle the following topics: personal trading pre-clearance thresholds, gifts & entertainment dollar thresholds, political contributions pre-clearance, outside board service approval, AI / generative tool use, MNPI handling, and social media. Build a comparison table. In a separate section, list topics that 3+ peers address but I do not see in [attached Virtus Code of Ethics]. Cite every source. Do not recommend changes — present findings for Compliance to evaluate.
+
+Compliance can then decide what's worth adopting; the gap surfacing is the value.
+
+**9. Manager cascade kit (Word)**
+
+When a new policy launches or an old one materially changes, HR/Compliance asks managers to "discuss with your team." Most managers don't. Build them a kit that makes the conversation easy.
+
+Prompt:
+> From the attached updated AI Acceptable Use Policy, create a manager cascade kit with: (1) a 3-minute talking-points script the manager can read at a team meeting, (2) the top 5 questions a manager should expect their team to ask, with suggested answers grounded in the policy, (3) a list of 5 scenarios the manager can use as a discussion prompt with the team, (4) a 1-page handout the manager can email after the meeting, (5) a 3-question pulse check the manager can use a week later to confirm the team understood. Tone: peer-to-peer, not HR-formal. Every factual claim about the policy must be traceable to a section.
+
+This pattern is reusable across every policy launch. Compliance/HR builds the kit once; managers run consistent conversations across the firm.
+
+---
+
+**Bonus thought — the "policy stack" view**
+
+If you want a flagship demo for a firm-wide audience, the most impressive single move is to upload your entire policy stack to a SharePoint site, point Copilot Chat at it, and demo it as a **personal compliance assistant**: "Can I accept this invitation?" "Do I need to pre-clear this trade?" "Can I post this on LinkedIn?" "My spouse is interviewing at a public company — what do I do?" The same source documents power #1 through #9 above; this is the human-facing top layer.
+
+One framing note for your audience: across all of these, the source PDF stays the authoritative document and Copilot output is always a derivative aid — FAQ, summary, training, flowchart — never the policy itself. That's the line legal and compliance will care about, and it's what makes these production-safe versus experimental.
+
+Want me to pick one policy type (say Code of Ethics or Social Media) and build out the full workflow — FAQ, role guides, flowchart, training deck, quiz — as a single end-to-end demo arc? It's a powerful showcase because the audience sees one source document become five usable artifacts in front of them.
