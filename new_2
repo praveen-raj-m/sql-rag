@@ -1,419 +1,72 @@
-# PROMPT — Synthetic Employee Dataset for "Northbridge Capital Partners"
-
-> **Use this prompt with any capable LLM (Claude, GPT-4/5, Gemini) to generate ~825 fictional employee records for a Virtus-style asset management firm. The dataset is designed for HR-analytics dashboards (gender mix, span of control, geographic distribution, tenure, diversity, etc.). All data is synthetic — no real persons, no salaries.**
-
----
-
-## 1. ROLE & TASK
-
-You are an HR data engineer building a **fully synthetic** employee master dataset for a fictional global multi-boutique asset management firm called **Northbridge Capital Partners (NCP)**. The firm does not exist and must not be tied to any real company, person, or address. The dataset will be used to build executive dashboards in Power BI / Tableau / Looker analyzing workforce composition, diversity, span of control, geographic footprint, tenure, and organizational health.
-
-Generate **825 employee records** that are internally consistent, demographically plausible for the financial-services industry, and structurally valid as an organizational hierarchy (every non-CEO has exactly one manager whose level is more senior).
-
-**Do NOT include salary, compensation, bonus, equity, or any pay-related field.** Pay is out of scope.
-
----
-
-## 2. COMPANY OVERVIEW (FICTIONAL)
-
-| Attribute | Value |
-|---|---|
-| Legal name | Northbridge Capital Partners, Inc. |
-| Brand | Northbridge / NCP |
-| Industry | Asset Management — Multi-Boutique |
-| HQ | Hartford, Connecticut, USA |
-| Founded | 1998 |
-| Public/Private | Publicly traded (fictional ticker: NBCP) |
-| Business model | Multi-manager / multi-boutique platform with ~12 affiliated investment teams across equities, fixed income, multi-asset, alternatives, and ETFs |
-| Total headcount | **825** |
-| Email domain | `@northbridgecp.com` |
-| Website (fictional) | northbridgecp.com |
-
----
-
-## 3. ORG HIERARCHY — EXACT HEADCOUNT BY LEVEL
-
-Generate exactly these counts. The hierarchy is 13 levels deep.
-
-| Level # | Level Name | Headcount | Notes |
-|---|---|---|---|
-| L1 | President & CEO | **1** | Reports to Board |
-| L2 | C-Suite Executives | **9** | COO, CFO, CHRO, CIO (Chief Investment Officer), CTO, Chief Legal Officer & General Counsel, Chief Risk Officer, Chief Compliance Officer, Chief Marketing Officer |
-| L3 | Executive Vice President (EVP) | **6** | Head of Distribution, Head of Fund Services, Head of Institutional, Head of International, Head of Product, Head of Corporate Strategy |
-| L4 | Senior Vice President / Managing Director (SVP/MD) | **30** | Division heads & deputy heads |
-| L5 | Vice President (VP) | **110** | Team leads & senior individual contributors |
-| L6 | Assistant Vice President (AVP) | **78** | |
-| L7 | Director | **72** | IC track equivalent to AVP/VP |
-| L8 | Senior Manager | **58** | |
-| L9 | Manager | **82** | First-line people managers |
-| L10 | Senior Associate | **122** | |
-| L11 | Associate | **122** | |
-| L12 | Analyst | **110** | Junior IC / new hires |
-| L13 | Coordinator / Administrative Assistant | **25** | Admin support |
-| **TOTAL** | | **825** | |
-
----
-
-## 4. DIVISIONS / COST CENTERS
-
-Generate the following 26 cost centers. Each employee belongs to exactly one. Headcount column gives the **target headcount per cost center** — total must reconcile to 825.
-
-| CC Code | Division | Sub-functions (examples) | Target HC |
-|---|---|---|---|
-| 1000 | Office of the CEO | Chief of Staff, Board Liaison, Executive Office | 6 |
-| 2000 | Investment Mgmt — Equities | PMs, analysts, traders for US/global equity boutiques | 95 |
-| 2100 | Investment Mgmt — Fixed Income | PMs, credit analysts, rates, EM debt | 75 |
-| 2200 | Investment Mgmt — Multi-Asset & Alternatives | Multi-asset allocation, event-driven, managed futures | 45 |
-| 2300 | Investment Research | Macro, fundamental, ESG, quant research | 50 |
-| 2400 | Trading & Portfolio Operations | Trade execution, portfolio implementation | 35 |
-| 3000 | Distribution — Retail Sales | Wholesalers, internal sales desk | 70 |
-| 3100 | Distribution — Institutional Sales | Consultant relations, key accounts | 35 |
-| 3200 | Distribution — International | EMEA & APAC sales | 25 |
-| 3300 | Marketing & Communications | Brand, content, PR, digital | 30 |
-| 3400 | Product Management & Strategy | Product development, pricing, lifecycle | 25 |
-| 4000 | Fund Services / Fund Administration | Fund accounting, treasury ops, NAV, transfer agency oversight | 80 |
-| 4100 | Operations | Reconciliations, settlements, corporate actions | 50 |
-| 4200 | Investor Relations | Shareholder relations, earnings, IR comms | 8 |
-| 5000 | Finance, Accounting & Treasury | FP&A, controller, treasury, GL | 40 |
-| 5100 | Tax | Corporate & fund tax | 10 |
-| 6000 | Legal | Corporate, funds, transactional, employment | 22 |
-| 6100 | Compliance | Regulatory, fund compliance, AML, surveillance | 30 |
-| 6200 | Risk Management | Investment risk, enterprise risk, ops risk | 18 |
-| 6300 | Internal Audit | SOX, ops audit, IT audit | 12 |
-| 7000 | Human Resources | TA, HRBP, L&D, Total Rewards, DEI | 22 |
-| 8000 | Technology / Infrastructure | Cloud, networks, end-user support, ServiceNow | 45 |
-| 8100 | Data & Analytics | Data engineering, BI, analytics, ML | 25 |
-| 8200 | Cybersecurity | InfoSec, SOC, GRC | 15 |
-| 9000 | Corporate Strategy & Business Dev | M&A, strategy, affiliate management | 12 |
-| 9100 | Facilities & Administration | Real estate, reception, exec assistants | 15 |
-
-**Total: 825** ✅
-
----
-
-## 5. OFFICE LOCATIONS — DISTRIBUTION
-
-Distribute employees across 12 offices. Use these targets (must sum to 825):
-
-| Office | City, State/Country | Region | Target HC | Notes |
-|---|---|---|---|---|
-| Hartford HQ | Hartford, CT, USA | Americas | **320** | HQ; Finance, HR, Legal, Compliance, Ops, Tech-heavy |
-| Manhattan | New York, NY, USA | Americas | **170** | Sales, Investment Mgmt, Marketing |
-| Stamford | Stamford, CT, USA | Americas | **45** | Growth equity boutique |
-| Pittsburgh | Pittsburgh, PA, USA | Americas | **50** | Fund Services hub |
-| Boston | Boston, MA, USA | Americas | **35** | Equity research, PM team |
-| Los Angeles | Los Angeles, CA, USA | Americas | **40** | Value equity & alts boutique |
-| Chicago | Chicago, IL, USA | Americas | **25** | Sales & consultant relations |
-| San Francisco | San Francisco, CA, USA | Americas | **20** | Tech & data team |
-| London | London, UK | EMEA | **60** | International distribution + EMEA investment |
-| Dublin | Dublin, Ireland | EMEA | **25** | UCITS / fund services EMEA |
-| Singapore | Singapore | APAC | **20** | APAC sales + tech |
-| Toronto | Toronto, Canada | Americas | **15** | Canadian distribution |
-
-**Total: 825** ✅
-
-**Location ↔ Division affinity (use these biases when assigning):**
-- Office of the CEO / Finance / HR / Legal / Compliance / Risk / Internal Audit / IR → **Hartford-heavy (60–80%)**
-- Investment Mgmt — Equities → NYC, Boston, LA, Stamford, London
-- Investment Mgmt — Fixed Income → Hartford, NYC, London, Dublin
-- Multi-Asset & Alternatives → Hartford, NYC, LA
-- Distribution — Retail → NYC, Chicago, Hartford, distributed
-- Distribution — International → London, Singapore, Hartford
-- Fund Services / Operations → Pittsburgh, Hartford, Dublin
-- Tech / Data / Cyber → Hartford, NYC, Singapore, San Francisco
-- Marketing → NYC, Hartford
-- Stamford office is ~80% Investment Mgmt — Equities (growth boutique)
-
----
-
-## 6. FIELDS TO GENERATE (Schema)
-
-Output the dataset as **CSV** with the following 45 columns, in this order:
-
-| # | Column | Type | Notes |
-|---|---|---|---|
-| 1 | `employee_id` | string | Format `NCP100001` … `NCP100825`. Sequential. |
-| 2 | `first_name` | string | Realistic per ethnicity/region |
-| 3 | `last_name` | string | Same |
-| 4 | `full_name` | string | `First Last` |
-| 5 | `preferred_name` | string | Often = first_name; sometimes diminutive (Mike, Liz, etc.) |
-| 6 | `gender` | enum | `Male` / `Female` / `Non-binary` / `Prefer not to disclose` |
-| 7 | `date_of_birth` | date | `YYYY-MM-DD`; consistent with `age` and level (see §7) |
-| 8 | `age` | int | Derived from DOB as of 2026-01-01 |
-| 9 | `ethnicity` | enum | See §7 — varies by office region |
-| 10 | `nationality` | string | Country code (e.g., `US`, `GB`, `IE`, `SG`, `CA`, `IN`) |
-| 11 | `marital_status` | enum | `Single` / `Married` / `Divorced` / `Widowed` / `Prefer not to disclose` |
-| 12 | `work_email` | string | `firstname.lastname@northbridgecp.com` (lowercase, append numbers on collision) |
-| 13 | `personal_email` | string | gmail/yahoo/outlook, plausible |
-| 14 | `work_phone` | string | Country-appropriate format |
-| 15 | `mobile_phone` | string | Same |
-| 16 | `office_location` | string | e.g., `Hartford HQ` |
-| 17 | `city` | string | |
-| 18 | `state_province` | string | State for US, country subdivision otherwise |
-| 19 | `country` | string | Full name |
-| 20 | `region` | enum | `Americas` / `EMEA` / `APAC` |
-| 21 | `time_zone` | string | e.g., `America/New_York`, `Europe/London`, `Asia/Singapore` |
-| 22 | `division` | string | From §4 table (Division column) |
-| 23 | `sub_department` | string | e.g., `Equities — US Large Cap Growth`, `Compliance — AML`, `Tech — Cloud Engineering` |
-| 24 | `team` | string | Specific team within sub-department |
-| 25 | `cost_center_code` | string | From §4 table (e.g., `2000`) |
-| 26 | `job_title` | string | Realistic & level-appropriate (e.g., `Senior Portfolio Manager, US Equity`) |
-| 27 | `job_level` | string | `L1`…`L13` |
-| 28 | `level_name` | string | `CEO`, `EVP`, `SVP`, `VP`, `AVP`, `Director`, `Senior Manager`, `Manager`, `Senior Associate`, `Associate`, `Analyst`, `Coordinator`, `C-Suite` |
-| 29 | `job_function` | enum | `Investment Management` / `Distribution & Sales` / `Operations` / `Technology` / `Finance` / `Legal & Compliance` / `Risk` / `HR` / `Marketing` / `Executive` / `Corporate Functions` |
-| 30 | `job_family` | string | Narrower than function (e.g., `Portfolio Management`, `Equity Research`, `Sales Wholesaler`, `Fund Accounting`) |
-| 31 | `manager_employee_id` | string | FK to another `employee_id`. CEO = `NULL`. Manager's level must be strictly more senior (lower L#). |
-| 32 | `manager_name` | string | Denormalized for convenience |
-| 33 | `skip_level_manager_id` | string | Two levels up |
-| 34 | `hire_date` | date | `YYYY-MM-DD`; consistent with age and tenure |
-| 35 | `tenure_years` | float | (2026-01-01 − hire_date) in years, 1 decimal |
-| 36 | `years_in_current_role` | float | ≤ tenure_years |
-| 37 | `last_promotion_date` | date or NULL | NULL if never promoted internally |
-| 38 | `employment_type` | enum | `Full-time` (95%), `Part-time` (3%), `Contractor` (1.5%), `Intern` (0.5%) |
-| 39 | `work_mode` | enum | `On-site` / `Hybrid` / `Remote` — see §7 |
-| 40 | `flsa_status` | enum | `Exempt` / `Non-exempt` (US only; use `N/A` for non-US) |
-| 41 | `education_level` | enum | `High School` / `Associate` / `Bachelor's` / `Master's` / `MBA` / `PhD` / `JD` |
-| 42 | `field_of_study` | string | e.g., `Finance`, `Economics`, `Computer Science`, `Accounting`, `Mathematics`, `Law` |
-| 43 | `university` | string | Plausible US/UK/SG/CA universities; mix top-tier and regional |
-| 44 | `graduation_year` | int | Consistent with age (typically `age − 22` for bachelor's) |
-| 45 | `certifications` | string (semicolon-separated) | e.g., `CFA;Series 7;Series 63`; can be empty |
-| 46 | `industry_experience_years` | int | ≥ tenure_years (prior experience elsewhere) |
-| 47 | `languages_spoken` | string | English required; add others based on region/ethnicity |
-| 48 | `last_performance_rating` | enum | `Exceeds Expectations` (15%) / `Strong Performer` (30%) / `Meets Expectations` (45%) / `Developing` (8%) / `Needs Improvement` (2%) |
-| 49 | `promotion_eligible` | bool | Higher likelihood at L9–L11 |
-| 50 | `veteran_status` | enum | `Veteran` (5% in US offices) / `Non-veteran` / `Prefer not to disclose` |
-| 51 | `disability_status` | enum | `Yes` (4%) / `No` / `Prefer not to disclose` |
-| 52 | `engagement_score` | int | 1–10, lightly correlated with performance rating |
-| 53 | `training_hours_last_12mo` | int | 0–80, median ~25 |
-| 54 | `employee_status` | enum | `Active` (97%) / `On Leave` (2%) / `Notice Period` (1%) |
-| 55 | `hire_source` | enum | `Internal Referral` (25%) / `Direct Application` (15%) / `Recruiter — External` (20%) / `LinkedIn` (20%) / `University Recruiting` (10%) / `Acquisition` (5%) / `Returning Employee` (5%) |
-
-*(Yes that's 55 — I added a few obvious analytical fields. Drop any you don't want.)*
-
----
-
-## 7. REALISM RULES & DISTRIBUTIONS
-
-### 7.1 Gender by level (realistic for asset management)
-| Level | % Female | % Male | % NB / PNS |
-|---|---|---|---|
-| L1 (CEO) | flip a coin | | — |
-| L2 (C-Suite) | 30% | 67% | 3% |
-| L3 (EVP) | 25% | 72% | 3% |
-| L4 (SVP/MD) | 28% | 70% | 2% |
-| L5 (VP) | 33% | 65% | 2% |
-| L6 (AVP) | 38% | 60% | 2% |
-| L7 (Director) | 40% | 58% | 2% |
-| L8 (Sr Manager) | 43% | 55% | 2% |
-| L9 (Manager) | 45% | 53% | 2% |
-| L10 (Sr Assoc) | 48% | 50% | 2% |
-| L11 (Assoc) | 50% | 48% | 2% |
-| L12 (Analyst) | 50% | 48% | 2% |
-| L13 (Coordinator) | 72% | 25% | 3% |
-
-Overall blended ratio should land around **44% F / 54% M / 2% other** — a believable asset-mgmt mix.
-
-### 7.2 Age by level
-| Level | Min | Mode | Max |
-|---|---|---|---|
-| L1 | 52 | 60 | 67 |
-| L2 | 46 | 54 | 64 |
-| L3 | 44 | 52 | 62 |
-| L4 | 40 | 48 | 60 |
-| L5 | 33 | 42 | 58 |
-| L6 | 30 | 38 | 52 |
-| L7 | 33 | 42 | 55 |
-| L8 | 30 | 38 | 50 |
-| L9 | 28 | 36 | 48 |
-| L10 | 26 | 31 | 42 |
-| L11 | 24 | 28 | 36 |
-| L12 | 22 | 24 | 29 |
-| L13 | 21 | 35 | 60 |
-
-### 7.3 Tenure
-- Senior (L1–L4): mix of long-tenured (10–25 yrs) and recent strategic hires (1–4 yrs)
-- Mid (L5–L8): median ~6 yrs, range 1–18
-- Junior (L9–L12): median ~3 yrs, range 0.2–10
-- L13: bimodal — long-time loyal admins (15+ yrs) and recent hires (0–2 yrs)
-- `hire_date` must be on or after employee's 22nd birthday (or 18th for L12/L13)
-- ~30% of L4+ should have `hire_source = Acquisition` (boutique acquisitions) with longer tenures starting at the acquisition year
-
-### 7.4 Ethnicity by office region
-**US offices** (Hartford, NYC, Stamford, Pittsburgh, Boston, LA, Chicago, SF):
-- White: 56%
-- Asian: 22% (slightly higher in SF & NYC tech roles, up to 35%)
-- Hispanic / Latino: 9%
-- Black / African American: 7%
-- Two or More Races: 3%
-- Prefer not to disclose: 3%
-
-**London**: White-British 48%, White-Other 18%, Asian (Indian/Pakistani/Bangladeshi) 15%, Black 6%, Mixed 5%, Other 8%
-**Dublin**: White-Irish 68%, White-Other EU 20%, Asian 6%, Other 6%
-**Singapore**: Chinese 70%, Malay 12%, Indian 9%, Other (incl. Western expats) 9%
-**Toronto**: White 52%, Asian (East + South) 28%, Black 7%, Hispanic 5%, Multiracial 5%, Other 3%
-
-### 7.5 Names — match to ethnicity & region
-- Use realistic, common names for each ethnicity/region combination
-- Vary heavily — avoid repeating the same surname more than ~3 times across 825 records
-- For London/Dublin/Singapore/Toronto, use locally appropriate names; don't import US naming patterns
-
-### 7.6 Work mode by level & function
-- L1–L4: Hybrid 80%, On-site 15%, Remote 5%
-- L5–L9: Hybrid 65%, On-site 25%, Remote 10%
-- L10–L13: Hybrid 55%, On-site 35%, Remote 10%
-- Tech & Data roles skew Remote/Hybrid (60% Hybrid, 25% Remote, 15% On-site)
-- Fund Services (Pittsburgh) skews On-site (50%) due to ops nature
-- Trading roles: 70%+ On-site
-
-### 7.7 Certifications by function
-- **Investment Mgmt / Research**: CFA very common at L4+ (~65%), CAIA for alts (~30%), FRM for risk (~25%)
-- **Distribution — Retail**: Series 7, 63, 65/66 standard; Series 24 for managers
-- **Finance / Tax / Audit**: CPA, CA, ACCA depending on geography
-- **Risk**: FRM, PRM
-- **Compliance**: Series 7 + Series 24 + JD common at senior levels
-- **Legal**: JD required at L4+ in Legal CC
-- **Tech / Data**: AWS / Azure / GCP certs, CISSP for cybersecurity, PMP
-
-### 7.8 Education
-- L4+ in Investment functions: 75% Master's/MBA, often Ivy or top-tier (Wharton, Booth, Sloan, Columbia, HBS, INSEAD, LBS)
-- L1–L3: 90%+ have graduate degree
-- L12 Analysts: ~95% Bachelor's, ~5% Master's
-- Mix of top-tier (Ivies, Stanford, MIT, LSE, Oxford, Cambridge, NUS, U Toronto), strong regional (UConn, Penn State, Boston College, Trinity College Dublin, NTU Singapore, UCLA, Berkeley, Michigan, Cornell), and lesser-known schools
-
-### 7.9 Performance rating distribution (overall)
-- Exceeds Expectations: 15%
-- Strong Performer: 30%
-- Meets Expectations: 45%
-- Developing: 8%
-- Needs Improvement: 2%
-
-### 7.10 Subtle realistic patterns to include
-- A small (~2%) over-representation of long tenure at L4+ in Hartford (loyalty effect)
-- Slightly lower gender diversity in Investment Mgmt vs. Marketing/HR
-- Pittsburgh skews older with longer tenure (back-office stability)
-- Singapore & London offices have higher % of employees with multi-lingual capability
-- Recently acquired affiliates (assign 2 fictional acquisitions: "Stamford Growth Advisers" acquired 2018 → Stamford office; "Halcyon Alternatives" acquired 2023 → LA office) — their employees should have `hire_source = Acquisition`
-
----
-
-## 8. STRUCTURAL INTEGRITY RULES (HARD CONSTRAINTS)
-
-These MUST hold. Validate before producing output.
-
-1. **Exactly 825 records, unique `employee_id`s `NCP100001`–`NCP100825`.**
-2. **Exactly one L1 (CEO).** CEO has `manager_employee_id = NULL`.
-3. **All 9 L2 C-Suite report to L1.**
-4. **All 6 L3 EVPs report to L1 or L2.**
-5. **Every non-CEO has a `manager_employee_id` referencing a real record with a strictly more senior level** (lower L#).
-6. **No circular reporting.** The graph must be a tree rooted at the CEO.
-7. **Allowed reporting ranges:**
-   - L4 → reports to L2 or L3
-   - L5 → L3 or L4
-   - L6 → L4 or L5
-   - L7 → L4 or L5
-   - L8 → L5, L6, or L7
-   - L9 → L5, L6, L7, or L8
-   - L10 → L7, L8, or L9
-   - L11 → L8, L9, or L10
-   - L12 → L9, L10, or L11
-   - L13 → L9, L10, or L11
-8. **Span of control:** No manager has more than ~12 direct reports. Median should be 4–7.
-9. **Cost-center alignment:** an employee's manager should usually be in the **same cost center**. Allow ~10% cross-CC reporting (matrix relationships).
-10. **Email uniqueness:** `work_email` must be unique. Resolve collisions by appending a number.
-11. **Date consistency:**
-    - `hire_date ≥ date_of_birth + 18 years` (22 for L12+ analyst roles)
-    - `years_in_current_role ≤ tenure_years`
-    - `last_promotion_date`, if present, ≥ `hire_date` and ≤ `2026-01-01`
-    - `graduation_year` consistent with age
-12. **Headcount per cost center matches §4 (±2 tolerance).**
-13. **Headcount per office matches §5 (±2 tolerance).**
-14. **No real-world names of actual Virtus / financial-services executives.**
-15. **No real addresses or phone numbers** — use plausible but clearly fictional patterns (e.g., NYC numbers `+1-212-555-0xxx`).
-
----
-
-## 9. OUTPUT FORMAT
-
-- Produce CSV with header row, one record per line.
-- UTF-8 encoded.
-- Quote any field containing commas, semicolons, or quotes.
-- Date format `YYYY-MM-DD`.
-- Booleans as `TRUE`/`FALSE`.
-- NULL as empty string.
-
----
-
-## 10. SAMPLE ROWS (for tone calibration — generate ~10 representative rows in your first response, then ask if you should proceed in batches)
-
-```
-employee_id,first_name,last_name,full_name,preferred_name,gender,date_of_birth,age,ethnicity,nationality,marital_status,work_email,personal_email,work_phone,mobile_phone,office_location,city,state_province,country,region,time_zone,division,sub_department,team,cost_center_code,job_title,job_level,level_name,job_function,job_family,manager_employee_id,manager_name,skip_level_manager_id,hire_date,tenure_years,years_in_current_role,last_promotion_date,employment_type,work_mode,flsa_status,education_level,field_of_study,university,graduation_year,certifications,industry_experience_years,languages_spoken,last_performance_rating,promotion_eligible,veteran_status,disability_status,engagement_score,training_hours_last_12mo,employee_status,hire_source
-NCP100001,Gregory,Aylsworth,Gregory Aylsworth,Greg,Male,1963-04-12,62,White,US,Married,gregory.aylsworth@northbridgecp.com,greg.aylsworth63@gmail.com,+1-860-555-0101,+1-860-555-2101,Hartford HQ,Hartford,CT,United States,Americas,America/New_York,Office of the CEO,Executive Office,Office of the President,1000,President & Chief Executive Officer,L1,CEO,Executive,Executive Leadership,,,,,2002-03-04,23.8,17.2,2008-11-15,Full-time,Hybrid,Exempt,MBA,Finance,University of Connecticut / UMass Amherst,1987,CPA,30,English,Strong Performer,FALSE,Non-veteran,No,9,42,Active,Internal Referral
-```
-
-*(Generate the remaining ~824 following all rules above.)*
-
----
-
-## 11. GENERATION STRATEGY (because 825 rows don't fit one LLM response)
-
-Generate in **phases** to maintain consistency:
-
-**Phase 1 — Org skeleton (top of the house):**
-Generate L1 + L2 + L3 + L4 = **46 records**. Lock down `employee_id`, name, division, cost_center, office, level. Output as CSV.
-
-**Phase 2 — Middle management:**
-Generate L5 + L6 + L7 = **260 records**. Each must report to someone from Phase 1 or Phase 2. Respect headcounts per CC and office.
-
-**Phase 3 — Manager layer:**
-Generate L8 + L9 = **140 records**. Same rules.
-
-**Phase 4 — Individual contributors:**
-Generate L10 + L11 = **244 records**.
-
-**Phase 5 — Junior staff & admin:**
-Generate L12 + L13 = **135 records**.
-
-After each phase, output:
-- The phase's CSV rows
-- A running tally of headcount by cost center and by office
-- Any constraint violations to flag
-
-At the end, output a final **integrity report**:
-- Total headcount = 825 ✅
-- All managers exist ✅
-- Per-CC and per-office targets met ✅
-- Gender / ethnicity / tenure distributions (summary stats)
-
----
-
-## 12. DASHBOARD ANALYSIS USE CASES (for your downstream context)
-
-The resulting dataset should power dashboards answering questions like:
-- Gender breakdown by level, division, and office (and gender pipeline: % female at each level)
-- Ethnicity mix overall and by function (DEI scorecard)
-- Age & tenure pyramids
-- Span-of-control distribution (and outliers — managers with too many or too few reports)
-- Headcount by cost center, office, region
-- Hybrid / remote / on-site mix by function
-- Education & certification coverage (e.g., % of Investment Mgmt with CFA)
-- Promotion velocity (years in role, time since last promotion)
-- Engagement score correlations
-- Acquired-affiliate vs. organic-hire workforce composition
-- Veteran / disability self-ID rates
-
-Keep these in mind so the data has enough variance and signal to drive interesting visuals.
-
----
-
-## 13. FINAL INSTRUCTIONS TO THE GENERATING LLM
-
-1. Confirm you understand the task by restating: total headcount, number of levels, number of cost centers, number of offices.
-2. Begin **Phase 1** and output the 46 senior records as CSV.
-3. Wait for the user to say `proceed` before each subsequent phase.
-4. If anything is ambiguous, ask **before** generating; don't invent silent rules.
-5. After Phase 5, output the integrity report.
-6. Remember: **synthetic, no salaries, no real persons, no real addresses.**
-
----
-
-*End of prompt.*
+Location ↔ Division bias
+	•	Corporate functions (CEO Office, Finance, HR, Legal, Compliance, Risk, Audit, IR) → Hartford-heavy (60–80%)
+	•	Equities → NYC, Boston, LA, Stamford, London | Fixed Income → Hartford, NYC, London, Dublin
+	•	Multi-Asset/Alts → Hartford, NYC, LA | Retail Sales → NYC, Chicago, Hartford
+	•	International Sales → London, Singapore | Fund Services/Ops → Pittsburgh, Hartford, Dublin
+	•	Tech/Data/Cyber → Hartford, NYC, Singapore, SF | Marketing → NYC, Hartford
+	•	Stamford office is ~80% Equities (acquired growth boutique)
+Fields to generate (40 columns, in this order)
+	1.	employee_id (NCP100001–NCP100825, sequential)
+	2.	first_name
+	3.	last_name
+	4.	full_name
+	5.	gender (Male / Female / Non-binary / Prefer not to disclose)
+	6.	date_of_birth (YYYY-MM-DD)
+	7.	age (as of 2026-01-01)
+	8.	ethnicity
+	9.	nationality (country code)
+	10.	work_email (firstname.lastname@northbridgecp.com, unique)
+	11.	office_location
+	12.	city
+	13.	state_province
+	14.	country
+	15.	region (Americas / EMEA / APAC)
+	16.	division
+	17.	sub_department
+	18.	team
+	19.	cost_center_code
+	20.	job_title (realistic, level-appropriate)
+	21.	job_level (L1…L13)
+	22.	level_name (CEO, C-Suite, EVP, SVP, VP, AVP, Director, Senior Manager, Manager, Senior Associate, Associate, Analyst, Coordinator)
+	23.	job_function (Investment Management / Distribution & Sales / Operations / Technology / Finance / Legal & Compliance / Risk / HR / Marketing / Executive / Corporate Functions)
+	24.	job_family
+	25.	manager_employee_id (CEO = blank; manager must be strictly more senior level)
+	26.	manager_name
+	27.	hire_date (YYYY-MM-DD; ≥ DOB + 18 yrs, or +22 for L12+)
+	28.	tenure_years (float, 1 decimal, vs 2026-01-01)
+	29.	employment_type (Full-time 95% / Part-time 3% / Contractor 1.5% / Intern 0.5%)
+	30.	work_mode (On-site / Hybrid / Remote)
+	31.	education_level (Bachelor's / Master's / MBA / PhD / JD / Associate / High School)
+	32.	field_of_study
+	33.	university
+	34.	certifications (semicolon-separated; e.g., CFA;Series 7)
+	35.	languages_spoken (English plus regional)
+	36.	last_performance_rating (Exceeds Expectations 15% / Strong Performer 30% / Meets Expectations 45% / Developing 8% / Needs Improvement 2%)
+	37.	veteran_status (Veteran 5% in US / Non-veteran / Prefer not to disclose)
+	38.	engagement_score (1–10, loosely tracks performance)
+	39.	employee_status (Active 97% / On Leave 2% / Notice Period 1%)
+	40.	hire_source (Internal Referral 25% / Direct Application 15% / Recruiter — External 20% / LinkedIn 20% / University Recruiting 10% / Acquisition 5% / Returning Employee 5%)
+Gender by level (target %F / %M / %NB-PNS)
+L1 coin-flip · L2 30/67/3 · L3 25/72/3 · L4 28/70/2 · L5 33/65/2 · L6 38/60/2 · L7 40/58/2 · L8 43/55/2 · L9 45/53/2 · L10 48/50/2 · L11 50/48/2 · L12 50/48/2 · L13 72/25/3
+Age by level (min / mode / max)
+L1 52/60/67 · L2 46/54/64 · L3 44/52/62 · L4 40/48/60 · L5 33/42/58 · L6 30/38/52 · L7 33/42/55 · L8 30/38/50 · L9 28/36/48 · L10 26/31/42 · L11 24/28/36 · L12 22/24/29 · L13 21/35/60
+Ethnicity by office region
+	•	US offices: White 56% / Asian 22% / Hispanic 9% / Black 7% / Two-or-More 3% / PNS 3% (SF & NYC tech may push Asian to 35%)
+	•	London: White-British 48% / White-Other 18% / South Asian 15% / Black 6% / Mixed 5% / Other 8%
+	•	Dublin: White-Irish 68% / White-Other EU 20% / Asian 6% / Other 6%
+	•	Singapore: Chinese 70% / Malay 12% / Indian 9% / Other 9%
+	•	Toronto: White 52% / Asian 28% / Black 7% / Hispanic 5% / Mixed 5% / Other 3%
+Hard rules
+	1.	Exactly one CEO (manager_employee_id blank).
+	2.	Every other employee has a manager whose level is strictly more senior (lower L#).
+	3.	No manager has more than ~12 direct reports; median 4–7.
+	4.	Manager and report usually share the same cost center (~10% cross-CC matrix allowed).
+	5.	work_email unique (append numbers on collision).
+	6.	hire_date ≥ DOB + 18 yrs (≥ 22 for L12 Analysts).
+	7.	No real-world names of actual financial-services executives. No real addresses or phone numbers.
+	8.	Output as CSV with header row; UTF-8; quote fields containing commas.
+Realism touches
+	•	Two fictional acquisitions seed hire_source = Acquisition: “Stamford Growth Advisers” (2018, Stamford) and “Halcyon Alternatives” (2023, LA).
+	•	CFA common in Investment Mgmt at L4+ (~65%). Series 7/63/65/66 standard in Distribution. JD required in Legal at L4+. CPA/CA in Finance/Tax/Audit.
+	•	Tech/Data roles skew Remote/Hybrid; Trading skews On-site; Pittsburgh Fund Services skews On-site.
+End of Reference Card. Acknowledge you understand, then wait for the user to send STEP 1.
