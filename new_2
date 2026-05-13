@@ -1,72 +1,321 @@
+Northbridge Capital Partners — Synthetic Employee
+Data
+Step-by-Step Prompts for Microsoft Copilot
+Copilot can’t generate 825 rows in one shot. Use this in 7 sequential steps. Paste STEP
+0 (Reference Card) at the start of each new chat so Copilot has context, then run the
+steps in order. After each step, save the CSV output, then move to the next step. The last
+step is a validation pass.
+STEP 0 — REFERENCE CARD (paste at the start of every chat)
+You are generating a fully synthetic employee dataset for a fictional firm called Northbridge
+Capital Partners (NCP) — a multi-boutique asset manager modeled on a Virtus-style
+company. No real people, no real addresses, no salaries.
+Company facts
+Legal name: Northbridge Capital Partners, Inc. | Ticker (fictional): NBCP
+HQ: Hartford, CT | Founded: 1998 | Industry: Asset Management (multi-boutique)
+Email domain: @northbridgecp.com
+Total headcount target: 825
+Hierarchy (13 levels, exact counts)
+L Title HC
+L1 President & CEO 1
+L2 C-Suite (COO, CFO, CHRO, CIO, CTO, CLO, CRO, CCO, CMO) 9
+L3 EVP 6
+L4 SVP / Managing Director 30
+L5 Vice President 110
+L6 Assistant Vice President 78
+L7 Director 72
+L8 Senior Manager 58
+L9 Manager 82
+L10 Senior Associate 122
+L11 Associate 122
+L12 Analyst 110
+L13 Coordinator / Admin 25
+Divisions / Cost Centers (26 total, target HC)
+Code Division HC
+1000 Office of the CEO 6
+2000 Investment Mgmt — Equities 95
+2100 Investment Mgmt — Fixed Income 75
+2200 Investment Mgmt — Multi-Asset & Alternatives 45
+2300 Investment Research 50
+2400 Trading & Portfolio Operations 35
+3000 Distribution — Retail Sales 70
+3100 Distribution — Institutional Sales 35
+3200 Distribution — International 25
+3300 Marketing & Communications 30
+3400 Product Management & Strategy 25
+4000 Fund Services / Fund Administration 80
+4100 Operations 50
+4200 Investor Relations 8
+5000 Finance, Accounting & Treasury 5100 Tax 6000 Legal 6100 Compliance 6200 Risk Management 6300 Internal Audit 7000 Human Resources 8000 Technology / Infrastructure 8100 Data & Analytics 8200 Cybersecurity 9000 Corporate Strategy & Business Dev 9100 Facilities & Administration Offices (12 total, target HC)
+Office City Hartford HQ Hartford, CT Manhattan New York, NY Stamford Stamford, CT Pittsburgh Pittsburgh, PA Boston Boston, MA Los Angeles Los Angeles, CA Chicago Chicago, IL San Francisco San Francisco, CA London London, UK Dublin Dublin, Ireland Region Americas Americas Americas Americas Americas Americas Americas Americas EMEA EMEA 40
+10
+22
+30
+18
+12
+22
+45
+25
+15
+12
+15
+HC
+320
+170
+45
+50
+35
+40
+25
+20
+60
+25
+Singapore Singapore APAC 20
+Toronto Toronto, Canada Americas 15
 Location ↔ Division bias
-	•	Corporate functions (CEO Office, Finance, HR, Legal, Compliance, Risk, Audit, IR) → Hartford-heavy (60–80%)
-	•	Equities → NYC, Boston, LA, Stamford, London | Fixed Income → Hartford, NYC, London, Dublin
-	•	Multi-Asset/Alts → Hartford, NYC, LA | Retail Sales → NYC, Chicago, Hartford
-	•	International Sales → London, Singapore | Fund Services/Ops → Pittsburgh, Hartford, Dublin
-	•	Tech/Data/Cyber → Hartford, NYC, Singapore, SF | Marketing → NYC, Hartford
-	•	Stamford office is ~80% Equities (acquired growth boutique)
+Corporate functions (CEO Office, Finance, HR, Legal, Compliance, Risk, Audit, IR) →
+Hartford-heavy (60–80%)
+Equities → NYC, Boston, LA, Stamford, London | Fixed Income → Hartford, NYC, London,
+Dublin
+Multi-Asset/Alts → Hartford, NYC, LA | Retail Sales → NYC, Chicago, Hartford
+International Sales → London, Singapore | Fund Services/Ops → Pittsburgh, Hartford,
+Dublin
+Tech/Data/Cyber → Hartford, NYC, Singapore, SF | Marketing → NYC, Hartford
+Stamford office is ~80% Equities (acquired growth boutique)
 Fields to generate (40 columns, in this order)
-	1.	employee_id (NCP100001–NCP100825, sequential)
-	2.	first_name
-	3.	last_name
-	4.	full_name
-	5.	gender (Male / Female / Non-binary / Prefer not to disclose)
-	6.	date_of_birth (YYYY-MM-DD)
-	7.	age (as of 2026-01-01)
-	8.	ethnicity
-	9.	nationality (country code)
-	10.	work_email (firstname.lastname@northbridgecp.com, unique)
-	11.	office_location
-	12.	city
-	13.	state_province
-	14.	country
-	15.	region (Americas / EMEA / APAC)
-	16.	division
-	17.	sub_department
-	18.	team
-	19.	cost_center_code
-	20.	job_title (realistic, level-appropriate)
-	21.	job_level (L1…L13)
-	22.	level_name (CEO, C-Suite, EVP, SVP, VP, AVP, Director, Senior Manager, Manager, Senior Associate, Associate, Analyst, Coordinator)
-	23.	job_function (Investment Management / Distribution & Sales / Operations / Technology / Finance / Legal & Compliance / Risk / HR / Marketing / Executive / Corporate Functions)
-	24.	job_family
-	25.	manager_employee_id (CEO = blank; manager must be strictly more senior level)
-	26.	manager_name
-	27.	hire_date (YYYY-MM-DD; ≥ DOB + 18 yrs, or +22 for L12+)
-	28.	tenure_years (float, 1 decimal, vs 2026-01-01)
-	29.	employment_type (Full-time 95% / Part-time 3% / Contractor 1.5% / Intern 0.5%)
-	30.	work_mode (On-site / Hybrid / Remote)
-	31.	education_level (Bachelor's / Master's / MBA / PhD / JD / Associate / High School)
-	32.	field_of_study
-	33.	university
-	34.	certifications (semicolon-separated; e.g., CFA;Series 7)
-	35.	languages_spoken (English plus regional)
-	36.	last_performance_rating (Exceeds Expectations 15% / Strong Performer 30% / Meets Expectations 45% / Developing 8% / Needs Improvement 2%)
-	37.	veteran_status (Veteran 5% in US / Non-veteran / Prefer not to disclose)
-	38.	engagement_score (1–10, loosely tracks performance)
-	39.	employee_status (Active 97% / On Leave 2% / Notice Period 1%)
-	40.	hire_source (Internal Referral 25% / Direct Application 15% / Recruiter — External 20% / LinkedIn 20% / University Recruiting 10% / Acquisition 5% / Returning Employee 5%)
-Gender by level (target %F / %M / %NB-PNS)
-L1 coin-flip · L2 30/67/3 · L3 25/72/3 · L4 28/70/2 · L5 33/65/2 · L6 38/60/2 · L7 40/58/2 · L8 43/55/2 · L9 45/53/2 · L10 48/50/2 · L11 50/48/2 · L12 50/48/2 · L13 72/25/3
-Age by level (min / mode / max)
-L1 52/60/67 · L2 46/54/64 · L3 44/52/62 · L4 40/48/60 · L5 33/42/58 · L6 30/38/52 · L7 33/42/55 · L8 30/38/50 · L9 28/36/48 · L10 26/31/42 · L11 24/28/36 · L12 22/24/29 · L13 21/35/60
+1. employee_id ( NCP100001– NCP100825 , sequential)
+2. first
+name
+_
+3. last
+name
+_
+4. full
+name
+_
+5. gender ( Male / Female / Non-binary / Prefer not to disclose )
+6. date
+of
+_
+_birth (YYYY-MM-DD)
+7. age (as of 2026-01-01)
+8. ethnicity
+9. nationality (country code)
+10. work
+_email ( firstname.lastname@northbridgecp.com , unique)
+11. office
+location
+_
+12. city
+13. state
+_province
+14. country
+15. region ( Americas / EMEA / APAC )
+16. division
+17. sub
+_department
+18. team
+19. cost
+center
+code
+_
+_
+20. job_title (realistic, level-appropriate)
+21. job_level ( L1 … L13 )
+22. level
+_name ( CEO , C-Suite , EVP , SVP , VP , AVP , Director , Senior Manager ,
+Manager , Senior Associate , Associate , Analyst , Coordinator )
+23. job_function ( Investment Management / Distribution & Sales / Operations /
+Technology / Finance / Legal & Compliance / Risk / HR / Marketing / Executive /
+Corporate Functions )
+24. job_family
+25. manager_employee_id (CEO = blank; manager must be strictly more senior level)
+26. manager_
+name
+27. hire
+_date (YYYY-MM-DD; ≥ DOB + 18 yrs, or +22 for L12+)
+28. tenure
+_years (float, 1 decimal, vs 2026-01-01)
+29. employment_type ( Full-time 95% / Part-time 3% / Contractor 1.5% / Intern
+0.5%)
+30. work
+_mode ( On-site / Hybrid / Remote )
+31. education
+_level ( Bachelor's / Master's / MBA / PhD / JD / Associate / High
+School )
+32. field
+of
+_
+_study
+33. university
+34. certifications (semicolon-separated; e.g., CFA;Series 7 )
+35. languages_spoken (English plus regional)
+36. last
+_performance_rating ( Exceeds Expectations 15% / Strong Performer 30% /
+Meets Expectations 45% / Developing 8% / Needs Improvement 2%)
+37. veteran
+_status ( Veteran 5% in US / Non-veteran / Prefer not to disclose )
+38. engagement_score (1–10, loosely tracks performance)
+39. employee_status ( Active 97% / On Leave 2% / Notice Period 1%)
+40. hire
+_source ( Internal Referral 25% / Direct Application 15% / Recruiter —
+External 20% / LinkedIn 20% / University Recruiting 10% / Acquisition 5% /
+Returning Employee 5%)
+Gender by level (target %F / %M / %NB-PNS) L1 coin-flip · L2 30/67/3 · L3 25/72/3 · L4
+28/70/2 · L5 33/65/2 · L6 38/60/2 · L7 40/58/2 · L8 43/55/2 · L9 45/53/2 · L10 48/50/2 · L11
+50/48/2 · L12 50/48/2 · L13 72/25/3
+Age by level (min / mode / max) L1 52/60/67 · L2 46/54/64 · L3 44/52/62 · L4 40/48/60 · L5
+33/42/58 · L6 30/38/52 · L7 33/42/55 · L8 30/38/50 · L9 28/36/48 · L10 26/31/42 · L11
+24/28/36 · L12 22/24/29 · L13 21/35/60
 Ethnicity by office region
-	•	US offices: White 56% / Asian 22% / Hispanic 9% / Black 7% / Two-or-More 3% / PNS 3% (SF & NYC tech may push Asian to 35%)
-	•	London: White-British 48% / White-Other 18% / South Asian 15% / Black 6% / Mixed 5% / Other 8%
-	•	Dublin: White-Irish 68% / White-Other EU 20% / Asian 6% / Other 6%
-	•	Singapore: Chinese 70% / Malay 12% / Indian 9% / Other 9%
-	•	Toronto: White 52% / Asian 28% / Black 7% / Hispanic 5% / Mixed 5% / Other 3%
+US offices: White 56% / Asian 22% / Hispanic 9% / Black 7% / Two-or-More 3% / PNS
+3% (SF & NYC tech may push Asian to 35%)
+London: White-British 48% / White-Other 18% / South Asian 15% / Black 6% / Mixed 5%
+/ Other 8%
+Dublin: White-Irish 68% / White-Other EU 20% / Asian 6% / Other 6%
+Singapore: Chinese 70% / Malay 12% / Indian 9% / Other 9%
+Toronto: White 52% / Asian 28% / Black 7% / Hispanic 5% / Mixed 5% / Other 3%
 Hard rules
-	1.	Exactly one CEO (manager_employee_id blank).
-	2.	Every other employee has a manager whose level is strictly more senior (lower L#).
-	3.	No manager has more than ~12 direct reports; median 4–7.
-	4.	Manager and report usually share the same cost center (~10% cross-CC matrix allowed).
-	5.	work_email unique (append numbers on collision).
-	6.	hire_date ≥ DOB + 18 yrs (≥ 22 for L12 Analysts).
-	7.	No real-world names of actual financial-services executives. No real addresses or phone numbers.
-	8.	Output as CSV with header row; UTF-8; quote fields containing commas.
+1. Exactly one CEO ( manager_employee_id blank).
+2. Every other employee has a manager whose level is strictly more senior (lower L#).
+3. No manager has more than ~12 direct reports; median 4–7.
+4. Manager and report usually share the same cost center (~10% cross-CC matrix
+allowed).
+5. work_email unique (append numbers on collision).
+6. hire_date ≥ DOB + 18 yrs (≥ 22 for L12 Analysts).
+7. No real-world names of actual financial-services executives. No real addresses or phone
+numbers.
+8. Output as CSV with header row; UTF-8; quote fields containing commas.
 Realism touches
-	•	Two fictional acquisitions seed hire_source = Acquisition: “Stamford Growth Advisers” (2018, Stamford) and “Halcyon Alternatives” (2023, LA).
-	•	CFA common in Investment Mgmt at L4+ (~65%). Series 7/63/65/66 standard in Distribution. JD required in Legal at L4+. CPA/CA in Finance/Tax/Audit.
-	•	Tech/Data roles skew Remote/Hybrid; Trading skews On-site; Pittsburgh Fund Services skews On-site.
-End of Reference Card. Acknowledge you understand, then wait for the user to send STEP 1.
+Two fictional acquisitions seed hire_source = Acquisition : “Stamford Growth
+Advisers” (2018, Stamford) and “Halcyon Alternatives” (2023, LA).
+CFA common in Investment Mgmt at L4+ (~65%). Series 7/63/65/66 standard in
+Distribution. JD required in Legal at L4+. CPA/CA in Finance/Tax/Audit.
+Tech/Data roles skew Remote/Hybrid; Trading skews On-site; Pittsburgh Fund Services
+skews On-site.
+End of Reference Card. Acknowledge you understand, then wait for the user to send STEP
+1.
+STEP 1 — Top of House (46 records: L1 + L2 + L3 + L4)
+Using the Reference Card, generate the top 46 employees:
+1× L1 (CEO)
+9× L2 (C-Suite)
+6× L3 (EVP)
+30× L4 (SVP/MD)
+Rules for this step:
+CEO sits in Cost Center 1000 (Office of the CEO), Hartford HQ.
+All 9 C-Suite report to the CEO. Distribute across cost centers (CFO → 5000, CHRO →
+7000, CLO → 6000, CCO → 6100, CRO → 6200, CTO → 8000, CMO → 3300, CIO →
+2300, COO → 4100). All Hartford HQ except CMO who can be NYC.
+6 EVPs report to CEO or relevant C-Suite. They head: Distribution (3000), Fund Services
+(4000), Institutional Sales (3100), International (3200), Product (3400), Corporate
+Strategy (9000).
+30 SVPs spread across all 26 cost centers — every cost center gets at least one SVP/MD
+acting as its head. Larger CCs (Equities, Retail Sales, Fund Services, Tech) get 2–3
+SVPs.
+Mix US offices (~75%) with London (3–4 SVPs), Dublin (1), Singapore (1).
+Output CSV with header row + 46 rows.
+After the CSV, list: count by level, count by cost center, count by office.
+Generate now.
+STEP 2 — VPs (110 records: L5)
+Using the Reference Card and the 46 employees already generated, add 110 Vice
+Presidents (L5).
+Rules:
+Each VP reports to an L3 or L4 from Step 1.
+Distribute across cost centers proportional to remaining HC budget (heaviest: Equities,
+Fund Services, Retail Sales, Fixed Income, Operations, Tech).
+Distribute across offices respecting the Reference Card geographic targets.
+No L4 manager has more than 8 direct VPs.
+Apply gender, age, ethnicity, tenure rules from Reference Card.
+Hire dates: tenure mostly 3–15 years; some recent strategic hires at 1–3 years.
+Output CSV (header + 110 rows). End with: count by CC, count by office, total org
+headcount so far (should be 156).
+Generate now.
+STEP 3 — AVPs and Directors (150 records: L6 + L7)
+Add 78 AVPs (L6) + 72 Directors (L7) = 150 records.
+Rules:
+AVPs and Directors report to L4 or L5.
+Directors are typically senior individual contributors (IC track); AVPs are mid-
+management with small teams.
+Distribute across cost centers and offices per Reference Card targets, filling toward the
+per-CC target HC.
+Tenure mostly 2–12 years.
+No manager has more than 10 direct reports across L6+L7 combined.
+Output CSV (header + 150 rows). End with: count by level, count by CC, count by office,
+total org headcount so far (should be 306).
+Generate now.
+STEP 4 — Senior Managers and Managers (140 records: L8 +
+L9)
+Add 58 Senior Managers (L8) + 82 Managers (L9) = 140 records.
+Rules:
+L8 reports to L5/L6/L7. L9 reports to L5/L6/L7/L8.
+These are the first-line people-manager tier; each should plausibly have 3–8 reports
+waiting in later steps.
+Mid-career employees: tenure mostly 2–10 years, ages 28–48.
+Match per-CC and per-office gaps from running tallies.
+Output CSV (header + 140 rows). End with: count by level, count by CC, count by office,
+total headcount so far (should be 446).
+Generate now.
+STEP 5 — Senior Associates (122 records: L10)
+Add 122 Senior Associates (L10).
+Rules:
+Report to L7, L8, or L9.
+Mid-junior tier: ages 26–42, tenure 1–8 years.
+Distribute toward filling remaining per-CC and per-office gaps.
+Gender close to 48F / 50M / 2 other.
+Apply ethnicity by region, certifications per function.
+Output CSV (header + 122 rows). End with: count by CC, count by office, total
+headcount so far (should be 568).
+Generate now.
+STEP 6 — Associates (122 records: L11)
+Add 122 Associates (L11).
+Rules:
+Report to L8, L9, or L10.
+Junior professional tier: ages 24–36, tenure 0.5–6 years.
+Heavier in Investment Research, Fund Services, Operations, Tech, Compliance,
+Distribution support.
+Gender close to 50F / 48M / 2 other.
+Output CSV (header + 122 rows). End with: count by CC, count by office, total
+headcount so far (should be 690).
+Generate now.
+STEP 7 — Analysts and Coordinators (135 records: L12 + L13)
+Add 110 Analysts (L12) + 25 Coordinators/Admin (L13) = 135 records. This closes the
+org.
+Rules:
+L12 reports to L9/L10/L11. Ages 22–29; tenure 0.2–4 years; 95% Bachelor’s, 5%
+Master’s. Heavier in Investment Research, Fund Services, Ops, Tech, Data, Finance,
+Compliance.
+L13 reports to L9/L10/L11. Bimodal age: long-tenured admins (15+ yrs, age 45–60) AND
+recent hires (0–2 yrs, age 21–28). 72% female. Spread across all offices supporting
+senior leaders.
+After generation, the final totals must hit Reference Card targets (±2 tolerance per
+CC/office).
+Output CSV (header + 135 rows). End with: count by level (verify all 13), count by CC
+(verify all 26), count by office (verify all 12), grand total (must be 825).
+Generate now.
+STEP 8 — Validation Pass
+Run these checks against the full 825-record dataset and report any failures:
+1. Headcount: exactly 825 unique employee_id s from NCP100001 to NCP100825.
+2. Per-level counts match Reference Card exactly (1 / 9 / 6 / 30 / 110 / 78 / 72 / 58 / 82 /
+122 / 122 / 110 / 25).
+3. Per-cost-center counts within ±2 of Reference Card targets.
+4. Per-office counts within ±2 of Reference Card targets.
+5. Manager integrity: every manager_employee_id (except CEO’s, which is blank) exists in
+the dataset AND points to an employee with a strictly more senior level.
+6. Span of control: list any manager with more than 12 direct reports.
+7. Email uniqueness: all work_email values unique.
+8. Date sanity: hire_date ≥ DOB + 18 years for all rows; no hire_date after 2026-01-
+01.
+9. Distribution summary: print overall gender %, ethnicity %, region %, work_mode %,
+and average tenure by level.
+10. Acquisition cohort: confirm Stamford office has employees with hire_source =
+Acquisition and hire dates ≥ 2018; LA office has some with hire_source =
+Acquisition and hire dates ≥ 2023.
+Output a short pass/fail report. If anything fails, list affected employee_id s.
+TIPS WHEN RUNNING IN COPILOT
+Start each step in a fresh chat if Copilot’s context fills up. Paste the Reference Card
+(Step 0) first, then say “Here are the records generated so far” and paste the running
+CSV, then run the next step’s prompt.
+After each step, download the CSV chunk before moving on — don’t trust Copilot to
+remember it perfectly across steps.
+If Copilot truncates a CSV mid-row, ask: “Continue the CSV from row N” (give the last
+employee_id it completed).
+Merge all 7 CSV chunks into one master file before running Step 8.
