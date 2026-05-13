@@ -1,1127 +1,419 @@
+# PROMPT — Synthetic Employee Dataset for "Northbridge Capital Partners"
 
-The Microsoft 365 Copilot Power-User Playbook
-(May 2026)
-Volume 3: Saved Prompts, Tips & Tricks, Standard Power
-Automate, and the Wider M365 Productivity Stack
-TL;DR
-The single highest-leverage move for any user is to combine the Microsoft Copilot
-Prompt Gallery (Microsoft / Your prompts / Team prompts tabs in Copilot Chat), Saved
-prompts (hover any prompt → bookmark icon), Scheduled prompts (up to 10 per user,
-GA since January 2026), and a shared SharePoint List “Prompt Library” rendered as
-Prompt Cards via JSON formatting.
-The biggest skill upgrade is meta-prompting: ask Copilot to interview you (“Ask me 5
-questions before you start”), critique its own draft, rewrite your prompt, and force
-structure. These four moves consistently outperform longer one-shot prompts.
-The firm’s “no agents / no autonomous flows” guardrails still leave a rich toolbox:
-standard-connector Power Automate flows, Copilot Notebooks with per-notebook
-custom instructions and audio overviews, Copilot Pages, Researcher, Create, plus
-the M365 productivity layer (OneNote, Loop, Forms, Planner, Whiteboard,
-Stream/Clipchamp, Lists, Bookings, Viva Insights/Engage/Learning, Designer, Sway,
-Power BI Copilot, Edge Copilot Mode).
-Key Findings
-1. The Prompt Gallery is the home base. Microsoft consolidated prompt-sharing into the
-in-Chat Prompt Gallery with three tabs — Microsoft prompts, Your prompts, Team
-prompts. The standalone “Prompts” Teams app Lindsaytshelton was discontinued July
-15, 2025; saved prompts now live in the Microsoft 365 Substrate Data Store, tenant-
-scoped.
-2. Scheduled prompts are a hidden game-changer. GA since January 2026. License
-required: Microsoft 365 Copilot. Limit: 10 per user. GitHub Backed by a locked-down
-Power Platform “Microsoft 365” environment with fixed DLP — fully compatible with the
-firm’s restrictions.
-3. Meta-prompting outperforms one-shot prompts. Best patterns: “Ask me N questions
-first”, “Echo back what you understood”, “Improve this prompt then answer the improved
-version”, “List the 3 weakest claims and how I’d verify each”, “Critique your answer as a
-sceptical reviewer”.
-4. Notebooks ≠ Pages ≠ Loop. Notebooks (per-notebook custom instructions, podcast-
-style Audio Overview, grounded only in references) for project research. Pages (built on
-Loop, paste as live components) IW Mentor for joint drafting. Loop for ongoing
-workspaces.
-5. Standard-connector Power Automate is genuinely productive. Outlook, Teams,
-SharePoint, OneDrive, Excel Online (Business), Approvals, Forms, Planner, To Do, Office
-365 Users connectors alone enable email triage, attachment archival, approvals, status
-digests, scheduled distribution, OOO handover, recognition flows, and Form-to-task
-pipelines — no premium licenses, no Dataverse, no agents.
-6. Verifying Copilot output is non-negotiable. Microsoft’s own guidance: outputs are
-drafts; click every citation; never use for final regulated content.
-Details
-Part 1 — Saved Prompts and Prompt Library Strategy
-1.1 The Microsoft Copilot Prompt Gallery (built-in, official)
-Where it lives: m365.cloud.microsoft/copilot-prompts Teams/Outlook/microsoft365.com. Three tabs:
-(web), and inside Copilot Chat in
-Microsoft prompts — curated by role/scenario (Catch up, Ask, Learn, Create, Analyze,
-Prepare, Understand, Code, Execute, Find, Edit, Schedule). Microsoft 365
-Your prompts — your saved prompts; private to you.
-Team prompts — prompts shared into Microsoft 365 Groups/Teams.
-How to save (per Microsoft Support): run the prompt → hover the bubble → click Save
-prompt (bookmark icon) Lindsaytshelton → rename descriptively. Find later under Prompt
-Gallery → Your prompts. Microsoft Support Windows Forum
-How to share to a team: open it under Your prompts → Share to team → select the M365
-Team. Members see it under Team prompts.
-1.2 Scheduled Prompts (every user’s free executive assistant)
-Status (May 2026): GA since January 2026. License required: M365 Copilot. Limit: 10
-active per user.
-Setup: Copilot Chat (microsoft365.com/chat, Teams, Outlook) → run prompt once → hover
-response → Schedule this prompt (clock icon) → choose frequency, time, run count,
-optional email notification. Microsoft Support HubSite 365 Manage via “…” → Scheduled
-prompts. Microsoft Support
-High-value scheduled prompts (copy-paste):
-When Prompt
-Weekdays
-7:30 AM
-“Summarise my unread emails from the past 24 hours. Rank by importance (1–
-5). For anything ≥ 4, draft a 3-sentence reply suggestion. Output as a
-markdown table.”
-Mondays
-8:00 AM
-“Review my calendar for the week. For each meeting, list: organiser, purpose, 3
-talking points, prep work. Flag conflicts.”
-Fridays
-4:00 PM
-“Summarise this week’s Teams chats and meeting notes for [Project X]. List
-decisions, open questions, action items with owners, and risks to escalate.”
-End of
-day
-“Recap my completed and outstanding tasks today across email, Teams, and
-Planner. Draft my end-of-day status update for my manager (under 120
-words).”
-Mondays
-9:00 AM
-“Search trusted web sources for mentions of [our company / top 3 competitors]
-from the past 7 days. Summarise as a 5-bullet executive brief with source links.”
-1st of
-month
-“Draft my monthly accomplishments using my emails, Teams messages, and
-completed Planner tasks. Group by theme. Quantify impact.”
-1.3 Building a firm-wide prompt library — three patterns
-Pattern A — Microsoft Lists “Prompt Library” (most scalable; PnP-published).
-Columns: Title, Prompt, Category (Catch up / Create / Understand / Analyze / Edit / Ask /
-Schedule), Works in (Word, Excel, PPT, Outlook, Teams, Chat, Notebooks, Researcher,
-Planner, Forms, Loop, OneNote), Contoso Corporation Department, Owner, Last Updated,
-Example Output. Apply the Prompt Cards JSON formatter from the official PnP samples.
-Add a Microsoft Forms front-end (“What’s your favourite prompt?”) for submissions. Use
-Add-SPOListDesign to publish as a reusable list template. Contoso Corporation
-Pattern B — SharePoint page (lowest friction). Single page, prompts grouped by use
-case. Best for pilots. Mr. SharePoint
-Pattern C — Loop workspace + Pages. One Page per category with embedded Loop
-components. Best when prompts are evolving rapidly.
-Governance: named owner per category; quarterly review; tag prompts as Approved /
-Experimental / Deprecated; sign-off for sensitive categories (Legal, Finance).
-1.4 The 25 prompts every firm should seed its library with
-1. 2. 3. 4. 5. 6. 7. 8. 9. 10. 11. 12. 13. Catch up — “Summarise everything in [Project] since [date], grouped by topic, then list
-decisions, open questions, action items with owners.”
-Inbox triage — “Group emails into Needs reply / FYI / Newsletter / Action requested. For
-‘Needs reply’, draft a 2-sentence response.”
-Meeting prep — “I have a meeting with /[person] tomorrow. Summarise our last 5
-interactions and propose a 1-page brief: their priorities, my talking points, 3 questions, 1
-risk.”
-Reverse-prompt — “Before answering, ask me 5 questions about goal, audience,
-format, length, and constraints.”
-Meta-prompt rewrite — “Improve this prompt: [paste]. Show the improved version,
-explain changes, then answer the improved version.”
-Echo-back — “Restate my request, list assumptions, ask anything missing before
-answering.”
-Few-shot — “Here are 3 examples of the format: [A], [B], [C]. Now produce one for
-[new input].”
-Self-critique — “Now act as a sceptical reviewer. List the 5 weakest points, what could
-be wrong, what evidence would change your mind.”
-Format-forcing — table — “Reply only as a markdown table with columns: [list]. No
-prose.”
-Format-forcing — JSON — “Reply as valid JSON with keys: [list]. No commentary.”
-Tone transfer — “Rewrite in the tone of [our brand voice doc / a professional but warm
-internal memo].”
-Length controls — “Three versions: 50 words for Slack, 200 for email, 800 for a memo.
-Each must stand alone.”
-Step-by-step — “Walk through your reasoning step by step, numbered, then give the
-final answer.”
-14. 15. 16. 17. 18. 19. 20. 21. 22. 23. 24. 25. Pre-mortem — “Assume this plan fails. List the top 10 reasons ranked by likelihood.
-Mitigations for the top 3.”
-Decision frameworks — “Apply [RICE / RACI / 2x2 / SCQA / MECE] to: [paste].”
-Document Q&A — “Using only /[file], answer: [question]. If not in source, say ‘Not in
-source’ — do not infer.”
-Compare/contrast — “Build a comparison table for [A] vs [B] on dimensions: [list]. Cite
-each row.”
-Fact-check pass — “Flag every claim in this draft that needs verification. Suggest one
-trusted source per claim.”
-Translate + localise — “Translate to [language]. Adjust idioms, dates, currency, and
-tone for a [region] business audience.”
-Visual — “Suggest 5 chart types or visuals to convey this insight, with
-strengths/weaknesses of each.”
-Brainstorm — “Generate 20 ideas for [problem]. Score each on novelty, feasibility,
-strategic fit (1–5). Recommend top 3.”
-Outline first — “Don’t write the full document yet. Detailed outline with H1/H2/H3 and
-2-line summaries per section.”
-Audience swap — “Rewrite for [executive / engineer / new hire / customer / regulator].
-Keep substance; change detail and vocabulary.”
-Persona — “Act as a [seasoned IR analyst / FP&A controller / instructional designer /
-M&A integration lead]. Critique [paste].” Substack
-Schedule + recurrence — Add clock icon.
-/[file] references where useful, then schedule via the
-Part 2 — Tips, Tricks, and Advanced Prompting
-2.1 The 12 advanced techniques
-1. 2. Reverse prompting — “Before producing anything, ask me whatever clarifying
-questions you need.” Microsoft’s official guidance even endorses: “Start with ‘I’m not
-sure how to begin—can you ask me questions?’” Microsoft
-Echo-back understanding — “Summarise what you understood, list assumptions, then
-answer.”
-3. 4. 5. 6. 7. 8. 9. 10. 11. 12. Meta-prompt rewriting — “Improve this prompt to follow
-Goal/Context/Source/Expectation, then answer.”
-Step-by-step reasoning — “Show reasoning step by step, numbered. Final answer
-last.”
-Few-shot — Provide 2–3 examples after context, before the new task.
-Self-critic loop — “Now act as a sceptical reviewer of your previous answer.”
-Format-forcing — Demand markdown tables, JSON, exact word counts. Microsoft’s
-prompting guide: “order matters… Later parts of a prompt are likely to be emphasised
-more than earlier parts… If you want Copilot to use specific files or sources, put that
-information last.” Microsoft Support
-Tone/style transfer — Reference an internal style guide with /.
-Negative space — “List what you would NOT include and why.”
-Persona prompting — “Act as a McKinsey strategy partner / a CFA charterholder
-analyst.”
-Source-or-silent — “Use only attached documents. If not there, say ‘Not in source.’”
-Triple-check — Steve Clayton (VP Communications Strategy at Microsoft), in the
-Microsoft 365 Blog post “Researcher and Analyst are now generally available” (June 2,
-2025), uses this verbatim Researcher suffix: “Please be sure to only use authoritative
-sources for this research and triple check the answers, especially the dates.”
-Computerworld Microsoft
-2.2 The / and # reference tricks
-In Copilot Chat (Work), Notebooks, Planner, and most M365 surfaces, files, people, meetings, or Teams. Explicit grounding via upgrade most users miss.
-/ opens a picker for
-/ is the single biggest accuracy
-2.3 Voice and “Hey Copilot”
-Voice chat GA in M365 Copilot mobile, web, and desktop (Windows/Mac).
-Microsoft Support Press the mic icon, or in the M365 Copilot Windows app press Win+C
-or say “Hey Copilot” Microsoft Support (must be enabled in Quick View settings).
-Wake-word recognition is on-device using a 10-second audio buffer. Microsoft
-Punctuation commands work in dictation: “period”, “comma”, “new line”.
-Microsoft Support
-Live transcripts default ON for desktop, OFF for mobile. Microsoft Support
-2.4 Persistent context where supported
-Per-Notebook Custom Instructions (Copilot Notebooks): “Add Copilot instructions”
-under the notebook title. Define audience, tone, output format, fact policy, constraints
-once. DEV Community Caveat (May 2026): Microsoft has acknowledged a known
-regression where some custom instructions are inconsistently applied; the documented
-workaround is to put critical instructions in the first chat message AND attach an
-“Instructions.md” file as a reference. Microsoft Learn
-Power BI AI Instructions: save instructions on a semantic model. Template: “You’re a
-senior BI analyst at a [industry] company. Responses should focus on [revenue, margin,
-churn]. Use [sales_fact] for sales questions. Ask for clarification when location is
-ambiguous.” Microsoft Learn
-Power Automate Copilot prompts: phrase as “When X happens, do Y” and explicitly
-name the connector — documented in Microsoft Learn. Microsoft Learn
-Ascendient Learning
-2.5 Keyboard and command shortcuts
-Win+C — open Copilot quick view (Windows desktop). Microsoft Support
-Mic icon — voice chat or dictation.
-/ — file/people/meeting picker.
-@ — mention an agent or person.
-Bookmark icon — Save prompt.
-Clock icon — Schedule prompt.
-Edit in Pages — convert response to a collaborative Page. IW Mentor
-Get audio overview in any Notebook style two-host summary.
-Microsoft Community Hub — generates a podcast-
-Part 3 — Universal Daily Workflows
-3.1 Inbox-zero (Outlook + Copilot + scheduled prompts + Power Automate)
-1. Triage via scheduled prompt at 7:30 AM (§1.2).
-2. Sweep — Outlook → Copilot → “Summarise” → “Draft reply” with tone instruction.
-3. 4. Archive — flow: “When email arrives in [Folder X] with attachment, save attachment to
-OneDrive /Inbox-Archive/[Year]/[Month] and mark email as read.”
-Convert to task — Outlook right-click → Create task → To Do; or flow creates Planner
-task.
-3.2 Calendar and meeting prep
-Pre-meeting brief: “For my next meeting [/meeting], summarise: organiser, agenda, last
-3 communications, pre-reads, my role, 5 talking points.”
-Focus time: enable Viva Insights’ Focus Plan.
-Recurring 1:1 prep: scheduled Monday prompt summarising last 1:1 + commitments.
-3.3 OneNote + Copilot
-“Take notes with Copilot” in real time.
-Office Consumer pulls relevant info from M365 onto the page
-Ribbon → Copilot → “Summarise this section / notebook.” Computerworld
-Notebook-wide search: “Across this notebook, find every mention of [client] and list
-with page references.”
-Notebooks-in-OneNote (build 2504+) brings full Copilot Notebooks into the OneNote
-app. Microsoft Community Hub
-3.4 Research workflow
-Quick scan: Copilot Chat (Web).
-Deep multi-step: Researcher agent.
-Project corpus: Copilot Notebook with up to 100 references. DEV Community
-Live website: Copilot in Edge (Copilot Mode) — multi-tab context with permission.
-Microsoft
-3.5 Long documents
-First pass — Word Copilot: “Summarise in 5 bullets, list 3 most important decisions, note
-ambiguities.”
-Compare versions — “Compare with /[earlier version]. List substantive changes; rate
-impact low/medium/high.”
-Audio overview for long Notebooks: 5–15 minute commute podcast.
-3.6 Writing, decisions, learning
-Rewrite with Copilot in any app.
-Decisions: “Apply [SCQA / MECE / cost-benefit]. Lay out options, expected value, what
-could change my mind.”
-Personal learning: “Build a 6-week 30-min/day plan to master [skill] using only Viva
-Learning catalogue.”
-Part 4 — Department-Specific Advanced Workflows
-4.1 Procurement, Sourcing, Vendor Management
-Copilot Chat (Work): “Search emails, contracts, and Teams chats for vendor [V]. Build
-a one-page profile: spend YTD, contract end date, SLAs, top issues, contacts, renewal
-leverage.”
-Copilot Notebook: per RFP cycle with vendor responses + scoring criteria as
-references; custom instructions: “Role: procurement analyst. Output: compliance
-checklist (Compliant/Partial/Non-compliant per requirement) with file+section
-references. Fact policy: only notebook references; if unsupported, say ‘Insufficient
-evidence.’” DEV Community
-Copilot in Word: “Compare /[Vendor A SOW] with /[Vendor B SOW] across pricing, SLA
-penalties, indemnification, IP, change-of-control, termination. Flag risk items.”
-Copilot in Excel: “Calculate 36-month TCO per vendor option with these usage
-assumptions [paste]. Sensitivity to a 20% volume change.”
-Power Automate: “Vendor performance alert” — Recurrence (monthly) → Get items
-from Vendors list → Filter where Score < 3 → Teams adaptive card to vendor manager +
-Planner task.
-4.2 Internal Communications
-Outlook Copilot: “Summarise this announcement and extract bullet points to
-understand the value-add.” Microsoft Adoption
-Copilot Chat: “Search announcements of new tools published in the last 6 months and
-review tone and sentiment so I can align my announcement.” Microsoft Adoption
-Copilot in Word: “Draft an awareness post about [tool] based on emails. ‘What’s new /
-Why it matters / What to do.’”
-Word (review): “Look for gaps or sections confusing for [audience]. Suggest updates
-with tracked changes.” Microsoft Adoption
-Copilot Chat / Notebooks: “Summarise the last 4 weeks of CEO town hall transcripts
-and Viva Engage posts. Top 5 narrative themes leadership is reinforcing.”
-Viva Amplify + Copilot: draft, schedule, and measure cross-channel campaigns;
-Copilot suggests headline variants and refines tone.
-4.3 Executive Assistants & Chief of Staff
-Scheduled prompt (daily 7 AM): “Review my exec’s emails from past 12 hours. Identify
-anything from the board, top 10 customers, or directs. Rank by importance, draft a 2-
-sentence summary, propose a reply.”
-Copilot Chat: “Based on my prior interactions with [/person], give me 5 things likely top
-of mind for our next meeting.” Fortune Windows Forum — this is one of five prompts
-Satya Nadella publicly shared Windows Forum on LinkedIn Fortune in late August 2025
-as part of “my everyday workflow” with GPT-5 in Microsoft 365 Copilot Fortune
-(reported by UC Today, Fortune, and Windows Report).
-Outlook: “Find a 60-min slot next week for [exec, person A, person B]; account for time
-zones; protect 12–1 PM lunch.”
-Power Automate: “Birthday recognition” — Recurrence (daily) → Get team list with DOB
-→ If today matches → Teams adaptive card.
-4.4 Compliance, Risk, Legal Review
-Copilot in Word: “Review /[contract]. Identify clauses that diverge from /[Standard
-Terms]. Output: Section / Standard / Counterparty Term / Risk Rating / Suggested
-Redline.”
-Researcher: “Summarise the latest [GDPR / DORA / SOX] regulatory updates from past
-90 days affecting [our line of business]. Cite official sources.”
-Copilot Notebook (audit prep): custom instructions enforce evidence-trail citations.
-Copilot Chat: “In emails and Teams chats over past 30 days, surface references to
-[confidential codename] from external recipients. Flag for review.”
-When NOT to use: never produce final regulatory filings, legal opinions, or compliance
-certifications.
-4.5 Investor Relations and Treasury
-Copilot in Excel (Finance): “Identify key drivers for forecast variance for Q[N] and
-produce 3-bullet talking points for the IR script.”
-Copilot in Word: “Summarise this 10-Q /[file]. Extract: revenue drivers, margin
-commentary, guidance changes, risk factor updates, new non-GAAP reconciliations.”
-Copilot Chat (persona): “Act as an IR Director with 15 years of experience. Draft Q&A
-for upcoming earnings call covering: gross margin compression, FX headwinds,
-Segment B deceleration. Audience: sell-side analysts. Tone: confident but
-conservative.”
-Researcher: “Build a peer benchmark table for FY25 cash conversion cycle, net
-debt/EBITDA, and dividend payout for [list 8 ticker peers]. Cite sources and triple-check
-dates.”
-Power Automate: “Daily cash position digest” — Recurrence 7 AM → Get rows from
-Excel treasury workbook → HTML email to Treasurer.
-4.6 Real Estate / Facilities
-Copilot Chat: “Summarise the last 30 days of facilities tickets from /[Tickets list] by
-category. Top 3 recurring issues by site.”
-Copilot in Excel: “Identify the 5 sites with the largest YoY increase in kWh per occupied
-sq ft. Suggest investigation steps.”
-Outlook: “Draft a tenant communication for HVAC maintenance on [date], expected
-impact, alternative meeting space.”
-Power Automate: “Lease expiry watcher” — Recurrence (weekly) → Properties list
-where LeaseEndDate < TODAY+540 days → Email summary + Planner task.
-4.7 Strategy / Corporate Development
-Researcher: “Build a detailed go-to-market strategy for entering [vertical] in [region].
-Use internal product docs in /[SharePoint], 12 months of customer-meeting notes, and
-authoritative external sources. Include TAM/SAM/SOM and 3 entry options.”
-Researcher (verbatim Steve Clayton, Microsoft VP Communications Strategy, in
-Microsoft 365 Blog “Researcher and Analyst are now generally available,” June 2,
-2025): “Help me build a list of 200 important, impactful, or notable Microsoft product
-releases chronologically. Please provide this as a table. The headings should be 1)
-product name 2) year released 3) category… Please be sure to only use authoritative
-sources for this research and triple check the answers, especially the dates.” Microsoft
-Adapt by replacing “Microsoft” with the competitor or category you want to map.
-Copilot in Word (persona): “Act as a McKinsey strategy partner. Stress-test this 3-year
-plan /[file]. Identify the 5 most fragile assumptions and propose pre-mortems.”
-Copilot Notebook: per strategic initiative, with PRD, market data, customer research,
-and 6 months of leadership emails.
-4.8 Data and Analytics (Power BI Copilot)
-Standalone Copilot: “Find reports about [topic] across all workspaces I have access
-to.” Microsoft Power BI
-Report-pane Copilot: “What was revenue per state last year?” — answers from open
-report visuals first, then queries the model and generates DAX. Chris Webb's BI Blog
-AI Instructions on the model: save once — “You’re a senior BI analyst at a global food
-distributor. Responses should be detail-oriented and focus on revenue and profitability.
-Use sales
-_fact for sales questions. Always ask for location clarification when
-ambiguous.” Microsoft Learn
-Subscription summaries: Copilot now embeds a narrative summary in scheduled
-report subscription emails. Microsoft Power BI
-Verified Answers: maintain a curated set for the top 20 ad-hoc questions.
-4.9 Quality Assurance / Testing
-Copilot Chat: “You are a QA assistant. Given this requirement /[doc], break it into
-testable components and highlight ambiguous or missing details.” NashTech Blog
-Copilot in Word: “Generate test cases: ID, Title, Preconditions, Steps, Test Data,
-Expected Result. Cover positive, negative, edge cases — at least 5 each.”
-NashTech Blog
-Copilot in Excel: “Cluster 50 defects by root cause. Identify top 3 hotspot modules and
-recommend regression focus.”
-Copilot in Teams: “Summarise the Sprint 47 test readiness review. Decisions, exit-
-criteria gaps, owners with due dates.”
-4.10 PMO (advanced)
-Copilot in Planner (Premium): “Create a plan with buckets, goals, tasks for [initiative].
-Include risks, dependencies, 30/60/90 milestones.”
-Copilot Chat: “Across all my Planner plans, list tasks due this week with no owner or
-with OOO owners.”
-Power Automate: “Cross-project status digest” — Recurrence (Friday 4 PM) → Get
-items from each project’s status list → HTML email + Teams post.
-4.11 Knowledge Management
-Copilot Chat: “Summarise what I need to know for a meeting about [topic] using only
-documents in /[approved sites] under Restricted SharePoint Search.”
-Copilot in Word: “Review this knowledge article for ingestion readiness: clear title,
-version, effective date, single owner, no PII, supersedes older versions.”
-Copilot Page: curated “Decision Log” preserving every Copilot answer used in a
-decision alongside source citations.
-Quarterly hygiene: “In /[my team’s site], list pages not updated in 12+ months and
-pages with broken links. Output as a remediation table.”
-4.12 Innovation & R&D Ideation
-Copilot in Excel: “Analyse this VoC file /[VoC.xlsx]. Sentiment analysis to identify
-common pain points and unmet feature requests.” Microsoft Adoption
-Researcher: “Summarise recent market trends, competitor products, and consumer
-preferences for [category] from external sources, with citations.” Microsoft Adoption
-Copilot Chat: “Brainstorm 15 product ideas. Score on novelty, feasibility, strategic fit
-(1–5).”
-Copilot Chat (Web): “For my top 3 concepts, check common websites for similar ideas
-or prior art. Cite the closest analog.” Microsoft Adoption
-Copilot Page: finalists go onto a Page; tag engineering and PMM; embed a Loop poll.
-4.13 DEI / People & Culture
-Copilot in Word: “Suggest revisions to ensure inclusive, non-gendered language
-aligned with our DEI standard /[Standard.docx].” Microsoft Learn
-Copilot Chat: “Checklist and tips for an inclusive all-hands (turn-taking, accessibility,
-time-zone equity, captioning).” Microsoft Learn
-Copilot in Excel: “Compare aggregated sentiment scores between underrepresented
-employee groups and the overall population. Surface top 3 gaps.” (Aggregated only.)
-Copilot Chat: “Summarise accessibility feedback from past 6 months of Viva Engage
-posts and Teams threads. Top 3 product/process barriers.”
-4.14 ESG and Sustainability
-Copilot in Word (grounded): “Draft the water stewardship narrative. Use only data
-from /[Sustainability site] and our verified GRI workbook.”
-Copilot in Excel: “Compare reported Scope 1 emissions FY25 vs FY24 by site. Flag any
-site with >15% YoY change.”
-Researcher: “Compare our public Scope 3 reduction goals to our 5 closest peers. Peer-
-benchmark table with citations.”
-Copilot Chat: “Analyse these uploaded ESG documents — what are this company’s
-Scope 3 reduction goals, and how do their methodologies differ?”
-4.15 M&A Support
-Researcher: “Screen this list of 25 target companies /[Excel]. For each: revenue, recent
-funding, top 3 customers, key risks, fit with [thesis]. Cite sources.”
-Copilot in Word: “Read these 12 due-diligence PDFs /[folder]. Build a red-flag log:
-pricing concessions >15%, change-of-control clauses, key-person risk, IP indemnities.”
-Copilot Notebook (deal-room): every deal gets a Notebook with the data room as
-references; instructions enforce file+section citations.
-Copilot in Teams: “Catch me up on yesterday’s M&A status meeting. Decisions,
-blockers, integration playbook items needing update.”
-Copilot in Excel: “Build a 90-day post-merger integration tracker: workstream, owner,
-milestone, status (R/A/G), synergy $ target, dependencies. Pre-populate workstreams:
-Finance, IT/M365 tenant, HR/Payroll, GTM, Legal, Real Estate.”
-Part 5 — Standard-Connector Power Automate Flows
-All flows use only Outlook, Teams, SharePoint, OneDrive, Excel Online (Business), Office
-365 Users, Approvals, Forms, Planner, To Do, RSS, and Notifications connectors.
-5.1 Email and inbox
-1. Save attachments to OneDrive Hako IT /Inbox-Archive/[Year]/[Month] → mark read.
-2. 3. 4. — New email with attachment → save to
-Boss-priority alert Hako IT — New email from [manager] → mobile push + flag.
-Newsletter sweep — Inbox rule routes to “Newsletters” folder → append to Excel log →
-Friday scheduled prompt summarises.
-Email-to-task — Flag email → create Planner task with subject + body.
-5.2 Approvals
-5. 6. 7. 8. Document approval Hako IT — New file in /Drafts → manager approval → if approved,
-move to /Final and post Teams; if rejected, return with comments.
-Multi-stage approval — File over $X → sequential (Legal → Finance → Operations) with
-comments stored in metadata. AIA Copilot
-PTO request — New Forms response → Teams adaptive card → on approval, calendar
-update + HR notification. AIA Copilot
-Approval reminders + escalation — Recurrence (daily) → pending >48h: Teams nudge;
->5 days: escalate.
-5.3 SharePoint, OneDrive, file org
-9. 10. 11. Auto-tag uploads — New file → set metadata from file properties + folder + naming.
-Site provisioning kit — Forms request → create site from template, channel, Planner
-board, kickoff meeting.
-Inactive content audit — Recurrence (monthly) → items where Modified < TODAY-365
-→ email owner.
-5.4 Calendar, OOO
-12. 13. 14. Smart OOO handover — Manual trigger → get To Do “Active” items → Teams message
-to delegate + handoff stand-up invite.
-Recurring 1:1 prep — Recurrence (Sunday 6 PM) → get next week’s calendar → append
-to OneNote with Loop link to last meeting.
-Birthday/anniversary recognition — Recurrence (daily) → team list → match →
-adaptive card.
-5.5 Forms, Planner, To Do, Lists
-15. 16. 17. Forms-to-Planner — New Forms response → Planner task assigned per response field.
-Lists item to Teams — SharePoint list item created → adaptive card + Planner task.
-Status report aggregator — Recurrence (Fri 3 PM) → send Forms link to N managers →
-collect → Excel summary → Teams card.
-5.6 Notification, digest
-18. Daily news digest Practical 365 — Recurrence (daily 7 AM) → RSS items → HTML
-19. 20. email; pair with scheduled Copilot prompt summarising content.
-SLA breach alert — Recurrence (hourly) → tickets where DueDate < NOW+4h and
-Status≠Closed → adaptive card to owner. AIA Copilot
-Weekly project digest — Recurrence (Friday 4 PM) → project list items → HTML email +
-Teams; scheduled Copilot prompt: “Read the latest digest and produce a 5-bullet exec
-summary.”
-5.7 Document generation
-21. 22. Excel-to-Word client doc — Manual / new Forms entry → read Excel → Word Online
-“Populate template” → save to SharePoint + email client.
-Meeting minutes finalisation — Teams recording transcribed → save transcript →
-manual trigger to run Copilot prompt: “Produce minutes from /[transcript], format as our
-template.”
-5.8 HR onboarding/offboarding (standard connectors only)
-23. Onboarding kit — New row in HR “Starters” Excel → create OneDrive folder, welcome
-email, add to Teams, schedule Day 1 meetings, create Planner onboarding tasks.
-24. Offboarding — New row in “Leavers” → sequential approvals (manager → IT → HR) →
-set OOO → move OneDrive content → notify Teams owners.
-Build tip — Copilot helps build the flow itself. In Power Automate’s “Create your
-automation with Copilot” box, Microsoft Learn follow Microsoft’s “When X, do Y” pattern
-and explicitly name the connector. Example: “When an email arrives with attachments
-from my boss, post a message to the ‘Leadership Updates’ Teams channel with the email
-subject and a link to the attachment.” Hako IT
-Part 6 — The Wider M365 Productivity Stack
-6.1 OneNote
-Copilot button on Home tab task lists. Microsoft
-Office Consumer → summarise, rewrite, organise, generate
-“Take notes with Copilot” pulls relevant info from M365 onto the page.
-Top prompts: “Organise pages in this section by date, then summarise key decisions.” /
-“Convert this page into a study guide with definitions, examples, 5 quiz questions.”
-6.2 Loop and Copilot Pages
-Loop: workspaces with portable components syncing everywhere they’re pasted.
-Copilot Pages are .loop / .page files Microsoft Support generated from a Copilot Chat
-answer — click “Edit in Pages.” Two-pane editor.
-Paste a Page as a Loop component into Teams/Outlook for live edit.
-Find your Pages under M365 Copilot → Library → Pages. Microsoft Support
-Caveat: Microsoft consolidated Loop’s in-app Copilot into the Copilot Pages model in
-late 2025; some legacy Loop AI features were removed/migrated.
-6.3 Forms
-Copilot drafts surveys/quizzes from a one-line prompt; suggests question types,
-themes, settings. Ragnarheil
-Boost response (agentic): suggests channels, drafts invitations, monitors progress,
-drafts reminders. Microsoft Community Hub
-Quizzes: Copilot generates answer explanations Microsoft Community Hub and adapts
-difficulty.
-Analysis pattern: sync to Excel → use Copilot in Excel for Python analysis and visuals.
-Microsoft Community Hub
-6.4 Planner (Copilot in Premium)
-Generate full plan from a prompt; Microsoft Community Hub auto-create buckets, goals,
-tasks.
-Built-in starter prompts: “Plan my day”, “Get a status report”, “Add tasks for [goal].”
-Microsoft Support
-Use / to attach files/people.
-Caveat: requires Planner & Project Plan 3 / Plan 5 OR M365 Copilot AND a Premium
-plan.
-6.5 To Do
-M365 Chat can create To Do items: “Add a To Do for next Tuesday: ‘Review draft RFP
-from [vendor]’.”
-Flagged emails appear in To Do automatically.
-6.6 Whiteboard
-Generate sticky notes from a prompt; Categorise auto-groups stickies into themed
-clusters.
-“Generate 30 sticky notes for ways to improve customer onboarding, then categorise.”
-6.7 Stream / Clipchamp (unified)
-Microsoft announced the Stream/Clipchamp brand unification in November 2024;
-Windows Forum per Microsoft’s Community Hub blog “Microsoft Stream and Microsoft
-Clipchamp: Brand unification update for Microsoft 365 video,” the rollout began mid-
-December 2024 and the brand transition — including unified start page, video player,
-and admin controls — completed by late July 2025. M365 Admin Videos live in
-SharePoint/OneDrive/Teams.
-Copilot in the Clipchamp player Windows Report extract action items, ask Q, jump to timestamp. (transcripts ≥100 words) — summarise,
-Microsoft Support
-Top prompts: “What did the lead designer say about the budget?” TheFix
-6.8 Lists
-Copilot generates lists from a prompt and writes JSON view formatting (e.g., Prompt
-Cards layout).
-AI-powered filtering and smart views.
-6.9 Bookings
-Combine with Forms + Power Automate: customer books → flow creates Planner task +
-sends prep brief to host.
-6.10 Designer and Create
-M365 Copilot Create: generates infographics, short videos, AI images, branded
-marketing assets from a prompt + brand kit + source files. Microsoft Community Hub
-Microsoft
-Designer: dedicated graphic creation; pull into PPT and Word.
-“Turn this 12-slide deck into a 45–60 second marketing video using our brand kit” is a
-Microsoft Create example.
-6.11 Sway
-AI-generated narrative presentations from a prompt or outline; lighter-weight than
-PowerPoint.
-6.12 Power BI Copilot — see §4.8.
-6.13 Viva
-Insights: personal Focus Plan, after-hours/meeting-overload alerts; Copilot Dashboard
-shows org Copilot adoption Microsoft Learn and assisted-hours metrics; benchmarks
-(Oct 2025+) compare to similar cohorts.
-Engage: Copilot suggests Conversation Starters, Microsoft Learn refines tone,
-summarises trending themes; multi-language posting; Microsoft Community Hub
-community agents (preview) answer with citations. Microsoft Community Hub
-Learning: recommends paths; catalogue.
-MS Solutions generate 6-week plan grounded in your
-Goals: retired by Microsoft on December 31, 2025 Planner Premium + Copilot, or Power BI.
-HANDS ON Teams — migrate OKRs to
-Topics: also retired (early 2025); the SharePoint Knowledge Agent is its successor.
-Glint / Pulse: Copilot summarises survey verbatim comments. Microsoft Learn
-6.14 M365 Copilot mobile app
-Voice chat (Hey Copilot on Windows, mic icon on mobile/web).
-Library — central place for Pages, Notebooks, Created items.
-Pin favourite apps in side nav.
-6.15 Edge Copilot Mode
-Multi-tab context with permission. Microsoft
-Quick Assist dynamic pane keeps Copilot open while reading any page. Ideal for vendor comparisons, regulatory research, multiple PDFs in tabs.
-Microsoft
-Part 7 — Cross-App Pipelines
-1. Word → PowerPoint → Teams — Word brief → “Create presentation from document” →
-PowerPoint deck → Share to Teams → Copilot in Teams takes meeting notes and posts
-recap.
-2. Email → Task → Calendar — Flag email → flow creates Planner task → Sunday
-scheduled prompt brings unfinished tasks into next week’s calendar slots.
-3. Meeting → Action items → Follow-up — Copilot in Teams meeting recap → “Generate
-follow-up email” in Outlook → flow creates Planner tasks for each action item with
-owners.
-4. Survey → Analysis → Report → Presentation — Forms with Copilot-drafted questions
-→ Excel → Copilot in Excel Python analysis → Copilot in Word report → Copilot in PPT
-readout deck.
-5. Idea → Research → Document — Copilot Chat brainstorm → Researcher deep-dive →
-Notebook collects refs → “Create Word document.”
-6. Notebook → Word/PPT export — From any Notebook, “Export to Word” or “Create
-presentation from notebook” preserves citations.
-7. Voice memo → polished output — Record on phone → upload to OneDrive → Copilot in
-Word: “Transcribe and rewrite as a professional executive memo.”
-8. Recording → transcript → summary → distribution — Teams meeting recorded →
-transcript → Clipchamp/Stream Copilot summarises → flow distributes to Teams + saves
-to /Minutes.
-Part 8 — Adoption, Governance, Verification
-8.1 Champions and adoption
-Build a Copilot Champs Community (Microsoft Digital’s published model): grassroots,
-peer-to-peer; one champ per ~50–100 users; monthly drop-in clinics; lunch-and-learns;
-share wins via Viva Engage.
-Department-specific pilots before broad rollout.
-Make expert-led training the foundation. VisualSP Consultancies report that
-organisations without structured training see a wide adoption gap relative to other AI
-tools. Worklytics Avantiico
-8.2 Measuring impact
-M365 Copilot Dashboard (Viva Insights): “Copilot actions taken”, “Copilot assisted
-hours”, “Satisfaction rate” over rolling 6 months. Benchmarks (Oct 2025+) compare to
-similar cohorts.
-Move beyond vanity metrics to:
-DAU/MAU ratio (depth) Copilot Consulting
-Feature adoption distribution (Word vs Excel vs Chat)
-Self-reported time saved (monthly pulse, directional)
-Task completion rate (sessions ending without manual fallback)
-Tie KPIs to interventions (training, governance, champions). Copilot Consulting
-8.3 Verifying outputs
-Microsoft’s own guidance (Microsoft Learn — Application card for Microsoft 365
-Copilot): users should review and verify responses, and be aware of overreliance —
-accepting incorrect or incomplete AI outputs because mistakes are hard to detect.
-Microsoft Learn
-Preston Gralla, Computerworld, “How to curb hallucinations in Copilot (and other
-genAI tools)” (October 23, 2025) advises: “Check Copilot’s citations and follow those
-links to see whether they’re trustworthy.” TechBeams Computerworld The article also
-recommends never using Copilot output as a final draft and fact-checking each
-iteration. Computerworld
-Hallucination-defence prompt patterns:
-Source-or-silent: “Use only attached documents. If not there, say ‘Not in source.’”
-Triple-check (Steve Clayton, Microsoft VP Communications Strategy): “Triple-check
-the dates and numbers; cite authoritative sources only.”
-Self-review: “After your answer, list the 3 weakest claims and how I would verify
-each.”
-Confidence flags: “For each claim, mark High/Medium/Low confidence based on
-source quality.”
-8.4 When NOT to use Copilot
-Final regulatory filings, legal opinions, medical/financial certifications. Microsoft: outputs
-“must be considered drafts.” Microsoft Learn
-Decisions where the cost of error is high without human review.
-Sensitive arithmetic without manual verification.
-Encrypted/IRM-protected files where extract rights are stripped — Copilot returns empty
-or mis-grounded answers.
-Teams meeting/chat data with sensitivity labels — those labels aren’t currently
-recognised by Copilot and agents Microsoft Learn (per Microsoft Purview
-considerations).
-Highly specialised vertical workflows (complex underwriting, deal modelling, litigation
-strategy) — first drafts only, with mandatory expert review.
-Where data permissions are not yet remediated — Copilot will surface anything users
-technically have access to.
-8.5 Privacy and data handling
-Enterprise Data Protection applies to Copilot Chat with M365 Copilot: prompts,
-responses, and grounding data are not used to train foundation models.
-Saved prompts live in the M365 Substrate Data Store; admins can export them via a
-documented PowerShell tool.
-Scheduled prompts run in a locked Power Platform “Microsoft 365” environment with a
-fixed DLP policy (no premium connectors); Power Platform Admins can inventory all
-scheduled prompts. GitHub
-Treat Copilot Chat (Web, no M365 Copilot) as you would any external chat tool: no
-organisational data.
-Recommendations
-Stage 1 — Universal baseline (every employee, week 1–2):
-1. Save 10–15 personal prompts via the Prompt Gallery.
-2. Set up 2 scheduled prompts: morning inbox triage and Friday weekly recap.
-3. Bookmark Microsoft’s Prompt Gallery and Volumes 1+2 of these playbooks.
-Stage 2 — Team enablement (week 3–6):
-1. Build a SharePoint List “Prompt Library” using the PnP JSON formatter; seed with the 25
-prompts in §1.4 plus 10–20 department-specific from §4.
-2. Pin as a Teams tab.
-3. Identify and train one Copilot Champion per team.
-4. Run a 30-minute “saved prompts + meta-prompting + scheduled prompts” drop-in.
-Stage 3 — Workflow automation (week 6–10):
-1. Roll out the 24 standard-connector flows in §5; let teams self-serve from a “Flow
-Library” SharePoint page.
-2. Pair scheduled Copilot prompts with the flows.
-3. Onboard each team to Copilot Notebooks for one ongoing project.
-Stage 4 — Department deepening (month 3+):
-1. Each department picks 3 of its prompts from §4 and embeds them in SOPs.
-2. Track adoption via Copilot Dashboard; intervene where DAU/MAU < 0.3.
-3. Quarterly: prune unused prompts, promote high-traffic submissions.
-Benchmarks that would change the recommendations:
-If Microsoft re-enables a richer Copilot Notebooks custom-instructions experience, shift
-more departments to Notebook-based workflows.
-If the firm relaxes the “no agents” rule, layer SharePoint Agents on the prompt library to
-make it conversational.
-If Copilot Dashboard shows assisted hours plateauing at <2 hrs/user/week after 90 days,
-restart with mandatory expert-led training.
-Caveats
-Copilot, Power Automate, and the M365 productivity layer evolve monthly. Some
-specifics (custom-instruction reliability in Notebooks; the Loop ↔ Pages convergence;
-Researcher with Computer Use — currently in Frontier) Microsoft Support may have
-moved by the time you read this.
-“Hey Copilot” wake word is English-only; voice chat itself supports the broader Copilot
-supported-languages list. Microsoft Support
-A handful of features (Copilot in Planner Premium, Power BI standalone Copilot, Copilot
-in Edge “Actions”) are licensed differently or in preview; confirm tenant entitlement.
-Microsoft retired Viva Goals (Dec 31, 2025) and consolidated Stream under Clipchamp
-by late July 2025; legacy URLs and links in older documentation will break.
-Some prompts above are paraphrased from Microsoft scenario library entries that are
-template-level rather than verbatim copy-paste; they have been rewritten while
-preserving intent.
-The firm’s “no agents” / “no autonomous Power Automate” guardrails mean some flows
-from public template galleries (Copilot Studio agents, Dataverse-backed orchestration,
-premium-connector-based ones) are intentionally out of scope.
-All output must be reviewed by a human; do not use Copilot for final regulated content,
-sensitive financial calculations without verification, or decisions where the cost of error
-is 
+> **Use this prompt with any capable LLM (Claude, GPT-4/5, Gemini) to generate ~825 fictional employee records for a Virtus-style asset management firm. The dataset is designed for HR-analytics dashboards (gender mix, span of control, geographic distribution, tenure, diversity, etc.). All data is synthetic — no real persons, no salaries.**
 
+---
 
+## 1. ROLE & TASK
 
-file2
-Microsoft 365 Copilot
-Cross-Department Playbook
-Use cases, prompts, and techniques for daily work across the firm
+You are an HR data engineer building a **fully synthetic** employee master dataset for a fictional global multi-boutique asset management firm called **Northbridge Capital Partners (NCP)**. The firm does not exist and must not be tied to any real company, person, or address. The dataset will be used to build executive dashboards in Power BI / Tableau / Looker analyzing workforce composition, diversity, span of control, geographic footprint, tenure, and organizational health.
 
+Generate **825 employee records** that are internally consistent, demographically plausible for the financial-services industry, and structurally valid as an organizational hierarchy (every non-CEO has exactly one manager whose level is more senior).
 
+**Do NOT include salary, compensation, bonus, equity, or any pay-related field.** Pay is out of scope.
 
-A practical reference for every team
+---
 
-How to use this playbook
-This document is organised in three parts. Part 1 covers the Copilot apps and surfaces themselves — what each one is good for and how to use it well. Part 2 walks through every major department in the firm with concrete day-to-day use cases and ready-to-paste prompts. Part 3 covers prompting techniques, governance reminders, and a suggested rollout approach.
-Skim it once front-to-back, then come back to your department section as a daily reference. Every prompt below is a starting point — change names, dates, file references, and tone to match your situation.
+## 2. COMPANY OVERVIEW (FICTIONAL)
 
-Part 1 — Copilot across the M365 surfaces
-Copilot in Word
-Strongest for first drafts, rewrites, summarisation, comparison of document versions, and structured generation from existing source files. Always reference your own files (use the / shortcut) so output matches your firm's voice and policies rather than generic Copilot defaults.
-Universal use cases
-	•	First drafts of policies, memos, proposals, briefs, reports, and standard operating procedures
-	•	Rewriting for tone, audience, or reading level (executive summary vs. plain English vs. legal)
-	•	Summarising long documents into 1-page briefs or executive summaries
-	•	Comparing two document versions and listing every substantive change
-	•	Generating tables of contents, glossaries, FAQs, and appendices from existing content
-	•	Translating documents while preserving formatting and tone
-Prompts that work well
-	•	Summarise this 30-page document into a one-page brief for senior leadership. Lead with the recommendation, then 3 supporting points, then risks.
-	•	Rewrite this section in plain English at an 8th-grade reading level. Keep all technical and legal requirements intact.
-	•	Compare /Policy_v1.docx and /Policy_v2.docx and list every substantive change in a table with columns: Section, Old Wording, New Wording, Likely Reason.
-	•	Draft a 2-page client memo on [topic] using the structure of /Standard_Memo_Template.docx and the data in /Q3_Analysis.xlsx.
-Tip: Word now offers a Claude model option alongside the OpenAI models. For long-form drafting and nuanced rewrites, Claude often produces noticeably better prose; switch via the model picker in the Copilot pane.
-Copilot in Excel
-Best for analysis, formula generation, data cleaning, chart creation, and Q&A over structured data. Excel Copilot dramatically improves when your data is in a proper Table (Ctrl+T) with clean headers and no merged cells.
-Universal use cases
-	•	Cleaning messy exports — deduplication, date format standardisation, fixing inconsistent text
-	•	Building formulas in plain English ("calculate annualised growth between 2022 and 2025")
-	•	Generating PivotTables, charts, and conditional formatting on demand
-	•	Variance analysis, trend detection, outlier flagging
-	•	Categorising open-text fields (survey responses, ticket descriptions, exit interviews) into themes
-	•	Forecasting and scenario modelling using historical data
-Prompts that work well
-	•	Add a column showing month-over-month growth as a percentage, and conditionally format negatives in red.
-	•	Categorise the comments in column C into 5–7 themes and add a column with the assigned theme.
-	•	Build a PivotTable showing total revenue by region and product line, then create a bar chart from it.
-	•	Find any rows where the date in column B is more than 60 days after the date in column A and highlight them.
-	•	Forecast next quarter's values for column D using the last 24 months of data, and show the 80% confidence interval.
-Copilot in PowerPoint
-Best when you give it structured input — a Word document, a brief, or even a webpage URL — rather than a blank canvas. Copilot in PowerPoint can now also use public webpages as source material when building decks.
-Universal use cases
-	•	Turning a Word document or report into a 10–15 slide presentation with speaker notes
-	•	Creating internal training decks, onboarding decks, and process explainers
-	•	Restyling an existing deck to match the firm template
-	•	Generating speaker notes for slides that don't have them
-	•	Translating decks to other languages while keeping layouts intact
-	•	Summarising a long deck into an executive 5-slider
-Prompts that work well
-	•	Create a 12-slide deck from /ProjectReport.docx. Audience: executive leadership. Include a title slide, agenda, 3 highlights, 3 risks, recommended next steps, and an appendix slide for detailed numbers.
-	•	Reformat this deck using our company template and modernise the visual style. Keep all content unchanged.
-	•	Add concise speaker notes (3–5 bullets per slide) for the entire presentation.
-	•	Build a deck explaining [topic] using https://[reference-url] as source material.
-Copilot in Outlook
-Among the highest-frequency, highest-ROI surfaces — most professionals lose hours a day to email triage. Use it for catching up, drafting, and tone-checking.
-Universal use cases
-	•	"Catch me up" on a long email thread or after time away
-	•	Drafting replies in your typical voice, then refining tone (more direct, more diplomatic, shorter)
-	•	Suggesting follow-ups based on outstanding requests in your inbox
-	•	Drafting status updates by pulling from recent emails and meetings
-	•	Generating audio overviews of long attached files for listening on commutes
-Prompts that work well
-	•	Summarise this thread in 5 bullets. Highlight any open questions or commitments I made.
-	•	Draft a polite reply declining this request. Suggest [alternative] and offer to help next quarter.
-	•	Catch me up on everything from [client name] over the last 2 weeks across email and Teams.
-	•	Draft an email asking for a 1-week extension on the [project] deliverable. Professional, brief, no excuses.
-Copilot in Teams (chats and meetings)
-Two distinct experiences — meeting Copilot during/after calls, and chat Copilot for ongoing conversations and channels.
-Universal use cases
-	•	Real-time recap during a meeting ("what did I miss in the last 10 minutes")
-	•	Post-meeting: action items, decisions, unresolved questions, sentiment of attendees
-	•	Catch up on a busy channel after vacation or a focus block
-	•	Drafting follow-up emails or status updates from meeting transcripts
-	•	Comparing what was said in two different meetings on the same topic
-Prompts that work well
-	•	From this meeting, list every action item with the owner, due date if mentioned, and which agenda item it relates to.
-	•	Summarise the discussion on [topic]. Note any disagreements between participants and how they were resolved.
-	•	Catch me up on this channel for the last 7 days. Group by topic and flag anything where my name was mentioned.
-	•	Draft a follow-up email to the attendees summarising what we agreed and what we still need to decide.
-Copilot in SharePoint
-Two big capabilities here, both underused. First, page authoring — Copilot can draft entire intranet pages, news posts, or knowledge base articles. Second, custom agents grounded on a specific site or library, which let employees ask questions and get answers cited back to source documents.
-Note: your admin has restricted agent creation, so the agent capability won't apply for your firm — but the page authoring features remain fully available.
-Universal use cases
-	•	Drafting intranet pages, news posts, and announcements directly from a brief
-	•	Generating FAQ sections, project landing pages, and team site content
-	•	Restructuring messy SharePoint sites — Copilot can suggest navigation, taxonomies, and content groupings
-	•	Translating SharePoint content for multilingual audiences
-Prompts that work well
-	•	Create a SharePoint page announcing our new [policy/benefit/initiative]. Include a 1-paragraph overview, 3 key changes, an FAQ with 5 questions, and a contact section.
-	•	Draft a project landing page for [project]. Include purpose, team members, key milestones, link section for documents, and a status block.
-Copilot Notebooks
-A persistent workspace where you pin a curated set of files, links, and notes as a knowledge base, then chat with Copilot grounded only on those sources. Notebooks support long prompts (around 18,000 characters versus 2,000 in standard chat) and can generate Word docs, PowerPoint decks, mind maps, and audio overviews from their contents.
-When to choose Notebook over standard Chat
-	•	Long-running projects (proposals, tenders, board prep, audits, investigations)
-	•	Tasks that span many source files and need consistent grounding across sessions
-	•	Cross-document analysis — "what's inconsistent across these 12 policies?"
-	•	Onboarding workspaces — pin all the materials a new joiner needs
-	•	Knowledge synthesis — research notes, interview transcripts, market scans
-Audio Overviews (the "podcast" feature)
-Notebooks can generate a podcast-style audio discussion between two AI hosts based on your pinned content. You can choose one or two speakers, adjust tone (concise to playful), and pick length (short, medium, long). Use cases:
-	•	Turn a 50-page benefits guide into a 12-minute podcast for new hires
-	•	Make policy updates digestible — leaders listen on their commute
-	•	Create a "this month at the firm" audio recap from a notebook of internal updates
-	•	Project retrospective podcast for teams to listen to at the end of an engagement
-	•	Audio briefings for board members ahead of meetings
-Prompts that work well in a Notebook
-	•	Across all the documents in this notebook, identify any inconsistencies, contradictions, or gaps. Group findings by severity.
-	•	Generate a Word document summarising the key arguments in these 8 research papers, with a comparison table of methodologies and conclusions.
-	•	Create a PowerPoint deck pitching the recommendation in [pinned brief], using supporting evidence from the other files in this notebook.
-	•	Generate an audio overview, conversational tone, two hosts, around 10 minutes, focused on the practical implications for managers.
-Important: Notebook sharing currently works only inside your own M365 tenant — you cannot share notebooks externally. Plan accordingly when working with external collaborators.
-Researcher (deep reasoning agent)
-Researcher is Copilot's deep reasoning capability — it performs multi-step research combining your work data with the public web, taking longer but producing far more thorough analysis than a single chat turn. Use it when the question genuinely needs synthesis across many sources.
-Good fits for Researcher
-	•	Competitive analysis combining internal documents and external research
-	•	Market entry studies, vendor evaluations, build-vs-buy analyses
-	•	Regulatory landscape reviews — what's changing, who's affected, what to do about it
-	•	Strategic option papers requiring evidence from many angles
-	•	Best-practice benchmarking against the firm's own current state
-Prompts that work well
-	•	Research the current state of [market/topic]. Synthesise the 3 most credible perspectives, then assess how our internal approach (per /InternalStrategy.docx) compares. End with 5 specific recommendations.
-	•	Build a vendor comparison for [category] covering the top 5 providers. For each: pricing model, integration profile, security posture, customer reviews, recent product changes. Recommend a shortlist of 2.
-	•	Analyse our last 4 quarters of [data type] and compare patterns to industry benchmarks. Identify the top 3 areas where we're underperforming and propose responses.
-Copilot Create (images, video, posters, surveys)
-A standalone surface for generating designed content from prompts, templates, or your brand kit — images, videos, podcasts, posters, surveys, and short multimedia explainers. PowerPoint also now offers a model picker for image generation (GPT-Image, Flux, or Auto).
-Universal use cases
-	•	Short explainer videos (60–120 seconds) for internal launches, training, comms
-	•	Onboarding welcome videos personalised by department or role
-	•	Visual aids and infographics for policy rollouts and town halls
-	•	Recruitment marketing — "day in the life" content
-	•	Internal surveys with built-in analysis afterwards
-	•	Posters and visual campaigns for wellness, DEI, or operational initiatives
-Prompts that work well
-	•	Create a 90-second explainer video on our new [policy/tool/process]. Friendly tone. Include text overlays for the key takeaways.
-	•	Design a poster for our wellness week, professional but warm tone, 4 themes per day.
-	•	Build a 6-question pulse survey on team workload and stress, with a balance of scale and open-text questions.
-Work vs. Web — using both modes well
-Copilot Chat has two grounding modes that fundamentally change what it can answer.
-Work mode
-Grounds responses in your tenant — your emails, Teams, SharePoint, OneDrive, calendar. Use for any question that depends on internal context.
-	•	"Catch me up on what I missed last week"
-	•	"What did we decide in the [project] meetings last quarter?"
-	•	"Find every document related to [topic] and summarise its current status"
-	•	"Who are the experts in the firm on [subject], based on documents and meetings?"
-Web mode
-Grounds responses in the public internet. Use for benchmarks, trends, regulations, vendor research, current events.
-	•	"What's the current state of [regulation] in [jurisdiction]?"
-	•	"Compare the top 5 [products] in [category] for an enterprise of our size"
-	•	"Recent best practices for [process]"
-Combined power prompts
-	•	Compare our [policy/process] (per /OurPolicy.docx) to current industry standards in [region]. Highlight every gap.
-	•	Based on our [internal data] and recent market data, is our pricing for [product] competitive? Recommend adjustments.
+| Attribute | Value |
+|---|---|
+| Legal name | Northbridge Capital Partners, Inc. |
+| Brand | Northbridge / NCP |
+| Industry | Asset Management — Multi-Boutique |
+| HQ | Hartford, Connecticut, USA |
+| Founded | 1998 |
+| Public/Private | Publicly traded (fictional ticker: NBCP) |
+| Business model | Multi-manager / multi-boutique platform with ~12 affiliated investment teams across equities, fixed income, multi-asset, alternatives, and ETFs |
+| Total headcount | **825** |
+| Email domain | `@northbridgecp.com` |
+| Website (fictional) | northbridgecp.com |
 
-Part 2 — Department-by-department use cases
-Each section below covers daily, weekly, and project-based scenarios with prompts you can adapt directly. Where helpful, we note which app or surface works best.
-Executive / Leadership
-Daily and weekly
-	•	Catching up after travel or vacation across email, Teams, and meetings
-	•	Pre-reading prep for back-to-back meetings using calendar and attached files
-	•	Drafting all-hands updates, board comms, and internal announcements
-	•	Reviewing reports for blind spots, missing data, or weak arguments
-Project and strategic
-	•	Synthesising input from many leaders into a single position paper
-	•	Building board pre-reads from underlying data and prior minutes
-	•	Generating audio briefings for committee members ahead of decisions
-	•	Stress-testing strategic plans ("what assumptions am I making that might be wrong?")
-High-leverage prompts
-	•	Catch me up on the last 5 business days. Group by topic, flag urgent items, and highlight anything where I owe someone a response.
-	•	From this set of board materials [pin in Notebook], generate a 2-page executive summary, a list of likely director questions, and suggested answers.
-	•	Review this strategic plan and act as a skeptical board member. What are the 5 weakest arguments? What evidence is missing?
-	•	Draft an all-hands update on [topic]. Empathetic but candid. 400 words max. Match the tone of /PriorAllHands.docx.
-Human Resources
-Recruiting and talent acquisition
-	•	Drafting and tailoring job descriptions for inclusivity, clarity, and SEO
-	•	Generating interview question banks tied to specific competencies
-	•	Summarising candidate feedback from panel interviews into a recommendation
-	•	Drafting offer letters, regret letters, and reference request emails
-	•	Analysing recruitment funnel data in Excel
-Employee lifecycle and operations
-	•	Onboarding plans, welcome packs, and 30/60/90-day check-in templates
-	•	Drafting policies, handbooks, FAQs, and updates to existing documents
-	•	Comparing policy versions to track changes for legal review
-	•	PIPs, performance review templates, and termination documentation
-	•	Exit interview synthesis and theme analysis
-People analytics
-	•	Attrition analysis, pay equity reviews, headcount forecasting
-	•	Engagement survey theme extraction and manager-level reporting
-	•	Time-off pattern analysis
-High-leverage prompts
-	•	Draft a job description for [role]. Inclusive language, structured as: about us, role summary, responsibilities, must-haves, nice-to-haves, what we offer, EEO statement. Tone: warm and engaging.
-	•	From these 6 panel feedback forms, summarise consensus strengths, consensus concerns, divergent views, and a recommended hire/no-hire with reasoning.
-	•	Compare /Handbook_v3.docx and /Handbook_v4.docx and summarise every substantive policy change for legal review.
-	•	Categorise these 220 exit interview comments into 5–7 themes. For each theme: a count, 2 representative quotes, and a recommended HR action.
-	•	Analyse this attrition data by tenure, department, and manager. Flag teams with attrition above company average and suggest the 3 most actionable interventions.
-Finance and Accounting
-Daily and monthly
-	•	Variance analysis, P&L commentary, month-end close narrative
-	•	AP/AR aging analysis with collection priority lists
-	•	Drafting management commentary for monthly reports
-	•	Reconciling exports from multiple systems and flagging discrepancies
-FP&A and planning
-	•	Budget vs. actual analysis with root cause hypotheses
-	•	Scenario modelling — best/base/worst case forecasts
-	•	Driver-based forecasting using historical patterns
-	•	Building investor or board financial decks from underlying spreadsheets
-Treasury, audit, controls
-	•	Summarising audit findings and drafting management responses
-	•	Vendor risk analysis and consolidation opportunities
-	•	Drafting policy documents for new financial controls
-High-leverage prompts
-	•	Summarise the P&L variances for this month vs. last month by business line. Identify the top 3 drivers and distinguish seasonality from one-off events.
-	•	Add columns for ROI, payback period, and risk-adjusted return for each project in this table. Then sort by risk-adjusted return descending.
-	•	Build a 3-scenario forecast (conservative, base, aggressive) for the next 4 quarters using the trends in columns B–F. Show assumptions clearly.
-	•	From these 18 vendor invoices [in folder], identify any duplicates, unusual variances from typical amounts, or vendors with unusually high payment frequency.
-	•	Draft management commentary for our quarterly report. Focus on the variance drivers in /VarianceAnalysis.xlsx. Tone: confident but not defensive. 400 words.
-Sales
-Daily prospecting and outreach
-	•	Personalised outreach emails based on prospect's company news and LinkedIn profile
-	•	Follow-up cadences after demos, proposals, and silence
-	•	Pre-call research summaries combining web + CRM data
-	•	Objection-handling playbooks tailored to specific personas
-Pipeline and deals
-	•	Drafting proposals from a brief plus prior winning proposals
-	•	Summarising long client emails and meeting transcripts into account next steps
-	•	Building account plans from CRM data and meeting history
-	•	Forecasting calls — analysing pipeline health, slippage risk, and best-case/worst-case scenarios
-Reporting and enablement
-	•	Win/loss analysis from CRM notes
-	•	QBR decks built from internal performance data
-	•	Battle cards comparing the firm's offerings to specific competitors
-High-leverage prompts
-	•	Draft a personalised outreach email to [name] at [company] referencing their recent [news item]. Connect their challenge to our [offering]. Conversational tone, under 120 words.
-	•	Catch me up on [client account] across email, Teams, and meetings for the last 30 days. List open items, expressed concerns, and next-step opportunities.
-	•	Build a 12-slide proposal deck for [client] using the structure of /BestProposal_2024.pptx and the discovery notes in /ClientNotes.docx.
-	•	From these 30 lost-deal CRM notes, identify the top 5 reasons for losses and recommend product, pricing, or sales process changes.
-	•	Build a battle card comparing us to [competitor]. Use our /Differentiators.docx and recent web research on the competitor. Output as a 1-page table.
-Marketing
-Content production
-	•	Blog posts, LinkedIn content, newsletter copy, landing page drafts
-	•	Repurposing one long-form asset into 8+ social/email/video derivatives
-	•	Email nurture sequences segmented by persona
-	•	Translating campaigns across markets while preserving brand voice
-Strategy and analysis
-	•	Competitor monitoring — what they launched, what they're saying, how to respond
-	•	Campaign performance analysis with recommended next-test ideas
-	•	Persona research and segmentation refresh
-	•	ICP analysis from CRM data
-Events and brand
-	•	Event run-of-show docs, briefing books for executives, social copy schedules
-	•	Internal launch comms for new products or services
-	•	Media briefing packs and FAQ documents
-High-leverage prompts
-	•	Repurpose /WhitepaperQ3.docx into: 1 LinkedIn post (200 words), 5 LinkedIn carousel slide ideas, 1 blog post (800 words), 3 email teasers, and 5 short-form video scripts.
-	•	Develop a 4-email nurture sequence introducing [product] to [persona]. Each email under 150 words, with a clear single CTA.
-	•	Analyse this campaign performance data. Identify the top 3 winning segments, the 2 weakest, and recommend a follow-up test plan.
-	•	Build a competitive landscape one-pager for [market] using web research. Include positioning map, key messages, and our differentiation.
-IT and Operations
-Service desk and end-user support
-	•	Drafting clear, friendly responses to support tickets
-	•	Generating knowledge base articles from resolved tickets
-	•	Building FAQs from clusters of similar tickets
-	•	Communicating outages, maintenance windows, and changes in plain language
-Project and infrastructure
-	•	Drafting RFPs, RFIs, and vendor evaluation matrices
-	•	Writing change management plans, runbooks, and rollback procedures
-	•	Translating technical documentation for non-technical audiences
-	•	Generating user training materials for new tools
-Security and compliance
-	•	Summarising security advisories and translating impact to business stakeholders
-	•	Drafting incident communications during/after events
-	•	Audit prep — pulling evidence from logs and documenting controls
-	•	Analysing access reviews and flagging anomalies
-High-leverage prompts
-	•	From these 50 recent service desk tickets, identify the top 5 root causes and propose self-service KB articles or process changes for each.
-	•	Draft a clear, calm comms message about today's outage. Audience: all employees. Include what happened (in plain language), impact, current status, and what to do if affected.
-	•	Build a vendor evaluation matrix for [tool category]. Columns: features, pricing, security, integration, support, references. Pre-populate from web research on the top 5 vendors.
-	•	Translate this technical incident report into a 1-page executive summary. No jargon. Focus on business impact and remediation.
-Legal
-Contract and document work
-	•	First-pass review of contracts — flagging unusual clauses, missing terms, deviation from playbook
-	•	Comparing two contract versions and surfacing every change
-	•	Drafting standard agreements (NDAs, SOWs, vendor agreements) from briefs
-	•	Summarising long agreements into business-friendly briefs
-Research and analysis
-	•	Synthesising regulatory developments across jurisdictions
-	•	Building briefs from collections of cases or filings
-	•	Translating legal opinions into plain-language guidance for the business
-Operations
-	•	Drafting policies, codes of conduct, and training materials
-	•	Generating litigation hold notices and document preservation comms
-	•	Building compliance checklists from regulations
-High-leverage prompts
-	•	Review this contract against /OurPlaybook.docx. List every clause that deviates from our standard, its risk level, and a suggested negotiation position.
-	•	Compare /Contract_v3.docx and /Contract_v4.docx in tracked-changes style and summarise the substantive shifts in negotiation position.
-	•	Translate this 30-page agreement into a 1-page business brief covering: term, payment, termination rights, key risks, and points worth pushing back on.
-	•	Summarise [regulation] and identify the 5 most material implications for our business based on /OurOperations.docx.
-Caution: Always have a qualified lawyer review Copilot's legal output before reliance. Treat it as a strong first draft, never as final advice.
-Operations and PMO
-Project management
-	•	Drafting project charters, scope documents, RAID logs
-	•	Status reports built from meeting notes, emails, and Planner/Project data
-	•	Stakeholder comms tailored to different audiences
-	•	Lessons-learned summaries from project artifacts
-Process improvement
-	•	Documenting current-state processes from interview notes
-	•	Drafting SOPs and work instructions
-	•	Identifying automation candidates from process documentation
-	•	Building training materials for new processes
-Vendor and supply chain
-	•	Vendor performance reviews from contract data and feedback
-	•	PO and invoice variance analysis
-	•	Supplier risk summaries combining internal data and external news
-High-leverage prompts
-	•	Draft a project status report for [project] for the steering committee. Use my Teams meetings and emails for the last 2 weeks. Sections: progress, risks, decisions needed, next milestones.
-	•	From these 8 process interview transcripts, document the current-state process step by step. Flag inconsistencies between interviewees.
-	•	Build a vendor performance scorecard for [vendor]. Columns: SLA performance, invoice accuracy, responsiveness, escalations. Use /VendorData.xlsx.
-	•	Generate a lessons-learned report for [project] using the documents in this notebook. Cover: what worked, what didn't, what we'd do differently, recommended changes to playbook.
-Customer Service / Support
-Daily handling
-	•	Drafting empathetic responses to complaints and escalations
-	•	Building macro/template responses for common issues
-	•	Translating responses into customer languages
-	•	Tone calibration — making responses warmer, firmer, more concise
-Analysis and improvement
-	•	Theme extraction from customer feedback
-	•	Identifying pre-churn signals from support history
-	•	Building VoC reports for product and leadership teams
-	•	Generating training scenarios from real (anonymised) tickets
-High-leverage prompts
-	•	Draft a response to this escalated complaint. Empathetic, takes ownership, offers [resolution]. Avoid corporate jargon. Under 150 words.
-	•	Categorise these 300 customer feedback responses into 5–8 themes. For each: count, sentiment, 2 representative quotes, recommended owner team.
-	•	From this customer's full support history, summarise their journey, current sentiment, and risk of churn. Recommend a retention play.
-	•	Build a training scenario from this anonymised ticket: customer profile, the issue, the wrong way to respond, the right way to respond, key learning point.
-Learning and Development
-	•	Designing course outlines, learning objectives, and assessment questions
-	•	Building manager toolkits and discussion guides
-	•	Generating role-play scenarios for soft skills training
-	•	Creating short explainer videos via Copilot Create
-	•	Audio overviews of dense training material so learners can listen on commutes
-	•	Personalising development plans based on competency frameworks
-High-leverage prompts
-	•	Design a 4-module course on [topic] for [audience]. Per module: learning objectives, key content, an activity, assessment questions, and recommended duration.
-	•	Generate 8 realistic role-play scenarios for [skill] training. Each scenario: situation, character motivations, success criteria, common mistakes.
-	•	From this dense compliance training material, generate a 10-minute audio podcast summary, conversational tone, two hosts.
-R&D / Product / Engineering
-	•	Drafting PRDs, technical specs, and one-pagers from rough briefs
-	•	Summarising customer research and synthesising themes across interviews
-	•	Code documentation, README generation, and changelog drafting (note: code generation in Copilot for M365 is limited; use GitHub Copilot for heavy coding)
-	•	Reviewing tickets and flagging duplicates, missing info, or scope creep
-	•	Stand-up summaries and sprint review prep
-High-leverage prompts
-	•	From these 20 customer interview transcripts in this notebook, extract the top 5 unmet needs, with frequency, supporting quotes, and implications for our roadmap.
-	•	Draft a PRD for [feature]. Include problem statement, target user, success metrics, scope (in/out), open questions, and rollout plan.
-	•	Summarise this sprint's completed work, in-flight work, and blockers. Audience: product leadership. 1 page.
+---
 
-Part 3 — Prompting techniques and adoption
-Prompting frameworks that consistently outperform
-The single biggest predictor of how much value someone gets from Copilot is prompt quality. Two simple frameworks cover most cases.
-The GCSE framework — Goal, Context, Source, Expectation
-	•	Goal: what are you trying to produce or decide?
-	•	Context: who is it for, what's the situation, what's the constraint?
-	•	Source: which files, emails, meetings, or web sources should Copilot use?
-	•	Expectation: format, length, tone, and quality criteria
-Example: "Draft a termination letter (Goal). Performance-based, employee on PIP for 90 days, in California (Context). Use /TerminationTemplate.docx and /CompanyTone.docx (Source). One page, legally compliant, empathetic, with appeal rights section (Expectation)."
-The RISE framework — Role, Intent, Scope, Expectations
-	•	Role: what perspective should Copilot adopt? ("Act as a CFO reviewing this proposal")
-	•	Intent: exactly what you want produced
-	•	Scope: boundaries — sources, timeframe, audience, format
-	•	Expectations: quality criteria, length, tone, what to avoid
-Techniques that meaningfully improve output
-	•	Reference your files. Type / in the Copilot pane to attach specific documents, emails, meetings, or people. Grounded prompts beat generic ones every time.
-	•	Iterate, don't restart. Refine with follow-ups: "shorter," "more empathetic," "add a section on X," "match the tone of /OtherDoc.docx."
-	•	Persona prompting. "Act as a senior employment lawyer reviewing this for risk" or "Act as a CFO sceptical of this business case." Personas dramatically change the lens.
-	•	Show, don't tell. Paste an example of the style or format you want, then say "match this style."
-	•	Ask for structure. "Give me this as a table with columns for Issue, Risk, Recommendation, Owner." Structured outputs are easier to act on.
-	•	Red-team prompts. "What's missing? What's the weakest argument? How might this be misinterpreted? What edge cases haven't I addressed?"
-	•	Prompt chaining. Break complex requests into steps. Ask Copilot to summarise highlights first, then build the deck from the summary, then refine speaker notes — better than one big request.
-	•	Positive direction. "Write in a conversational tone" works better than "don't be too formal." Tell Copilot what you want, not what to avoid.
-	•	Specify the audience. "For executives who skim" vs. "for technical reviewers who want detail" produces dramatically different outputs.
-Common mistakes to avoid
-	•	Vague prompts ("summarise this") — always specify length, structure, and audience
-	•	Asking Copilot to do too much in one prompt — chain instead
-	•	Not referencing files — generic prompts produce generic output
-	•	Trusting numbers without verification — always sanity-check financial or factual claims
-	•	Pasting confidential data into web mode — always use Work mode for internal content
-	•	Forgetting that Copilot inherits your permissions — it can only see what you can see
-Governance and safe use
-Copilot inherits the user's existing M365 permissions, sensitivity labels, and retention policies — it cannot grant access to anything you can't already see. That said, a few practical reminders for the firm:
-	•	Sensitivity labels matter — DLP policies for Copilot will block summarisation of highly confidential files. Don't try to work around this.
-	•	Always verify factual outputs — Copilot can hallucinate dates, numbers, and citations
-	•	For client-facing or legal-bearing output, treat Copilot drafts as first drafts requiring human review
-	•	When in doubt about whether a prompt is appropriate, ask whether you'd be comfortable with the output appearing in a discovery request
-Suggested rollout sequence for any team
-Rather than dumping everything on people at once, sequence adoption by complexity and time-to-value:
-	•	Week 1: Outlook (catch-up, drafting) and Word (rewrites, summarisation). Highest immediate relief, lowest learning curve.
-	•	Week 2: Teams (meeting recaps, action items) and Excel (formula help, basic analysis on Tables).
-	•	Week 3: Notebooks for ongoing projects, and SharePoint page authoring.
-	•	Week 4 and beyond: Researcher for deeper analyses, Create for visual content, advanced Excel scenarios.
-Pair each stage with 5–10 starter prompts specific to that team's actual work. Generic training lands far worse than role-specific examples. Designate "Copilot champions" per department who collect prompts that work and share them in a central library — your firm's prompt library will be more valuable than any external resource within a few months.
-Building a firm-wide prompt library
-As people develop prompts that work, capture them in a shared SharePoint library or OneNote notebook. Organise by:
-	•	Application (Word, Excel, PowerPoint, Outlook, Teams, Notebooks)
-	•	Department (HR, Finance, Sales, Legal, etc.)
-	•	Use case (drafting, summarising, analysis, comparison, brainstorming)
-For each prompt, record: the prompt itself, the typical input, what good output looks like, and any tweaks that improve results. Within a quarter, this becomes one of the most valuable internal assets the firm has.
+## 3. ORG HIERARCHY — EXACT HEADCOUNT BY LEVEL
 
-Final thoughts
-Copilot's value compounds. The first week feels marginal, the first month is noticeably faster, and by the third month most users would push back hard if you took the licenses away. The teams that get there fastest do three things: they reference files in every prompt, they iterate rather than restart, and they share what works.
-Treat this playbook as a starting point. The most valuable prompts in your firm three months from now will be ones nobody has written yet — discovered by your own people doing their own work.
+Generate exactly these counts. The hierarchy is 13 levels deep.
+
+| Level # | Level Name | Headcount | Notes |
+|---|---|---|---|
+| L1 | President & CEO | **1** | Reports to Board |
+| L2 | C-Suite Executives | **9** | COO, CFO, CHRO, CIO (Chief Investment Officer), CTO, Chief Legal Officer & General Counsel, Chief Risk Officer, Chief Compliance Officer, Chief Marketing Officer |
+| L3 | Executive Vice President (EVP) | **6** | Head of Distribution, Head of Fund Services, Head of Institutional, Head of International, Head of Product, Head of Corporate Strategy |
+| L4 | Senior Vice President / Managing Director (SVP/MD) | **30** | Division heads & deputy heads |
+| L5 | Vice President (VP) | **110** | Team leads & senior individual contributors |
+| L6 | Assistant Vice President (AVP) | **78** | |
+| L7 | Director | **72** | IC track equivalent to AVP/VP |
+| L8 | Senior Manager | **58** | |
+| L9 | Manager | **82** | First-line people managers |
+| L10 | Senior Associate | **122** | |
+| L11 | Associate | **122** | |
+| L12 | Analyst | **110** | Junior IC / new hires |
+| L13 | Coordinator / Administrative Assistant | **25** | Admin support |
+| **TOTAL** | | **825** | |
+
+---
+
+## 4. DIVISIONS / COST CENTERS
+
+Generate the following 26 cost centers. Each employee belongs to exactly one. Headcount column gives the **target headcount per cost center** — total must reconcile to 825.
+
+| CC Code | Division | Sub-functions (examples) | Target HC |
+|---|---|---|---|
+| 1000 | Office of the CEO | Chief of Staff, Board Liaison, Executive Office | 6 |
+| 2000 | Investment Mgmt — Equities | PMs, analysts, traders for US/global equity boutiques | 95 |
+| 2100 | Investment Mgmt — Fixed Income | PMs, credit analysts, rates, EM debt | 75 |
+| 2200 | Investment Mgmt — Multi-Asset & Alternatives | Multi-asset allocation, event-driven, managed futures | 45 |
+| 2300 | Investment Research | Macro, fundamental, ESG, quant research | 50 |
+| 2400 | Trading & Portfolio Operations | Trade execution, portfolio implementation | 35 |
+| 3000 | Distribution — Retail Sales | Wholesalers, internal sales desk | 70 |
+| 3100 | Distribution — Institutional Sales | Consultant relations, key accounts | 35 |
+| 3200 | Distribution — International | EMEA & APAC sales | 25 |
+| 3300 | Marketing & Communications | Brand, content, PR, digital | 30 |
+| 3400 | Product Management & Strategy | Product development, pricing, lifecycle | 25 |
+| 4000 | Fund Services / Fund Administration | Fund accounting, treasury ops, NAV, transfer agency oversight | 80 |
+| 4100 | Operations | Reconciliations, settlements, corporate actions | 50 |
+| 4200 | Investor Relations | Shareholder relations, earnings, IR comms | 8 |
+| 5000 | Finance, Accounting & Treasury | FP&A, controller, treasury, GL | 40 |
+| 5100 | Tax | Corporate & fund tax | 10 |
+| 6000 | Legal | Corporate, funds, transactional, employment | 22 |
+| 6100 | Compliance | Regulatory, fund compliance, AML, surveillance | 30 |
+| 6200 | Risk Management | Investment risk, enterprise risk, ops risk | 18 |
+| 6300 | Internal Audit | SOX, ops audit, IT audit | 12 |
+| 7000 | Human Resources | TA, HRBP, L&D, Total Rewards, DEI | 22 |
+| 8000 | Technology / Infrastructure | Cloud, networks, end-user support, ServiceNow | 45 |
+| 8100 | Data & Analytics | Data engineering, BI, analytics, ML | 25 |
+| 8200 | Cybersecurity | InfoSec, SOC, GRC | 15 |
+| 9000 | Corporate Strategy & Business Dev | M&A, strategy, affiliate management | 12 |
+| 9100 | Facilities & Administration | Real estate, reception, exec assistants | 15 |
+
+**Total: 825** ✅
+
+---
+
+## 5. OFFICE LOCATIONS — DISTRIBUTION
+
+Distribute employees across 12 offices. Use these targets (must sum to 825):
+
+| Office | City, State/Country | Region | Target HC | Notes |
+|---|---|---|---|---|
+| Hartford HQ | Hartford, CT, USA | Americas | **320** | HQ; Finance, HR, Legal, Compliance, Ops, Tech-heavy |
+| Manhattan | New York, NY, USA | Americas | **170** | Sales, Investment Mgmt, Marketing |
+| Stamford | Stamford, CT, USA | Americas | **45** | Growth equity boutique |
+| Pittsburgh | Pittsburgh, PA, USA | Americas | **50** | Fund Services hub |
+| Boston | Boston, MA, USA | Americas | **35** | Equity research, PM team |
+| Los Angeles | Los Angeles, CA, USA | Americas | **40** | Value equity & alts boutique |
+| Chicago | Chicago, IL, USA | Americas | **25** | Sales & consultant relations |
+| San Francisco | San Francisco, CA, USA | Americas | **20** | Tech & data team |
+| London | London, UK | EMEA | **60** | International distribution + EMEA investment |
+| Dublin | Dublin, Ireland | EMEA | **25** | UCITS / fund services EMEA |
+| Singapore | Singapore | APAC | **20** | APAC sales + tech |
+| Toronto | Toronto, Canada | Americas | **15** | Canadian distribution |
+
+**Total: 825** ✅
+
+**Location ↔ Division affinity (use these biases when assigning):**
+- Office of the CEO / Finance / HR / Legal / Compliance / Risk / Internal Audit / IR → **Hartford-heavy (60–80%)**
+- Investment Mgmt — Equities → NYC, Boston, LA, Stamford, London
+- Investment Mgmt — Fixed Income → Hartford, NYC, London, Dublin
+- Multi-Asset & Alternatives → Hartford, NYC, LA
+- Distribution — Retail → NYC, Chicago, Hartford, distributed
+- Distribution — International → London, Singapore, Hartford
+- Fund Services / Operations → Pittsburgh, Hartford, Dublin
+- Tech / Data / Cyber → Hartford, NYC, Singapore, San Francisco
+- Marketing → NYC, Hartford
+- Stamford office is ~80% Investment Mgmt — Equities (growth boutique)
+
+---
+
+## 6. FIELDS TO GENERATE (Schema)
+
+Output the dataset as **CSV** with the following 45 columns, in this order:
+
+| # | Column | Type | Notes |
+|---|---|---|---|
+| 1 | `employee_id` | string | Format `NCP100001` … `NCP100825`. Sequential. |
+| 2 | `first_name` | string | Realistic per ethnicity/region |
+| 3 | `last_name` | string | Same |
+| 4 | `full_name` | string | `First Last` |
+| 5 | `preferred_name` | string | Often = first_name; sometimes diminutive (Mike, Liz, etc.) |
+| 6 | `gender` | enum | `Male` / `Female` / `Non-binary` / `Prefer not to disclose` |
+| 7 | `date_of_birth` | date | `YYYY-MM-DD`; consistent with `age` and level (see §7) |
+| 8 | `age` | int | Derived from DOB as of 2026-01-01 |
+| 9 | `ethnicity` | enum | See §7 — varies by office region |
+| 10 | `nationality` | string | Country code (e.g., `US`, `GB`, `IE`, `SG`, `CA`, `IN`) |
+| 11 | `marital_status` | enum | `Single` / `Married` / `Divorced` / `Widowed` / `Prefer not to disclose` |
+| 12 | `work_email` | string | `firstname.lastname@northbridgecp.com` (lowercase, append numbers on collision) |
+| 13 | `personal_email` | string | gmail/yahoo/outlook, plausible |
+| 14 | `work_phone` | string | Country-appropriate format |
+| 15 | `mobile_phone` | string | Same |
+| 16 | `office_location` | string | e.g., `Hartford HQ` |
+| 17 | `city` | string | |
+| 18 | `state_province` | string | State for US, country subdivision otherwise |
+| 19 | `country` | string | Full name |
+| 20 | `region` | enum | `Americas` / `EMEA` / `APAC` |
+| 21 | `time_zone` | string | e.g., `America/New_York`, `Europe/London`, `Asia/Singapore` |
+| 22 | `division` | string | From §4 table (Division column) |
+| 23 | `sub_department` | string | e.g., `Equities — US Large Cap Growth`, `Compliance — AML`, `Tech — Cloud Engineering` |
+| 24 | `team` | string | Specific team within sub-department |
+| 25 | `cost_center_code` | string | From §4 table (e.g., `2000`) |
+| 26 | `job_title` | string | Realistic & level-appropriate (e.g., `Senior Portfolio Manager, US Equity`) |
+| 27 | `job_level` | string | `L1`…`L13` |
+| 28 | `level_name` | string | `CEO`, `EVP`, `SVP`, `VP`, `AVP`, `Director`, `Senior Manager`, `Manager`, `Senior Associate`, `Associate`, `Analyst`, `Coordinator`, `C-Suite` |
+| 29 | `job_function` | enum | `Investment Management` / `Distribution & Sales` / `Operations` / `Technology` / `Finance` / `Legal & Compliance` / `Risk` / `HR` / `Marketing` / `Executive` / `Corporate Functions` |
+| 30 | `job_family` | string | Narrower than function (e.g., `Portfolio Management`, `Equity Research`, `Sales Wholesaler`, `Fund Accounting`) |
+| 31 | `manager_employee_id` | string | FK to another `employee_id`. CEO = `NULL`. Manager's level must be strictly more senior (lower L#). |
+| 32 | `manager_name` | string | Denormalized for convenience |
+| 33 | `skip_level_manager_id` | string | Two levels up |
+| 34 | `hire_date` | date | `YYYY-MM-DD`; consistent with age and tenure |
+| 35 | `tenure_years` | float | (2026-01-01 − hire_date) in years, 1 decimal |
+| 36 | `years_in_current_role` | float | ≤ tenure_years |
+| 37 | `last_promotion_date` | date or NULL | NULL if never promoted internally |
+| 38 | `employment_type` | enum | `Full-time` (95%), `Part-time` (3%), `Contractor` (1.5%), `Intern` (0.5%) |
+| 39 | `work_mode` | enum | `On-site` / `Hybrid` / `Remote` — see §7 |
+| 40 | `flsa_status` | enum | `Exempt` / `Non-exempt` (US only; use `N/A` for non-US) |
+| 41 | `education_level` | enum | `High School` / `Associate` / `Bachelor's` / `Master's` / `MBA` / `PhD` / `JD` |
+| 42 | `field_of_study` | string | e.g., `Finance`, `Economics`, `Computer Science`, `Accounting`, `Mathematics`, `Law` |
+| 43 | `university` | string | Plausible US/UK/SG/CA universities; mix top-tier and regional |
+| 44 | `graduation_year` | int | Consistent with age (typically `age − 22` for bachelor's) |
+| 45 | `certifications` | string (semicolon-separated) | e.g., `CFA;Series 7;Series 63`; can be empty |
+| 46 | `industry_experience_years` | int | ≥ tenure_years (prior experience elsewhere) |
+| 47 | `languages_spoken` | string | English required; add others based on region/ethnicity |
+| 48 | `last_performance_rating` | enum | `Exceeds Expectations` (15%) / `Strong Performer` (30%) / `Meets Expectations` (45%) / `Developing` (8%) / `Needs Improvement` (2%) |
+| 49 | `promotion_eligible` | bool | Higher likelihood at L9–L11 |
+| 50 | `veteran_status` | enum | `Veteran` (5% in US offices) / `Non-veteran` / `Prefer not to disclose` |
+| 51 | `disability_status` | enum | `Yes` (4%) / `No` / `Prefer not to disclose` |
+| 52 | `engagement_score` | int | 1–10, lightly correlated with performance rating |
+| 53 | `training_hours_last_12mo` | int | 0–80, median ~25 |
+| 54 | `employee_status` | enum | `Active` (97%) / `On Leave` (2%) / `Notice Period` (1%) |
+| 55 | `hire_source` | enum | `Internal Referral` (25%) / `Direct Application` (15%) / `Recruiter — External` (20%) / `LinkedIn` (20%) / `University Recruiting` (10%) / `Acquisition` (5%) / `Returning Employee` (5%) |
+
+*(Yes that's 55 — I added a few obvious analytical fields. Drop any you don't want.)*
+
+---
+
+## 7. REALISM RULES & DISTRIBUTIONS
+
+### 7.1 Gender by level (realistic for asset management)
+| Level | % Female | % Male | % NB / PNS |
+|---|---|---|---|
+| L1 (CEO) | flip a coin | | — |
+| L2 (C-Suite) | 30% | 67% | 3% |
+| L3 (EVP) | 25% | 72% | 3% |
+| L4 (SVP/MD) | 28% | 70% | 2% |
+| L5 (VP) | 33% | 65% | 2% |
+| L6 (AVP) | 38% | 60% | 2% |
+| L7 (Director) | 40% | 58% | 2% |
+| L8 (Sr Manager) | 43% | 55% | 2% |
+| L9 (Manager) | 45% | 53% | 2% |
+| L10 (Sr Assoc) | 48% | 50% | 2% |
+| L11 (Assoc) | 50% | 48% | 2% |
+| L12 (Analyst) | 50% | 48% | 2% |
+| L13 (Coordinator) | 72% | 25% | 3% |
+
+Overall blended ratio should land around **44% F / 54% M / 2% other** — a believable asset-mgmt mix.
+
+### 7.2 Age by level
+| Level | Min | Mode | Max |
+|---|---|---|---|
+| L1 | 52 | 60 | 67 |
+| L2 | 46 | 54 | 64 |
+| L3 | 44 | 52 | 62 |
+| L4 | 40 | 48 | 60 |
+| L5 | 33 | 42 | 58 |
+| L6 | 30 | 38 | 52 |
+| L7 | 33 | 42 | 55 |
+| L8 | 30 | 38 | 50 |
+| L9 | 28 | 36 | 48 |
+| L10 | 26 | 31 | 42 |
+| L11 | 24 | 28 | 36 |
+| L12 | 22 | 24 | 29 |
+| L13 | 21 | 35 | 60 |
+
+### 7.3 Tenure
+- Senior (L1–L4): mix of long-tenured (10–25 yrs) and recent strategic hires (1–4 yrs)
+- Mid (L5–L8): median ~6 yrs, range 1–18
+- Junior (L9–L12): median ~3 yrs, range 0.2–10
+- L13: bimodal — long-time loyal admins (15+ yrs) and recent hires (0–2 yrs)
+- `hire_date` must be on or after employee's 22nd birthday (or 18th for L12/L13)
+- ~30% of L4+ should have `hire_source = Acquisition` (boutique acquisitions) with longer tenures starting at the acquisition year
+
+### 7.4 Ethnicity by office region
+**US offices** (Hartford, NYC, Stamford, Pittsburgh, Boston, LA, Chicago, SF):
+- White: 56%
+- Asian: 22% (slightly higher in SF & NYC tech roles, up to 35%)
+- Hispanic / Latino: 9%
+- Black / African American: 7%
+- Two or More Races: 3%
+- Prefer not to disclose: 3%
+
+**London**: White-British 48%, White-Other 18%, Asian (Indian/Pakistani/Bangladeshi) 15%, Black 6%, Mixed 5%, Other 8%
+**Dublin**: White-Irish 68%, White-Other EU 20%, Asian 6%, Other 6%
+**Singapore**: Chinese 70%, Malay 12%, Indian 9%, Other (incl. Western expats) 9%
+**Toronto**: White 52%, Asian (East + South) 28%, Black 7%, Hispanic 5%, Multiracial 5%, Other 3%
+
+### 7.5 Names — match to ethnicity & region
+- Use realistic, common names for each ethnicity/region combination
+- Vary heavily — avoid repeating the same surname more than ~3 times across 825 records
+- For London/Dublin/Singapore/Toronto, use locally appropriate names; don't import US naming patterns
+
+### 7.6 Work mode by level & function
+- L1–L4: Hybrid 80%, On-site 15%, Remote 5%
+- L5–L9: Hybrid 65%, On-site 25%, Remote 10%
+- L10–L13: Hybrid 55%, On-site 35%, Remote 10%
+- Tech & Data roles skew Remote/Hybrid (60% Hybrid, 25% Remote, 15% On-site)
+- Fund Services (Pittsburgh) skews On-site (50%) due to ops nature
+- Trading roles: 70%+ On-site
+
+### 7.7 Certifications by function
+- **Investment Mgmt / Research**: CFA very common at L4+ (~65%), CAIA for alts (~30%), FRM for risk (~25%)
+- **Distribution — Retail**: Series 7, 63, 65/66 standard; Series 24 for managers
+- **Finance / Tax / Audit**: CPA, CA, ACCA depending on geography
+- **Risk**: FRM, PRM
+- **Compliance**: Series 7 + Series 24 + JD common at senior levels
+- **Legal**: JD required at L4+ in Legal CC
+- **Tech / Data**: AWS / Azure / GCP certs, CISSP for cybersecurity, PMP
+
+### 7.8 Education
+- L4+ in Investment functions: 75% Master's/MBA, often Ivy or top-tier (Wharton, Booth, Sloan, Columbia, HBS, INSEAD, LBS)
+- L1–L3: 90%+ have graduate degree
+- L12 Analysts: ~95% Bachelor's, ~5% Master's
+- Mix of top-tier (Ivies, Stanford, MIT, LSE, Oxford, Cambridge, NUS, U Toronto), strong regional (UConn, Penn State, Boston College, Trinity College Dublin, NTU Singapore, UCLA, Berkeley, Michigan, Cornell), and lesser-known schools
+
+### 7.9 Performance rating distribution (overall)
+- Exceeds Expectations: 15%
+- Strong Performer: 30%
+- Meets Expectations: 45%
+- Developing: 8%
+- Needs Improvement: 2%
+
+### 7.10 Subtle realistic patterns to include
+- A small (~2%) over-representation of long tenure at L4+ in Hartford (loyalty effect)
+- Slightly lower gender diversity in Investment Mgmt vs. Marketing/HR
+- Pittsburgh skews older with longer tenure (back-office stability)
+- Singapore & London offices have higher % of employees with multi-lingual capability
+- Recently acquired affiliates (assign 2 fictional acquisitions: "Stamford Growth Advisers" acquired 2018 → Stamford office; "Halcyon Alternatives" acquired 2023 → LA office) — their employees should have `hire_source = Acquisition`
+
+---
+
+## 8. STRUCTURAL INTEGRITY RULES (HARD CONSTRAINTS)
+
+These MUST hold. Validate before producing output.
+
+1. **Exactly 825 records, unique `employee_id`s `NCP100001`–`NCP100825`.**
+2. **Exactly one L1 (CEO).** CEO has `manager_employee_id = NULL`.
+3. **All 9 L2 C-Suite report to L1.**
+4. **All 6 L3 EVPs report to L1 or L2.**
+5. **Every non-CEO has a `manager_employee_id` referencing a real record with a strictly more senior level** (lower L#).
+6. **No circular reporting.** The graph must be a tree rooted at the CEO.
+7. **Allowed reporting ranges:**
+   - L4 → reports to L2 or L3
+   - L5 → L3 or L4
+   - L6 → L4 or L5
+   - L7 → L4 or L5
+   - L8 → L5, L6, or L7
+   - L9 → L5, L6, L7, or L8
+   - L10 → L7, L8, or L9
+   - L11 → L8, L9, or L10
+   - L12 → L9, L10, or L11
+   - L13 → L9, L10, or L11
+8. **Span of control:** No manager has more than ~12 direct reports. Median should be 4–7.
+9. **Cost-center alignment:** an employee's manager should usually be in the **same cost center**. Allow ~10% cross-CC reporting (matrix relationships).
+10. **Email uniqueness:** `work_email` must be unique. Resolve collisions by appending a number.
+11. **Date consistency:**
+    - `hire_date ≥ date_of_birth + 18 years` (22 for L12+ analyst roles)
+    - `years_in_current_role ≤ tenure_years`
+    - `last_promotion_date`, if present, ≥ `hire_date` and ≤ `2026-01-01`
+    - `graduation_year` consistent with age
+12. **Headcount per cost center matches §4 (±2 tolerance).**
+13. **Headcount per office matches §5 (±2 tolerance).**
+14. **No real-world names of actual Virtus / financial-services executives.**
+15. **No real addresses or phone numbers** — use plausible but clearly fictional patterns (e.g., NYC numbers `+1-212-555-0xxx`).
+
+---
+
+## 9. OUTPUT FORMAT
+
+- Produce CSV with header row, one record per line.
+- UTF-8 encoded.
+- Quote any field containing commas, semicolons, or quotes.
+- Date format `YYYY-MM-DD`.
+- Booleans as `TRUE`/`FALSE`.
+- NULL as empty string.
+
+---
+
+## 10. SAMPLE ROWS (for tone calibration — generate ~10 representative rows in your first response, then ask if you should proceed in batches)
+
+```
+employee_id,first_name,last_name,full_name,preferred_name,gender,date_of_birth,age,ethnicity,nationality,marital_status,work_email,personal_email,work_phone,mobile_phone,office_location,city,state_province,country,region,time_zone,division,sub_department,team,cost_center_code,job_title,job_level,level_name,job_function,job_family,manager_employee_id,manager_name,skip_level_manager_id,hire_date,tenure_years,years_in_current_role,last_promotion_date,employment_type,work_mode,flsa_status,education_level,field_of_study,university,graduation_year,certifications,industry_experience_years,languages_spoken,last_performance_rating,promotion_eligible,veteran_status,disability_status,engagement_score,training_hours_last_12mo,employee_status,hire_source
+NCP100001,Gregory,Aylsworth,Gregory Aylsworth,Greg,Male,1963-04-12,62,White,US,Married,gregory.aylsworth@northbridgecp.com,greg.aylsworth63@gmail.com,+1-860-555-0101,+1-860-555-2101,Hartford HQ,Hartford,CT,United States,Americas,America/New_York,Office of the CEO,Executive Office,Office of the President,1000,President & Chief Executive Officer,L1,CEO,Executive,Executive Leadership,,,,,2002-03-04,23.8,17.2,2008-11-15,Full-time,Hybrid,Exempt,MBA,Finance,University of Connecticut / UMass Amherst,1987,CPA,30,English,Strong Performer,FALSE,Non-veteran,No,9,42,Active,Internal Referral
+```
+
+*(Generate the remaining ~824 following all rules above.)*
+
+---
+
+## 11. GENERATION STRATEGY (because 825 rows don't fit one LLM response)
+
+Generate in **phases** to maintain consistency:
+
+**Phase 1 — Org skeleton (top of the house):**
+Generate L1 + L2 + L3 + L4 = **46 records**. Lock down `employee_id`, name, division, cost_center, office, level. Output as CSV.
+
+**Phase 2 — Middle management:**
+Generate L5 + L6 + L7 = **260 records**. Each must report to someone from Phase 1 or Phase 2. Respect headcounts per CC and office.
+
+**Phase 3 — Manager layer:**
+Generate L8 + L9 = **140 records**. Same rules.
+
+**Phase 4 — Individual contributors:**
+Generate L10 + L11 = **244 records**.
+
+**Phase 5 — Junior staff & admin:**
+Generate L12 + L13 = **135 records**.
+
+After each phase, output:
+- The phase's CSV rows
+- A running tally of headcount by cost center and by office
+- Any constraint violations to flag
+
+At the end, output a final **integrity report**:
+- Total headcount = 825 ✅
+- All managers exist ✅
+- Per-CC and per-office targets met ✅
+- Gender / ethnicity / tenure distributions (summary stats)
+
+---
+
+## 12. DASHBOARD ANALYSIS USE CASES (for your downstream context)
+
+The resulting dataset should power dashboards answering questions like:
+- Gender breakdown by level, division, and office (and gender pipeline: % female at each level)
+- Ethnicity mix overall and by function (DEI scorecard)
+- Age & tenure pyramids
+- Span-of-control distribution (and outliers — managers with too many or too few reports)
+- Headcount by cost center, office, region
+- Hybrid / remote / on-site mix by function
+- Education & certification coverage (e.g., % of Investment Mgmt with CFA)
+- Promotion velocity (years in role, time since last promotion)
+- Engagement score correlations
+- Acquired-affiliate vs. organic-hire workforce composition
+- Veteran / disability self-ID rates
+
+Keep these in mind so the data has enough variance and signal to drive interesting visuals.
+
+---
+
+## 13. FINAL INSTRUCTIONS TO THE GENERATING LLM
+
+1. Confirm you understand the task by restating: total headcount, number of levels, number of cost centers, number of offices.
+2. Begin **Phase 1** and output the 46 senior records as CSV.
+3. Wait for the user to say `proceed` before each subsequent phase.
+4. If anything is ambiguous, ask **before** generating; don't invent silent rules.
+5. After Phase 5, output the integrity report.
+6. Remember: **synthetic, no salaries, no real persons, no real addresses.**
+
+---
+
+*End of prompt.*
