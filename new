@@ -1,49 +1,29 @@
-Here’s a prompt you can give Copilot to generate the data:
+Short version: the data isn’t actually being lost in the file. Excel always stores the full-precision number (0.123456) — the “0.12” is just a display mask applied by the cell’s number format. So nothing is truncated at the source. Your preprocessor is reading the formatted/displayed text of each cell instead of the stored value. Read the real value and the digits come back.
 
-“Generate a sample dataset of 200 rows simulating daily stock trading data with the following 6 columns:
+The fix depends on how the package reads the workbook. The usual culprits:
 
-	1.	Date — business days starting from January 2, 2025, going forward sequentially
-	2.	Ticker — randomly assigned from: AAPL, MSFT, GOOGL, TSLA, NVDA, AMZN
-	3.	Open Price — realistic values between $100 and $900 depending on ticker
-	4.	Close Price — within ±5% of the Open Price
-	5.	Volume — random integer between 1,000,000 and 80,000,000
-	6.	Sector — Tech for AAPL/MSFT/GOOGL/NVDA, Auto for TSLA, E-commerce for AMZN
+If it’s a Script Task using Excel Interop, the tell-tale is .Text. .Text returns the formatted string (“0.12”); .Value2 returns the raw underlying double. Switch to .Value2:
 
-Format it as an Excel table with headers. Make the prices look realistic for each ticker (e.g., NVDA and GOOGL higher range, AAPL mid-range).”
+// Bad — returns the displayed/formatted string
+object cellVal = range.Text;        // "0.12"
 
-Tip for the demo: if Copilot’s data generation feels slow or inconsistent, I can generate the .xlsx file directly so you have a reliable backup ready Got it — market/investment angle. Here’s the revised plan.
-
-Sample data (200 rows, 6 columns):
-Daily Stock Trading Data
-
-	•	Date (business days across ~10 months)
-	•	Ticker (5-6 stocks: AAPL, MSFT, GOOGL, TSLA, NVDA, AMZN)
-	•	Open Price
-	•	Close Price
-	•	Volume (shares traded)
-	•	Sector (Tech, Auto, E-commerce)
-
-Task 1 — Formula prompts:
-
-	1.	“Add a Daily Return % column showing percent change from Open to Close” → =([@Close]-[@Open])/[@Open]
-	2.	“Add a Trade Value column = Close Price × Volume”
-	3.	“Flag each row as ‘Gain’ or ‘Loss’ based on whether Close is higher than Open”
-	4.	“Add a Volatility Flag: ‘High’ if absolute daily return > 3%, ‘Medium’ if 1-3%, ‘Low’ if under 1%”
-	5.	“Add a 7-day Moving Average of Close Price for each ticker” (good one to show Copilot handling complex logic)
-	6.	“Add a Cumulative Return column per ticker from the first trading day”
-
-Task 2 — Chart prompts:
-
-	1.	“Plot Close Price trend over time for AAPL as a line chart”
-	2.	“Compare average daily return % across all tickers as a bar chart”
-	3.	“Show total trade value by sector as a pie chart”
-	4.	“Plot a line chart comparing Close Price trends of NVDA vs TSLA over time”
-	5.	“Show monthly average volume by ticker as a clustered column chart”
-	6.	“Visualize the count of Gain vs Loss days per ticker”
-
-The moving average + cumulative return prompts are great showpieces — they look impressive and Copilot handles them well. Want me to generate the file?
+// Good — returns full-precision value
+object cellVal = range.Value2;      // 0.123456
 
 
+(.Value also preserves precision, but .Value2 is the safest since it won’t reinterpret currency/dates.)
+
+If it’s OpenXML SDK, the full value lives in the cell’s <v> element. The truncation happens when code applies the cell’s number-format string to produce a display value. For the CSV, just emit the raw value and skip the format:
+
+string raw = cell.CellValue?.InnerText;  // "0.123456" — write this
 
 
+If it’s EPPlus / ClosedXML, use cell.Value (the object/double), never cell.Text (formatted).
 
+If it’s actually a Data Flow with an Excel Source (ACE/Jet OLE DB), the driver already returns the full numeric value, so this symptom usually wouldn’t appear there — which is another reason I suspect a custom text-reading step.
+
+One gotcha after you fix the read: make sure the CSV writer doesn’t re-round or flip to scientific notation. Format with invariant culture and a round-trip specifier, e.g. ((double)val).ToString("R", CultureInfo.InvariantCulture).
+
+To confirm the values are genuinely intact before you change anything, just widen the column or bump the decimal places in Excel — you’ll see the full 0.123456 sitting there.
+
+How is the conversion actually done — a Script Task (and if so, Interop, OpenXML, or EPPlus?) or a Data Flow with an Excel Source? Tell me which and I’ll give you the exact code change.
