@@ -1,321 +1,208 @@
-Northbridge Capital Partners — Synthetic Employee
-Data
-Step-by-Step Prompts for Microsoft Copilot
-Copilot can’t generate 825 rows in one shot. Use this in 7 sequential steps. Paste STEP
-0 (Reference Card) at the start of each new chat so Copilot has context, then run the
-steps in order. After each step, save the CSV output, then move to the next step. The last
-step is a validation pass.
-STEP 0 — REFERENCE CARD (paste at the start of every chat)
-You are generating a fully synthetic employee dataset for a fictional firm called Northbridge
-Capital Partners (NCP) — a multi-boutique asset manager modeled on a Virtus-style
-company. No real people, no real addresses, no salaries.
-Company facts
-Legal name: Northbridge Capital Partners, Inc. | Ticker (fictional): NBCP
-HQ: Hartford, CT | Founded: 1998 | Industry: Asset Management (multi-boutique)
-Email domain: @northbridgecp.com
-Total headcount target: 825
-Hierarchy (13 levels, exact counts)
-L Title HC
-L1 President & CEO 1
-L2 C-Suite (COO, CFO, CHRO, CIO, CTO, CLO, CRO, CCO, CMO) 9
-L3 EVP 6
-L4 SVP / Managing Director 30
-L5 Vice President 110
-L6 Assistant Vice President 78
-L7 Director 72
-L8 Senior Manager 58
-L9 Manager 82
-L10 Senior Associate 122
-L11 Associate 122
-L12 Analyst 110
-L13 Coordinator / Admin 25
-Divisions / Cost Centers (26 total, target HC)
-Code Division HC
-1000 Office of the CEO 6
-2000 Investment Mgmt — Equities 95
-2100 Investment Mgmt — Fixed Income 75
-2200 Investment Mgmt — Multi-Asset & Alternatives 45
-2300 Investment Research 50
-2400 Trading & Portfolio Operations 35
-3000 Distribution — Retail Sales 70
-3100 Distribution — Institutional Sales 35
-3200 Distribution — International 25
-3300 Marketing & Communications 30
-3400 Product Management & Strategy 25
-4000 Fund Services / Fund Administration 80
-4100 Operations 50
-4200 Investor Relations 8
-5000 Finance, Accounting & Treasury 5100 Tax 6000 Legal 6100 Compliance 6200 Risk Management 6300 Internal Audit 7000 Human Resources 8000 Technology / Infrastructure 8100 Data & Analytics 8200 Cybersecurity 9000 Corporate Strategy & Business Dev 9100 Facilities & Administration Offices (12 total, target HC)
-Office City Hartford HQ Hartford, CT Manhattan New York, NY Stamford Stamford, CT Pittsburgh Pittsburgh, PA Boston Boston, MA Los Angeles Los Angeles, CA Chicago Chicago, IL San Francisco San Francisco, CA London London, UK Dublin Dublin, Ireland Region Americas Americas Americas Americas Americas Americas Americas Americas EMEA EMEA 40
-10
-22
-30
-18
-12
-22
-45
-25
-15
-12
-15
-HC
-320
-170
-45
-50
-35
-40
-25
-20
-60
-25
-Singapore Singapore APAC 20
-Toronto Toronto, Canada Americas 15
-Location ↔ Division bias
-Corporate functions (CEO Office, Finance, HR, Legal, Compliance, Risk, Audit, IR) →
-Hartford-heavy (60–80%)
-Equities → NYC, Boston, LA, Stamford, London | Fixed Income → Hartford, NYC, London,
-Dublin
-Multi-Asset/Alts → Hartford, NYC, LA | Retail Sales → NYC, Chicago, Hartford
-International Sales → London, Singapore | Fund Services/Ops → Pittsburgh, Hartford,
-Dublin
-Tech/Data/Cyber → Hartford, NYC, Singapore, SF | Marketing → NYC, Hartford
-Stamford office is ~80% Equities (acquired growth boutique)
-Fields to generate (40 columns, in this order)
-1. employee_id ( NCP100001– NCP100825 , sequential)
-2. first
-name
-_
-3. last
-name
-_
-4. full
-name
-_
-5. gender ( Male / Female / Non-binary / Prefer not to disclose )
-6. date
-of
-_
-_birth (YYYY-MM-DD)
-7. age (as of 2026-01-01)
-8. ethnicity
-9. nationality (country code)
-10. work
-_email ( firstname.lastname@northbridgecp.com , unique)
-11. office
-location
-_
-12. city
-13. state
-_province
-14. country
-15. region ( Americas / EMEA / APAC )
-16. division
-17. sub
-_department
-18. team
-19. cost
-center
-code
-_
-_
-20. job_title (realistic, level-appropriate)
-21. job_level ( L1 … L13 )
-22. level
-_name ( CEO , C-Suite , EVP , SVP , VP , AVP , Director , Senior Manager ,
-Manager , Senior Associate , Associate , Analyst , Coordinator )
-23. job_function ( Investment Management / Distribution & Sales / Operations /
-Technology / Finance / Legal & Compliance / Risk / HR / Marketing / Executive /
-Corporate Functions )
-24. job_family
-25. manager_employee_id (CEO = blank; manager must be strictly more senior level)
-26. manager_
-name
-27. hire
-_date (YYYY-MM-DD; ≥ DOB + 18 yrs, or +22 for L12+)
-28. tenure
-_years (float, 1 decimal, vs 2026-01-01)
-29. employment_type ( Full-time 95% / Part-time 3% / Contractor 1.5% / Intern
-0.5%)
-30. work
-_mode ( On-site / Hybrid / Remote )
-31. education
-_level ( Bachelor's / Master's / MBA / PhD / JD / Associate / High
-School )
-32. field
-of
-_
-_study
-33. university
-34. certifications (semicolon-separated; e.g., CFA;Series 7 )
-35. languages_spoken (English plus regional)
-36. last
-_performance_rating ( Exceeds Expectations 15% / Strong Performer 30% /
-Meets Expectations 45% / Developing 8% / Needs Improvement 2%)
-37. veteran
-_status ( Veteran 5% in US / Non-veteran / Prefer not to disclose )
-38. engagement_score (1–10, loosely tracks performance)
-39. employee_status ( Active 97% / On Leave 2% / Notice Period 1%)
-40. hire
-_source ( Internal Referral 25% / Direct Application 15% / Recruiter —
-External 20% / LinkedIn 20% / University Recruiting 10% / Acquisition 5% /
-Returning Employee 5%)
-Gender by level (target %F / %M / %NB-PNS) L1 coin-flip · L2 30/67/3 · L3 25/72/3 · L4
-28/70/2 · L5 33/65/2 · L6 38/60/2 · L7 40/58/2 · L8 43/55/2 · L9 45/53/2 · L10 48/50/2 · L11
-50/48/2 · L12 50/48/2 · L13 72/25/3
-Age by level (min / mode / max) L1 52/60/67 · L2 46/54/64 · L3 44/52/62 · L4 40/48/60 · L5
-33/42/58 · L6 30/38/52 · L7 33/42/55 · L8 30/38/50 · L9 28/36/48 · L10 26/31/42 · L11
-24/28/36 · L12 22/24/29 · L13 21/35/60
-Ethnicity by office region
-US offices: White 56% / Asian 22% / Hispanic 9% / Black 7% / Two-or-More 3% / PNS
-3% (SF & NYC tech may push Asian to 35%)
-London: White-British 48% / White-Other 18% / South Asian 15% / Black 6% / Mixed 5%
-/ Other 8%
-Dublin: White-Irish 68% / White-Other EU 20% / Asian 6% / Other 6%
-Singapore: Chinese 70% / Malay 12% / Indian 9% / Other 9%
-Toronto: White 52% / Asian 28% / Black 7% / Hispanic 5% / Mixed 5% / Other 3%
-Hard rules
-1. Exactly one CEO ( manager_employee_id blank).
-2. Every other employee has a manager whose level is strictly more senior (lower L#).
-3. No manager has more than ~12 direct reports; median 4–7.
-4. Manager and report usually share the same cost center (~10% cross-CC matrix
-allowed).
-5. work_email unique (append numbers on collision).
-6. hire_date ≥ DOB + 18 yrs (≥ 22 for L12 Analysts).
-7. No real-world names of actual financial-services executives. No real addresses or phone
-numbers.
-8. Output as CSV with header row; UTF-8; quote fields containing commas.
-Realism touches
-Two fictional acquisitions seed hire_source = Acquisition : “Stamford Growth
-Advisers” (2018, Stamford) and “Halcyon Alternatives” (2023, LA).
-CFA common in Investment Mgmt at L4+ (~65%). Series 7/63/65/66 standard in
-Distribution. JD required in Legal at L4+. CPA/CA in Finance/Tax/Audit.
-Tech/Data roles skew Remote/Hybrid; Trading skews On-site; Pittsburgh Fund Services
-skews On-site.
-End of Reference Card. Acknowledge you understand, then wait for the user to send STEP
-1.
-STEP 1 — Top of House (46 records: L1 + L2 + L3 + L4)
-Using the Reference Card, generate the top 46 employees:
-1× L1 (CEO)
-9× L2 (C-Suite)
-6× L3 (EVP)
-30× L4 (SVP/MD)
-Rules for this step:
-CEO sits in Cost Center 1000 (Office of the CEO), Hartford HQ.
-All 9 C-Suite report to the CEO. Distribute across cost centers (CFO → 5000, CHRO →
-7000, CLO → 6000, CCO → 6100, CRO → 6200, CTO → 8000, CMO → 3300, CIO →
-2300, COO → 4100). All Hartford HQ except CMO who can be NYC.
-6 EVPs report to CEO or relevant C-Suite. They head: Distribution (3000), Fund Services
-(4000), Institutional Sales (3100), International (3200), Product (3400), Corporate
-Strategy (9000).
-30 SVPs spread across all 26 cost centers — every cost center gets at least one SVP/MD
-acting as its head. Larger CCs (Equities, Retail Sales, Fund Services, Tech) get 2–3
-SVPs.
-Mix US offices (~75%) with London (3–4 SVPs), Dublin (1), Singapore (1).
-Output CSV with header row + 46 rows.
-After the CSV, list: count by level, count by cost center, count by office.
-Generate now.
-STEP 2 — VPs (110 records: L5)
-Using the Reference Card and the 46 employees already generated, add 110 Vice
-Presidents (L5).
-Rules:
-Each VP reports to an L3 or L4 from Step 1.
-Distribute across cost centers proportional to remaining HC budget (heaviest: Equities,
-Fund Services, Retail Sales, Fixed Income, Operations, Tech).
-Distribute across offices respecting the Reference Card geographic targets.
-No L4 manager has more than 8 direct VPs.
-Apply gender, age, ethnicity, tenure rules from Reference Card.
-Hire dates: tenure mostly 3–15 years; some recent strategic hires at 1–3 years.
-Output CSV (header + 110 rows). End with: count by CC, count by office, total org
-headcount so far (should be 156).
-Generate now.
-STEP 3 — AVPs and Directors (150 records: L6 + L7)
-Add 78 AVPs (L6) + 72 Directors (L7) = 150 records.
-Rules:
-AVPs and Directors report to L4 or L5.
-Directors are typically senior individual contributors (IC track); AVPs are mid-
-management with small teams.
-Distribute across cost centers and offices per Reference Card targets, filling toward the
-per-CC target HC.
-Tenure mostly 2–12 years.
-No manager has more than 10 direct reports across L6+L7 combined.
-Output CSV (header + 150 rows). End with: count by level, count by CC, count by office,
-total org headcount so far (should be 306).
-Generate now.
-STEP 4 — Senior Managers and Managers (140 records: L8 +
-L9)
-Add 58 Senior Managers (L8) + 82 Managers (L9) = 140 records.
-Rules:
-L8 reports to L5/L6/L7. L9 reports to L5/L6/L7/L8.
-These are the first-line people-manager tier; each should plausibly have 3–8 reports
-waiting in later steps.
-Mid-career employees: tenure mostly 2–10 years, ages 28–48.
-Match per-CC and per-office gaps from running tallies.
-Output CSV (header + 140 rows). End with: count by level, count by CC, count by office,
-total headcount so far (should be 446).
-Generate now.
-STEP 5 — Senior Associates (122 records: L10)
-Add 122 Senior Associates (L10).
-Rules:
-Report to L7, L8, or L9.
-Mid-junior tier: ages 26–42, tenure 1–8 years.
-Distribute toward filling remaining per-CC and per-office gaps.
-Gender close to 48F / 50M / 2 other.
-Apply ethnicity by region, certifications per function.
-Output CSV (header + 122 rows). End with: count by CC, count by office, total
-headcount so far (should be 568).
-Generate now.
-STEP 6 — Associates (122 records: L11)
-Add 122 Associates (L11).
-Rules:
-Report to L8, L9, or L10.
-Junior professional tier: ages 24–36, tenure 0.5–6 years.
-Heavier in Investment Research, Fund Services, Operations, Tech, Compliance,
-Distribution support.
-Gender close to 50F / 48M / 2 other.
-Output CSV (header + 122 rows). End with: count by CC, count by office, total
-headcount so far (should be 690).
-Generate now.
-STEP 7 — Analysts and Coordinators (135 records: L12 + L13)
-Add 110 Analysts (L12) + 25 Coordinators/Admin (L13) = 135 records. This closes the
-org.
-Rules:
-L12 reports to L9/L10/L11. Ages 22–29; tenure 0.2–4 years; 95% Bachelor’s, 5%
-Master’s. Heavier in Investment Research, Fund Services, Ops, Tech, Data, Finance,
-Compliance.
-L13 reports to L9/L10/L11. Bimodal age: long-tenured admins (15+ yrs, age 45–60) AND
-recent hires (0–2 yrs, age 21–28). 72% female. Spread across all offices supporting
-senior leaders.
-After generation, the final totals must hit Reference Card targets (±2 tolerance per
-CC/office).
-Output CSV (header + 135 rows). End with: count by level (verify all 13), count by CC
-(verify all 26), count by office (verify all 12), grand total (must be 825).
-Generate now.
-STEP 8 — Validation Pass
-Run these checks against the full 825-record dataset and report any failures:
-1. Headcount: exactly 825 unique employee_id s from NCP100001 to NCP100825.
-2. Per-level counts match Reference Card exactly (1 / 9 / 6 / 30 / 110 / 78 / 72 / 58 / 82 /
-122 / 122 / 110 / 25).
-3. Per-cost-center counts within ±2 of Reference Card targets.
-4. Per-office counts within ±2 of Reference Card targets.
-5. Manager integrity: every manager_employee_id (except CEO’s, which is blank) exists in
-the dataset AND points to an employee with a strictly more senior level.
-6. Span of control: list any manager with more than 12 direct reports.
-7. Email uniqueness: all work_email values unique.
-8. Date sanity: hire_date ≥ DOB + 18 years for all rows; no hire_date after 2026-01-
-01.
-9. Distribution summary: print overall gender %, ethnicity %, region %, work_mode %,
-and average tenure by level.
-10. Acquisition cohort: confirm Stamford office has employees with hire_source =
-Acquisition and hire dates ≥ 2018; LA office has some with hire_source =
-Acquisition and hire dates ≥ 2023.
-Output a short pass/fail report. If anything fails, list affected employee_id s.
-TIPS WHEN RUNNING IN COPILOT
-Start each step in a fresh chat if Copilot’s context fills up. Paste the Reference Card
-(Step 0) first, then say “Here are the records generated so far” and paste the running
-CSV, then run the next step’s prompt.
-After each step, download the CSV chunk before moving on — don’t trust Copilot to
-remember it perfectly across steps.
-If Copilot truncates a CSV mid-row, ask: “Continue the CSV from row N” (give the last
-employee_id it completed).
-Merge all 7 CSV chunks into one master file before running Step 8.
+Copilot 365 Talk Script — Praveen
+Oct 29, 2026 · @Praveen Raj
+Run sheet
+The talk runs about 30 minutes plus Q&A; trim the demos first if you are short on time. Lines in plain text are what you say; [italic brackets] are what you do on screen.
+Time
+Section
+Have open on screen
+0:00–1:00
+Hello and who I am
+Title slide
+1:00–4:00
+Why AI matters
+Title slide (no demo yet)
+4:00–5:30
+Why use the Copilot app
+Copilot app, home screen
+5:30–7:00
+Is my data safe?
+Copilot app, home screen
+7:00–10:30
+Home screen tour: Work IQ, SharePoint, OneDrive, models
+Copilot app, home screen
+10:30–16:30
+Demo 1: Excel to ready-to-send email
+Copilot app + your sample Excel file
+16:30–18:00
+Why prompts matter
+Copilot app, new chat
+18:00–24:30
+Demo 2: three prompt techniques
+Copilot app + one sample document
+24:30–27:30
+Save and schedule prompts
+Prompt Gallery, then Scheduled prompts
+27:30–30:00
+Close and 5-day challenge
+Closing slide
+Before you start
+[ ] Copilot app open, signed in with your work account, Work IQ on
+[ ] Sample Excel file saved in OneDrive (dummy or cleared data only)
+[ ] Every demo prompt pasted into a notepad, ready to copy
+[ ] Screenshots of each demo result, in case the live demo is slow
+[ ] Screen zoom at 125–150% so the back row can read
+1. Opening and why AI matters (0:00–4:00)
+[Walk to the front. Smile. Pause two seconds before you speak.]
+Good morning everyone, and thank you all for being here. I'm Praveen, from the VBAM team.
+Today is the first session in a new series on Copilot. Think of it as a refresher — the basics, done properly, so we all start from the same place. And we have a lot more to come, so this is just the beginning.
+Quick show of hands. Who here spent more than half an hour this week on something like summarising a long email chain, tidying a spreadsheet, or writing an update you've written a hundred times before? [Raise your own hand. Wait.]
+Keep your hand up if you enjoyed it. [Pause. Let the hands drop and the laugh happen.]
+That's what today is about. Not robots. Not coding. Just getting that half hour back.
+Why AI, and why now
+Here's what makes AI a strange technology. Every tool we've had at work made us learn its language. Excel, we learned formulas. Outlook, we learned rules and folders.
+AI is the first tool that learns our language. You just type what you want, in plain English, the way you'd ask a colleague. If you can write an email, you can use AI. That's the only entry requirement.
+And the payoff adds up fast. Say it saves you just 20 to 30 minutes a day — a first draft here, a summary there. That's about two hours a week. Over a year, that's two to three working weeks back.
+[Pause. Let that number land.]
+I'm not asking you to change how you work. I'm asking you to hand off the boring first 80 percent, so you spend your time on the part that actually needs you.
+One picture to keep in mind for the rest of today. AI is like a very smart new joiner. Fast, eager, knows a lot about the world. But on day one it doesn't know our clients, our way of doing things, or what you want — unless you tell it. We'll come back to that.
+So let me show you the tool we already have: Microsoft 365 Copilot.
+[Switch to the Copilot app.]
+2. Why use the Copilot app (4:00–5:30)
+First, where to use it. You've probably seen Copilot pop up in Teams, in Outlook, and inside Word and Excel. Those are handy for quick things.
+But my one request today: download the Microsoft 365 Copilot app and make it your home base.
+Think of it this way. The Copilot in Teams and Outlook is the colleague you bump into in the corridor — good for a quick question. The app is that colleague's desk, with all their tools laid out. It has the newest updates and a lot more features. Everything I'll show you today — uploading files, saving prompts, scheduling them — lives in the app.
+[Show where to get it at the firm, e.g. Company Portal or Microsoft Store. Confirm this with IT before the talk.]
+Install it, pin it to your taskbar, and open it once a day. That habit alone is half the battle.
+3. Is my data safe? (5:30–7:00)
+Now the question everyone in finance should be asking: is it safe to put our data in here?
+Short answer: yes, when you're signed in with your work account.
+Here's how I think about it. A free AI tool on the internet is like talking in a coffee shop. You don't know who's listening, and what you say might be used to train the tool.
+Copilot at our firm is a meeting room inside our own building. Microsoft gives every company its own locked space in its cloud. The tech word is "tenant" — just think "our firm's private room."
+What you type and upload stays in that room. It's protected the same way our emails and files already are. And it is not used to train the AI.
+Two more things worth knowing:
+• Copilot only sees what you can already see. If you don't have access to a folder, neither does Copilot.
+• Our normal rules still apply. Copilot doesn't change what we're allowed to do with client data. If you're unsure, check with [compliance contact] as you would today.
+[If your screen shows a shield or "Protected" label near your profile, point to it: "That's your sign you're in the safe, work version."]
+4. Home screen tour (7:00–10:30)
+[Presenter note: since June 2026 the old Work/Web switch is a single Work IQ button, top left of the chat screen. On = mode 1, off = mode 2.]
+This is the home screen. A box to type in, and not much else. That's on purpose — you just ask.
+Two modes: Work IQ on or off
+[Point to the Work IQ button, top left.]
+See this button? It's called Work IQ, and it switches Copilot between two modes.
+Work IQ on — Copilot can look at your work world. Your emails, Teams chats, meetings and files, plus the internet. So you can ask, "What did we agree in Tuesday's budget meeting?" and it can actually answer.
+Work IQ off — Copilot only uses the public internet. Good for "Explain deferred revenue in simple terms" or "What are the latest changes to lease accounting?"
+My rule of thumb: leave it on. Turn it off only when you want an answer purely from the internet, with nothing from our work mixed in.
+OneDrive and SharePoint, in one breath
+You'll hear two words a lot: OneDrive and SharePoint.
+OneDrive is your personal drawer — your own files, saved online instead of on your laptop.
+SharePoint is the team filing cabinet — the shared folders your team or department uses.
+Copilot can read files from both, as long as you have access. So you can say "use the Q3 forecast file" and it can go find it. Or you can attach a file directly.
+[Show the attach / + button in the chat box.]
+The models, briefly
+[Open the model picker.]
+Last thing on this screen. This menu picks the "brain" behind Copilot. Microsoft gives us a few — some from OpenAI, the makers of ChatGPT, and some from Anthropic, the makers of Claude.
+Honest advice: leave it on Auto. Auto picks the right brain for the job. If you have a harder problem — say, comparing two long reports — try Think deeper. It takes a little longer, but it reasons more carefully.
+[Presenter note: the names in this menu change every few months and differ by firm. Show what your screen lists; don't put model names on a slide.]
+5. Demo 1: from spreadsheet to ready-to-send email (10:30–16:30)
+Enough talking. Let's do something real.
+I've got a spreadsheet here — [describe it: e.g. "12 months of department spending"]. Normally I'd spend 30 to 40 minutes with filters and pivot tables just to understand it. Watch this.
+[Attach the Excel file. Paste prompt 1.]
+Analyse this file. Explain what the data shows in plain English and give me the 5 most important takeaways.
+[While it works:] Notice I didn't use any special words. I typed exactly what I'd say to a colleague.
+[Read two takeaways aloud. Paste prompt 2.]
+Which 3 [departments / funds / regions] changed the most from last quarter? Show it as a table and a chart.
+See — I didn't start over. I just kept the conversation going, like talking to a person.
+[Paste prompt 3.]
+Is there anything unusual, missing, or that looks like an error in this data? List the rows.
+This is my favourite one. It's a second pair of eyes. But one rule: Copilot does the first draft, you do the final check. Always glance at the numbers before they go anywhere.
+[Paste prompt 4.]
+Draft a short email to my manager summarising these findings. Under 150 words, three bullet points, professional but friendly, and end with one recommended next step.
+[Show the draft. Copy it into a new Outlook email.]
+And that's ready to send. Read it once, add your name, hit send. About five minutes, instead of an hour.
+Now picture your own version. HR, swap this for a headcount or attrition sheet. Marketing, campaign results. PMs, your project tracker. Same four steps: understand it, dig in, check it, write it up.
+[If it's slow:] "The one thing it can't do yet is read my mind faster." [If it fails, switch to your screenshots and keep talking.]
+6. Why prompts matter (16:30–18:00)
+Everything you just saw came down to one thing: what I typed. That's called a prompt. A prompt is simply your instructions.
+Remember our smart new joiner? If you tell a new joiner "do the report," you'll get a report. If you say "do the monthly variance report for the board, two pages, focus on the three biggest misses, by Friday" — you get the report you actually need.
+Copilot is exactly the same. Better instructions, better answer.
+Microsoft's own tip is to cover four things:
+• Goal — what do you want?
+• Context — why, and who is it for?
+• Source — which files or information should it use?
+• Expectations — what should the answer look like? Length, tone, format.
+But here's the good news. You don't need to memorise any of that. Copilot can help write the prompt for you. Let me show you three levels.
+7. Demo 2: three levels of prompting (18:00–24:30)
+Level 1: just ask
+[New chat. Paste:]
+Write an email to my team about the year-end deadline.
+[Show the result.]
+It's… fine. It's polite. It's also the kind of email everyone skims and forgets. Copilot had to guess everything — which team, which deadline, what tone.
+Level 2: let Copilot interview you
+Now watch this small change. I give it the same request, but I ask it to help me first.
+[New chat. Paste:]
+I want to write an email to my team about the year-end deadline. Before you write anything, rewrite my request into a better prompt, and ask me any questions you need answered to do a great job.
+[Show the questions it asks. Answer two or three out loud as you type them in, e.g. "Finance team of 12, deadline is 15 December, tone friendly but firm."]
+See what happened? It interviewed me, the way a good colleague would before starting. And the email is now something I'd actually send.
+Level 3: give it the file, let it write the prompt
+This is the one I want you to remember.
+[New chat. Attach a real document, e.g. the year-end process note or the Excel file from Demo 1. Paste:]
+Read this file. I need to [brief my team on what they must do before year-end]. Write me the best possible prompt to get that done, using the details in this file. Ask me if anything is missing.
+[Show the prompt it writes. Copy it, paste it into the box, and run it.]
+That's the trick. You give Copilot the context, it writes the instructions, you press go. You get a prompt that fits your exact work, in seconds, without being a prompt expert.
+Quick recap
+1. Level 1 — just ask. Fine for quick things.
+2. Level 2 — ask it to improve your prompt and ask you questions.
+3. Level 3 — give it your file and ask it to write the prompt.
+If you remember nothing else today, remember Level 2. Add "ask me any questions you need" to the end of your request. It changes everything.
+8. Save it, then put it on autopilot (24:30–27:30)
+[Presenter note: Microsoft now calls the old "Copilot Lab" the Copilot Prompt Gallery. Use that name so people can find it. Icons can differ slightly, so rehearse on your own screen.]
+You've built a great prompt. Don't type it again next week. Two ways to reuse it.
+Save it: your speed dial
+[Hover over a prompt you just ran. Click the bookmark icon. Give it a short title, like "Weekly team summary". Click Save.]
+That's it. It's now in your own prompt library.
+[Start a new chat. Click the … More prompts button under the message box. Open "Your saved prompts". Click the one you saved.]
+One click, and the whole prompt is back, ready to go. Your saved prompts are private to you. And if one works really well, you can share it with your team from the Prompt Gallery — so nobody has to reinvent it.
+Schedule it: a standing order
+Saving is speed dial. Scheduling is like a standing order at the bank — it just happens.
+[Paste and run:]
+Review my emails and Teams messages from the last 24 hours. Summarise the key updates in 3–5 bullet points, list any action items for me with due dates, and flag anything urgent that needs a reply today.
+[Hover over the prompt. Click the clock icon, "Schedule this". Set the start time to 8:15 AM, tick Monday to Friday, set an end date, and tick the email alert. Click Create.]
+Now every weekday at 8:15, before I've even opened Outlook, Copilot has read my inbox and told me what matters. That's my 20 minutes, back, every morning — without lifting a finger.
+9. Close and call to action (27:30–30:00)
+So, three things to take away:
+1. Download the Copilot app and make it your home base.
+2. It's safe. Your work stays in our firm's private room.
+3. You don't need perfect prompts. Ask Copilot to ask you questions, or give it your file and let it write the prompt.
+The 5-day challenge
+Here's my ask. Starting Monday, one small task a day.
+Day
+Try this
+Monday
+Paste a long email thread and ask for a 5-bullet summary
+Tuesday
+Upload a spreadsheet you already use and ask for the key takeaways
+Wednesday
+Draft something with "ask me any questions you need" at the end
+Thursday
+Save your best prompt of the week
+Friday
+Schedule a weekly summary to land every Monday morning
+[Put this table on your closing slide.]
+Starter ideas for your role:
+Role
+First prompt to try
+Analyst
+"Compare these two files and list every number that changed, with the difference."
+PM
+"Summarise this project tracker: what's late, who owns it, and what's at risk."
+HR
+"Turn this policy into a one-page FAQ for new joiners, in plain English."
+Marketing
+"Give me 5 subject lines for this newsletter, each under 8 words."
+Closing line
+The best way to learn this is the same way you learned Excel — by using it on real work. So: one prompt, tomorrow morning. That's all I'm asking.
+Thank you. I'm Praveen from VBAM — find me after, or drop me a message on Teams. Happy to take questions.
+Likely questions, short answers
+• "Is it always right?" No. It can make mistakes, especially with numbers. Treat it as a fast first draft and check before you send.
+• "Can colleagues see my chats?" No, your chats aren't shared with colleagues. Like email, they still fall under the firm's normal compliance and record-keeping rules.
+• "Can I use client data?" Follow the same rules you follow today. If unsure, ask [compliance contact].
+• "I don't see the Work IQ button." Using your work data needs the paid Microsoft 365 Copilot licence. Check with IT.
+• "Will this replace my job?" It replaces the boring parts of the job. The judgement is still yours.
+Sources
+Feature details checked as of October 2026; Microsoft updates the app often, so rehearse on your own screen the day before.
+• What information does Copilot use to answer my prompt (Microsoft Support)
+• Microsoft 365 Copilot Chat's new look: how Work IQ replaces the Work and Web toggle (Chris Menard)
+• Microsoft 365 Copilot model picker changed (Chris Menard)
+• Save your favorite prompts to use again (Microsoft Support)
+• Microsoft Copilot: save and schedule prompts (Rajeev Pentyala, Sept 2026)
+• Enterprise data protection in Microsoft 365 Copilot (Microsoft Learn)
